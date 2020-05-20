@@ -1,0 +1,6 @@
+numpy
+scikit-learn
+torchvision
+pandas
+h5py
+seaborn
