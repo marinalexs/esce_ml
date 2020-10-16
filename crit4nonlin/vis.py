@@ -47,14 +47,14 @@ def sc_plot(df, ax=False):
 # hp_plot(df)
 # sc_plot(df)
 
-from glob import glob
-F=glob('./results/pca_*_None.csv')
-df = pandas.DataFrame()
+# from glob import glob
+# F=glob('./results/pca_*_None.csv')
+# df = pandas.DataFrame()
 
-for i,f in enumerate(F):
+# for i,f in enumerate(F):
 
-    # ax = pylab.subplot(5,5,1+i)
-    # df = pandas.read_csv(f)
-    # sc_plot(df, ax)
+#     # ax = pylab.subplot(5,5,1+i)
+#     # df = pandas.read_csv(f)
+#     # sc_plot(df, ax)
 
-pylab.plt.show()
+# pylab.plt.show()
