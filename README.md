@@ -1,4 +1,4 @@
-# esce
+# Empirical Sample Complexity Estimator (ESCE)
 
 TODO
 
