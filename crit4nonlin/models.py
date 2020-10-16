@@ -1,34 +1,34 @@
 import shelve
-
 import numpy
-from crit4nonlin.grid import GRID
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.svm import SVC
 from joblib import hash
-import h5py
 import numbers
 import pandas
 
+from crit4nonlin.grid import GRID
+from crit4nonlin.util import cached
 
 # def get_gram(x, gamma=None):
 #     x_hash = hash(x)
 #     key = f'{x_hash}/{gamma}'
-#
-#     with h5py.File('tmp.h5', 'a') as f:
+#     path = Path("cache/gram.h5")
+#     path.parent.mkdir(parents=True, exist_ok=True)
+
+#     with h5py.File(path, 'a') as f:
 #         if key not in f:
-#             f.create_dataset(key, (len(x), len(x)), dtype='f')
+#             dset = f.create_dataset(key, (len(x), len(x)), dtype='f')
 #             if gamma is None:
-#                 f[key][...] = linear_kernel(x, x)
+#                 dset[...] = linear_kernel(x, x)
 #             elif isinstance(gamma, numbers.Number):
-#                 f[key][...] = rbf_kernel(x, x, gamma=gamma)
+#                 dset[...] = rbf_kernel(x, x, gamma=gamma)
 #             else:
 #                 raise ValueError
-#             print('calc', x_hash, gamma)
+#             return dset[...]
 #         else:
-#             print('cache', x_hash, gamma)
-#
-#         return f[key][...]
+#             return f[key][...]
 
+@cached("cache/gram.h5")
 def get_gram(x, gamma=None):
     if gamma is None:
         return linear_kernel(x, x)
@@ -36,7 +36,6 @@ def get_gram(x, gamma=None):
         return rbf_kernel(x, x, gamma=gamma)
     else:
         raise ValueError
-
 
 def score(gram, y, C, idx_train, idx_val, idx_test):
     model = SVC(C=C, kernel='precomputed', max_iter=1000)
@@ -57,12 +56,10 @@ def score_splits(x, y, splits):
     results = []
 
     for model in ['linear', 'rbf']:
-
         for gamma in GRID[model]['gamma']:
             gram = get_gram(x, gamma=gamma)
 
             for n in splits:
-
                 for s in splits[n]:
                     idx_train, idx_val, idx_test = splits[n][s]
 
