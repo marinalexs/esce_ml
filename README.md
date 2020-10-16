@@ -1,4 +1,4 @@
-# Crit4nonlin
+# Empirical Sample Complexity Estimator (ESCE)
 
 TODO
 
