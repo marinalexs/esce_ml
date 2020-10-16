@@ -14,5 +14,8 @@ setup(
     url = "https://github.com/maschulz/crit4nonlin",
     packages = find_packages(),
     classifiers = [],
-    python_requires = '>=3.6'
+    python_requires = '>=3.6',
+    entry_points = {
+        'console_scripts': ['crit4nonlin=crit4nonlin.command_line:main'],
+    }
 )

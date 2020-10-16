@@ -1,7 +1,7 @@
 import shelve
 
 import numpy
-from grid import GRID
+from crit4nonlin.grid import GRID
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.svm import SVC
 from joblib import hash
