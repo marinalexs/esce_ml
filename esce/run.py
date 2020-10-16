@@ -1,8 +1,8 @@
 import sys
 import numpy
-from crit4nonlin.data import get_mnist
-from crit4nonlin.models import score_splits
-from crit4nonlin.sampling import split_grid
+from esce.data import get_mnist
+from esce.models import score_splits
+from esce.sampling import split_grid
 
 def run(method, n_components, noise=None, seeds=20):
     x, y = get_mnist(method=method, n_components=n_components, noise=noise)

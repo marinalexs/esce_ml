@@ -4,18 +4,18 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(
-    name = "crit4nonlin",
+    name = "esce",
     version = "0.0.1",
     author = "Alexander Koch",
     author_email = "kochalexander@gmx.net",
-    description = "TODO",
+    description = "Empirical Sample Complexity Estimator",
     long_description= long_description,
     long_description_content_type= "text/markdown",
-    url = "https://github.com/maschulz/crit4nonlin",
+    url = "https://github.com/maschulz/esce",
     packages = find_packages(),
     classifiers = [],
     python_requires = '>=3.6',
     entry_points = {
-        'console_scripts': ['crit4nonlin=crit4nonlin.command_line:main'],
+        'console_scripts': ['esce=esce.command_line:main'],
     }
 )

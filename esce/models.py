@@ -6,8 +6,8 @@ from joblib import hash
 import numbers
 import pandas
 
-from crit4nonlin.grid import GRID
-from crit4nonlin.util import cached
+from esce.grid import GRID
+from esce.util import cached
 
 # def get_gram(x, gamma=None):
 #     x_hash = hash(x)
