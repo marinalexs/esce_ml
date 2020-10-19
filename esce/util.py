@@ -25,6 +25,7 @@ def pickled(root):
         return wrapper
     return decorator
 
+# TODO: add option to specify datatype in decorator?
 def cached(root):
     """
     Decorator for HDF5 caching.

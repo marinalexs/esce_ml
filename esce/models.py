@@ -44,7 +44,7 @@ def get_gram(data, gamma=None):
     """
     tri = get_gram_tril(data, gamma)
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
-    K = np.zeros((n,n))
+    K = np.zeros((n,n), dtype=np.float32)
     K[np.tril_indices(n)] = tri
 
     # TODO: make this more efficient memory-wise?
@@ -64,7 +64,6 @@ def score(gram, y, C, idx_train, idx_val, idx_test):
     score_test = model.score(gram_, y[idx_test])
 
     return score_val, score_test
-
 
 def score_splits(x, y, splits):
     results = []
