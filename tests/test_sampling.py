@@ -1,5 +1,5 @@
 from unittest import TestCase
-from crit4nonlin.data import get_mnist
+from esce.data import get_mnist
 
 class TestSampling(TestCase):
     def test_example(self):

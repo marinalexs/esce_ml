@@ -14,7 +14,7 @@ from esce.util import cached
 @cached("cache/gram.h5")
 def get_gram_tril(data, gamma=None):
     """
-    Calculates the lower triangle half + diagonal of the gram matrix
+    Calculates the lower triangle + diagonal of the gram matrix
     """
     x = data.astype(np.float32)
     if gamma is None:
@@ -27,13 +27,13 @@ def get_gram_tril(data, gamma=None):
 
 def get_gram(data, gamma=None):
     """
-    Reconstructs the gram matrix based on lower triangle half + diagonal
+    Reconstructs the gram matrix based on lower triangle + diagonal
     """
     tri = get_gram_tril(data, gamma)
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
     K = np.zeros((n,n))
     K[np.tril_indices(n)] = tri
-    return 
+    return K
 
 def score(gram, y, C, idx_train, idx_val, idx_test):
     model = SVC(C=C, kernel='precomputed', max_iter=1000)
