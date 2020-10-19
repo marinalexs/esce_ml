@@ -1,20 +1,28 @@
 import argparse
+from pathlib import Path
+import pandas as pd
+
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
 from esce.data import get_mnist
 from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
-# from matplotlib import pylab
 
 def run(method, n_components, noise=None, seeds=20):
     x, y = get_mnist(method=method, n_components=n_components, noise=noise)
     splits = split_grid(y, n_samples=(50, 100, 200, 500, 1000, 2000, 5000, 10000), n_seeds=seeds)
     results = score_splits(x, y, splits)
-    results.to_csv(f'results/{method}_{n_components}_{noise}.csv')
+
+    path = Path(f'results/{method}_{n_components}_{noise}.csv')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    results.to_csv(path)
 
 def visualize(path):
-    df = pandas.read_csv(path)
-    hp_plot(df)
+    df = pd.read_csv(path)
+    # hp_plot(df)
     sc_plot(df)
 
     # from glob import glob
@@ -30,6 +38,8 @@ def visualize(path):
 def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='functions')
+    subparsers.required = True
+    subparsers.dest = 'command'
     est_parser = subparsers.add_parser("estimate", help="perform estimation on dataset / model")
     viz_parser = subparsers.add_parser("visualize", help="visualize results")
     parser.set_defaults(estimate=False, visualize=False)
@@ -40,7 +50,7 @@ def main():
     est_parser.add_argument('--seeds', default=20, type=int, help="seed used for each split")
     est_parser.set_defaults(estimate=True)
 
-    viz_parser.add_argument('--file', type=str, help="file containing the results to visualize")
+    viz_parser.add_argument('file', type=str, help="file containing the results to visualize")
     viz_parser.set_defaults(visualize=True)
     args = parser.parse_args()
 

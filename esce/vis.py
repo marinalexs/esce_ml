@@ -3,7 +3,6 @@ from matplotlib import pylab
 import numpy
 import pandas
 
-
 def hp_plot(df):
     df['log2_C'] = numpy.log2(df['C'])
     df['log2_gamma'] = numpy.log2(df['gamma'])
