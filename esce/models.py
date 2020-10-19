@@ -2,6 +2,7 @@ import shelve
 import numpy
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.svm import SVC, SVR
+from sklearn.linear_model import LinearRegression
 from joblib import hash
 import numbers
 import pandas
@@ -64,6 +65,17 @@ class BaseModel(ABC):
     def score(self, x, y, idx_train, idx_val, idx_test, params):
         pass
 
+class OLSModel(BaseModel):
+    def __init__(self):
+        self.model = LinearRegression()
+
+    def score(self, x, y, idx_train, idx_val, idx_test): 
+        self.model.fit(x[idx_train], y[idx_train])
+
+        score_val = self.model.score(x[idx_val], y[idx_val])
+        score_test = self.model.score(x[idx_test], y[idx_test])
+        return score_val, score_test
+
 class KernelSVMModel(BaseModel):
     def __init__(self, kernel=KernelType.LINEAR):
         self.kernel = kernel
@@ -107,13 +119,15 @@ def score_splits(x, y, splits):
 
                     # TODO: change this
                     gamma = params["gamma"] if "gamma" in params else 1
-                    results.append([n,s,model_name, params['C'], gamma, score_val, score_test])
+                    C = params['C'] if "C" in params else 0
+                    results.append([n,s,model_name, C, gamma, score_val, score_test])
                     print(results[-1])
 
     results = pandas.DataFrame(results, columns=['n', 's', 'model', 'C', 'gamma', 'score_val', 'score_test'])
     return results
 
 MODELS = {
+    "ols": OLSModel(),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF)
 }
