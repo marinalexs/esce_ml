@@ -13,8 +13,15 @@ from esce.util import cached
 
 @cached("cache/gram.h5")
 def get_gram_tril(data, gamma=None):
-    """
-    Calculates the lower triangle + diagonal of the gram matrix
+    """Calculates the lower triangle of the gram matrix.
+
+    Args:
+        data: Data to compute gram matrix of.
+        gamma: RBF kernel gamma.
+
+    Returns:
+        One-dimensional array containing the lower triangle
+        of the computed gram matrix.
     """
     x = data.astype(np.float32)
     if gamma is None:
@@ -26,13 +33,21 @@ def get_gram_tril(data, gamma=None):
     return K[np.tril_indices(K.shape[0])]
 
 def get_gram(data, gamma=None):
-    """
-    Reconstructs the gram matrix based on lower triangle + diagonal
+    """Reconstructs the gram matrix based on lower triangle.
+
+    Args:
+        data: Data to compute gram matrix of.
+        gamma: RBF kernel gamma.
+
+    Returns:
+        Two-dimensional gram matrix of the data.
     """
     tri = get_gram_tril(data, gamma)
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
     K = np.zeros((n,n))
     K[np.tril_indices(n)] = tri
+
+    # TODO: make this more efficient memory-wise?
     K = K + K.T - np.diag(np.diag(K))
     return K
 

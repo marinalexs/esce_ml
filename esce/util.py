@@ -28,8 +28,10 @@ def pickled(root):
 def cached(root):
     """
     Decorator for HDF5 caching.
-    Hashes arguments to provide a unique filename.
+    Hashes arguments to provide a unique key.
     Stores the data in the specified path.
+    Expects the returned data to be a floating point numpy array.
+    The created dataset will be of type f32.
     """
     path = Path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
