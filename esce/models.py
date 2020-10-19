@@ -5,37 +5,35 @@ from sklearn.svm import SVC
 from joblib import hash
 import numbers
 import pandas
+import numpy as np
+import math
 
 from esce.grid import GRID
 from esce.util import cached
 
-# def get_gram(x, gamma=None):
-#     x_hash = hash(x)
-#     key = f'{x_hash}/{gamma}'
-#     path = Path("cache/gram.h5")
-#     path.parent.mkdir(parents=True, exist_ok=True)
-
-#     with h5py.File(path, 'a') as f:
-#         if key not in f:
-#             dset = f.create_dataset(key, (len(x), len(x)), dtype='f')
-#             if gamma is None:
-#                 dset[...] = linear_kernel(x, x)
-#             elif isinstance(gamma, numbers.Number):
-#                 dset[...] = rbf_kernel(x, x, gamma=gamma)
-#             else:
-#                 raise ValueError
-#             return dset[...]
-#         else:
-#             return f[key][...]
-
 @cached("cache/gram.h5")
-def get_gram(x, gamma=None):
+def get_gram_tril(data, gamma=None):
+    """
+    Calculates the lower triangle half + diagonal of the gram matrix
+    """
+    x = data.astype(np.float32)
     if gamma is None:
-        return linear_kernel(x, x)
+        K = linear_kernel(x, x)
     elif isinstance(gamma, numbers.Number):
-        return rbf_kernel(x, x, gamma=gamma)
+        K = rbf_kernel(x, x, gamma=gamma)
     else:
         raise ValueError
+    return K[np.tril_indices(K.shape[0])]
+
+def get_gram(data, gamma=None):
+    """
+    Reconstructs the gram matrix based on lower triangle half + diagonal
+    """
+    tri = get_gram_tril(data, gamma)
+    n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
+    K = np.zeros((n,n))
+    K[np.tril_indices(n)] = tri
+    return 
 
 def score(gram, y, C, idx_train, idx_val, idx_test):
     model = SVC(C=C, kernel='precomputed', max_iter=1000)
