@@ -33,6 +33,7 @@ def get_gram(data, gamma=None):
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
     K = np.zeros((n,n))
     K[np.tril_indices(n)] = tri
+    K = K + K.T - np.diag(np.diag(K))
     return K
 
 def score(gram, y, C, idx_train, idx_val, idx_test):
