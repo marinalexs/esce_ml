@@ -44,7 +44,7 @@ def cached(root):
                     return f[key][...]
                 else:
                     res = fn(*args, **kwargs)
-                    dset = f.create_dataset(key, res.shape, dtype='f', data=res)
-                    return dset[...]
+                    f.create_dataset(key, res.shape, dtype='f', data=res)
+                    return res
         return wrapper
     return decorator
