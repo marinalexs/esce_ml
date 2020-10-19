@@ -47,7 +47,7 @@ def main():
     est_parser.add_argument('--data', default='mnist', type=str, help="dataset to use")
     est_parser.add_argument('--method', default='pca', type=str, help="dimensionality reduction method")
     est_parser.add_argument('--components', default=2, type=int, help="number of components used in dimensionality reduction")
-    est_parser.add_argument('--seeds', default=20, type=int, help="seed used for each split")
+    est_parser.add_argument('--seeds', default=10, type=int, help="number of seeds used for each split")
     est_parser.set_defaults(estimate=True)
 
     viz_parser.add_argument('file', type=str, help="file containing the results to visualize")

@@ -19,8 +19,8 @@ class KernelType(Enum):
     RBF = 2
 
 @cached("cache/gram.h5")
-def get_gram_tril(data, kernel=KernelType.LINEAR, gamma=0):
-    """Calculates the lower triangle of the gram matrix.
+def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0):
+    """Calculates the upper triangle of the gram matrix.
 
     Args:
         data: Data to compute gram matrix of.
@@ -28,7 +28,7 @@ def get_gram_tril(data, kernel=KernelType.LINEAR, gamma=0):
         gamma: RBF kernel gamma.
 
     Returns:
-        One-dimensional array containing the lower triangle
+        One-dimensional array containing the upper triangle
         of the computed gram matrix.
     """
     x = data.astype(np.float32)
@@ -38,10 +38,10 @@ def get_gram_tril(data, kernel=KernelType.LINEAR, gamma=0):
         K = rbf_kernel(x, x, gamma=gamma)
     else:
         raise ValueError
-    return K[np.tril_indices(K.shape[0])]
+    return K[np.triu_indices(K.shape[0])]
 
 def get_gram(data, kernel=KernelType.LINEAR, gamma=0):
-    """Reconstructs the gram matrix based on lower triangle.
+    """Reconstructs the gram matrix based on upper triangle.
 
     Args:
         data: Data to compute gram matrix of.
@@ -50,10 +50,10 @@ def get_gram(data, kernel=KernelType.LINEAR, gamma=0):
     Returns:
         Two-dimensional gram matrix of the data.
     """
-    tri = get_gram_tril(data, kernel, gamma)
+    tri = get_gram_triu(data, kernel, gamma)
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
     K = np.zeros((n,n), dtype=np.float32)
-    K[np.tril_indices(n)] = tri
+    K[np.triu_indices(n)] = tri
 
     # TODO: make this more efficient memory-wise?
     K = K + K.T - np.diag(np.diag(K))
