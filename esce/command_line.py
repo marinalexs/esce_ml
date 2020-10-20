@@ -88,7 +88,12 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     elif fmt == "pkl":
         path = path.with_suffix(".pkl")
         with path.open("wb") as f:
-            d = {"data": x, "label_default": y}
+            d = {"data": x}
+            if isinstance(y, dict):
+                for k,v in y.items():
+                    d[f"label_{k}"] = v
+            else:
+                d["label_default"] = y
             pickle.dump(d, f)
     else:
         raise ValueError
