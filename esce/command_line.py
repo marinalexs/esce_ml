@@ -86,7 +86,7 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     print(f"Generated {dataset} data file '{path}'.")
 
 def splitgen(data, label, seed, samples):
-    path = Path(f"splits/{seed}.split")
+    path = Path(f"splits/{Path(data).stem}_{label}_{seed}_{'_'.join(samples)}.split")
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = [int(sample) for sample in samples]
 
