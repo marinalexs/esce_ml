@@ -112,18 +112,17 @@ def score_splits(x, y, splits):
         model = MODELS[model_name]
 
         for n in splits:
-            for s in splits[n]:
-                for params in ParameterGrid(GRID[model_name]):
-                    idx_train, idx_val, idx_test = splits[n][s]
-                    score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
+            for params in ParameterGrid(GRID[model_name]):
+                idx_train, idx_val, idx_test = splits[n]
+                score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
 
-                    # TODO: change this
-                    gamma = params["gamma"] if "gamma" in params else 1
-                    C = params['C'] if "C" in params else 0
-                    results.append([n,s,model_name, C, gamma, score_val, score_test])
-                    print(results[-1])
+                # TODO: change this
+                gamma = params["gamma"] if "gamma" in params else 1
+                C = params['C'] if "C" in params else 0
+                results.append([n,model_name, C, gamma, score_val, score_test])
+                print(results[-1])
 
-    results = pandas.DataFrame(results, columns=['n', 's', 'model', 'C', 'gamma', 'score_val', 'score_test'])
+    results = pandas.DataFrame(results, columns=['n', 'model', 'C', 'gamma', 'score_val', 'score_test'])
     return results
 
 MODELS = {
