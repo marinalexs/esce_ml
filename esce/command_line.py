@@ -8,7 +8,7 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
-from esce.data import get_mnist, get_mnist_binary, get_fashion_mnist, get_superconductivity
+from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
 from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
@@ -80,7 +80,11 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
         path = path.with_suffix(".h5")
         with h5py.File(path, 'w') as f:
             f.create_dataset("/data", x.shape, data=x)
-            f.create_dataset("/labels/default", y.shape, data=y)
+            if isinstance(y, dict):
+                for k,v in y.items():
+                    f.create_dataset(f"/labels/{k}", v.shape, data=v)
+            else:
+                f.create_dataset("/labels/default", y.shape, data=y)
     elif fmt == "pkl":
         path = path.with_suffix(".pkl")
         with path.open("wb") as f:
@@ -133,7 +137,7 @@ def main():
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
     run_parser.set_defaults(run=True)
 
-    datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use")
+    datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity)")
     datagen_parser.add_argument('--method', default=None, type=str, help="dimensionality reduction method (pca,rp,tsne)")
     datagen_parser.add_argument('--components', default=2, type=int, help="number of components used in dimensionality reduction")
     datagen_parser.add_argument('--noise', default=None, type=float, help="whether or not to add noise")
