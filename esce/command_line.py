@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import pickle
 
 import warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -18,7 +19,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import h5py
 
-def run(data, label, seed):
+def load_dataset(data, label):
     data_path = Path(data)
     x = None
     y = None
@@ -28,12 +29,22 @@ def run(data, label, seed):
             y = f[f"/labels/{label}"][...]
     elif data_path.suffix == ".pkl":
         with data_path.open("rb") as f:
-            d = picke.load(f)
+            d = pickle.load(f)
             x = d["data"]
             y = d[f"label_{label}"]
+    else:
+        raise ValueError
+    return x,y
 
-    # x, y = get_mnist(method=method, n_components=n_components, noise=noise)
-    splits = split_grid(y, n_samples=(50, 100, 200, 500, 1000, 2000, 5000, 10000), seed=seed)
+def load_split(split):
+    with open(split, "rb") as f:
+        return pickle.load(f)
+
+def run(data, label, split):
+    x,y = load_dataset(data, label)
+    splits = load_split(split)
+
+    # splits = split_grid(y, n_samples=(50, 100, 200, 500, 1000, 2000, 5000, 10000), seed=seed)
     results = score_splits(x, y, splits)
 
     path = Path(f'results/{method}_{n_components}_{noise}.csv')
@@ -74,8 +85,17 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
         raise ValueError
     print(f"Generated {dataset} data file '{path}'.")
 
-def splitgen():
-    pass
+def splitgen(data, label, seed, samples):
+    path = Path(f"splits/{seed}.split")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    samples = [int(sample) for sample in samples]
+
+    _,y = load_dataset(data, label)
+    splits = split_grid(y, n_samples=samples, seed=seed)
+
+    with path.open("wb") as f:
+        pickle.dump(splits, f)
+    print(f"Generated split file '{path}'.")
 
 def visualize(path):
     df = pd.read_csv(path)
@@ -104,8 +124,8 @@ def main():
     parser.set_defaults(run=False, visualize=False, datagen=False, splitgen=False)
 
     run_parser.add_argument('data', type=str, help="dataset file to use")
-    run_parser.add_argument('--seed', type=int, help="seed to use", required=True)
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
+    run_parser.add_argument('--split', type=str, help="split file to use", required=True)
     run_parser.set_defaults(run=True)
 
     datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use")
@@ -115,18 +135,22 @@ def main():
     datagen_parser.add_argument('--format', default="hdf5", type=str, help="output file format (hdf5,pkl)")
     datagen_parser.set_defaults(datagen=True)
 
-    # splitgen_parser.add_argument
+    splitgen_parser.add_argument("data", type=str, help="dataset file to use")
+    splitgen_parser.add_argument("--label", default="default", type=str, help="label to use")
+    splitgen_parser.add_argument("--seed", type=int, help="seed to use", required=True)
+    splitgen_parser.add_argument("--samples", nargs="+", help="list number of samples", required=True)
+    splitgen_parser.set_defaults(splitgen=True)
 
     viz_parser.add_argument('file', type=str, help="file containing the results to visualize")
     viz_parser.set_defaults(visualize=True)
     args = parser.parse_args()
 
     if args.run:
-        run(args.data, args.label, args.seed)
-
+        run(args.data, args.label, args.split)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
-
+    elif args.splitgen:
+        splitgen(args.data, args.label, args.seed, args.samples)
     elif args.visualize:
         visualize(args.file)
 
