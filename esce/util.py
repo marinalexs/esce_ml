@@ -2,6 +2,21 @@ from pathlib import Path
 import pickle
 import h5py
 from joblib import hash
+import requests
+from tqdm import tqdm
+
+def download_file(url, path):
+    resp = requests.get(url, stream=True)
+    total = int(resp.headers.get('content-length', 0))
+    bar = tqdm(total=total, unit='iB', unit_scale=True)
+    block_size = 1024
+    with open(path, "wb") as f:
+        for data in resp.iter_content(block_size):
+            bar.update(len(data))
+            f.write(data)
+    bar.close()
+    if total != 0 and bar.n != total:
+        raise ValueError
 
 def pickled(root):
     """

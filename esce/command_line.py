@@ -8,7 +8,7 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
-from esce.data import get_mnist
+from esce.data import get_mnist, get_mnist_binary, get_fashion_mnist, get_superconductivity
 from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
@@ -52,10 +52,15 @@ def run(data, label, split):
     results.to_csv(path)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
-    path = Path("data")
+    path = Path("data") / dataset
     if dataset == "mnist":
-        x, y = get_mnist()
-        path = path / "mnist"
+        x,y = get_mnist()
+    elif dataset == "mnist_binary":
+        x,y = get_mnist_binary()
+    elif dataset == "fashion":
+        x,y = get_fashion_mnist()
+    elif dataset == "superconductivity":
+        x,y = get_superconductivity()
     else:
         raise ValueError
 
