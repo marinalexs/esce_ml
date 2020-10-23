@@ -35,7 +35,7 @@ esce splitgen data/mnist_pca2.h5 --seed=10 --samples 50 100 200 1000
 Finally the sampling process can be started using the *run* command.
 
 ```
-esce run data/mnist.h5 --label=default --split=splits/mnist_default_10_50_100_200.split
+esce run data/mnist.h5 --label=default --split=splits/mnist_default_s10_50_100_200.split
 ```
 
 ## Run unit tests

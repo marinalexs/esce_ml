@@ -5,12 +5,14 @@ from sklearn.svm import SVC, SVR
 from sklearn.linear_model import LinearRegression
 from joblib import hash
 import numbers
-import pandas
+import pandas as pd
 import numpy as np
 import math
 from enum import Enum
 from sklearn.model_selection import ParameterGrid
 from abc import ABC, abstractmethod
+import csv
+from pathlib import Path
 
 from esce.grid import GRID
 from esce.util import cached
@@ -105,25 +107,31 @@ class KernelSVMModel(BaseModel):
 
         return score_val, score_test
 
-def score_splits(x, y, splits):
-    results = []
+def score_splits(outfile, x, y, splits, warm_start=False):
+    prev_run_file = Path(outfile)
+    if prev_run_file.is_file() and warm_start:
+        df = pd.read_csv(outfile)
+    else:
+        with open(outfile, "w") as f:
+            f.write("model,n,param_hash,score_val,score_test\n")
+        df = pd.read_csv(outfile)
+    
+    with open(outfile, "a") as f:
+        csvwriter = csv.writer(f, delimiter=",")
 
-    for model_name in MODELS:
-        model = MODELS[model_name]
+        for model_name in MODELS:
+            model = MODELS[model_name]
 
-        for n in splits:
-            for params in ParameterGrid(GRID[model_name]):
-                idx_train, idx_val, idx_test = splits[n]
-                score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
+            for n in splits:
+                for params in ParameterGrid(GRID[model_name]):
+                    param_hash = hash(params)
+                    if not ((df["model"] == model_name) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
+                        idx_train, idx_val, idx_test = splits[n]
+                        score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
+                        print(model_name, n, param_hash, score_val, score_test)
 
-                # TODO: change this
-                gamma = params["gamma"] if "gamma" in params else 1
-                C = params['C'] if "C" in params else 0
-                results.append([n,model_name, C, gamma, score_val, score_test])
-                print(results[-1])
-
-    results = pandas.DataFrame(results, columns=['n', 'model', 'C', 'gamma', 'score_val', 'score_test'])
-    return results
+                        csvwriter.writerow([model_name, n, param_hash, score_val, score_test])
+                        f.flush()
 
 MODELS = {
     "ols": OLSModel(),

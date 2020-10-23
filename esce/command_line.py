@@ -36,15 +36,17 @@ def load_dataset(data, label):
         raise ValueError("Unknown file format")
     return x,y    
 
-def run(data, label, split):
+def run(data, label, split, warm_start):
     x,y = load_dataset(data, label)
     with open(split, "rb") as f:
         splits = pickle.load(f)
-    results = score_splits(x, y, splits)
+    outfile = Path(f"results/{Path(split).stem}.csv")
+    outfile.parent.mkdir(parents=True, exist_ok=True)
+    score_splits(outfile, x, y, splits, warm_start)
 
-    path = Path(f'results/{method}_{n_components}_{noise}.csv')
-    path.parent.mkdir(parents=True, exist_ok=True)
-    results.to_csv(path)
+    # path = Path(f'results/{method}_{n_components}_{noise}.csv')
+    # path.parent.mkdir(parents=True, exist_ok=True)
+    # results.to_csv(path)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
@@ -96,7 +98,7 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     print(f"Generated {dataset} data file '{path}'.")
 
 def splitgen(data, label, seed, samples):
-    path = Path(f"splits/{Path(data).stem}_{label}_{seed}_{'_'.join(samples)}.split")
+    path = Path(f"splits/{Path(data).stem}_{label}_s{seed}_{'_'.join(samples)}.split")
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = [int(sample) for sample in samples]
 
@@ -136,6 +138,7 @@ def main():
     run_parser.add_argument('data', type=str, help="dataset file to use")
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
+    run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.set_defaults(run=True)
 
     datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity)")
@@ -156,7 +159,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(args.data, args.label, args.split)
+        run(args.data, args.label, args.split, args.warm)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
