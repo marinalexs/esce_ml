@@ -33,18 +33,13 @@ def load_dataset(data, label):
             x = d["data"]
             y = d[f"label_{label}"]
     else:
-        raise ValueError
-    return x,y
-
-def load_split(split):
-    with open(split, "rb") as f:
-        return pickle.load(f)
+        raise ValueError("Unknown file format")
+    return x,y    
 
 def run(data, label, split):
     x,y = load_dataset(data, label)
-    splits = load_split(split)
-
-    # splits = split_grid(y, n_samples=(50, 100, 200, 500, 1000, 2000, 5000, 10000), seed=seed)
+    with open(split, "rb") as f:
+        splits = pickle.load(f)
     results = score_splits(x, y, splits)
 
     path = Path(f'results/{method}_{n_components}_{noise}.csv')
@@ -52,7 +47,8 @@ def run(data, label, split):
     results.to_csv(path)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
-    path = Path("data") / dataset
+    noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
+    path = Path("data") / f"{dataset}_{method}{n_components}{noise_str}"
     if dataset == "mnist":
         x,y = get_mnist()
     elif dataset == "mnist_binary":
@@ -62,7 +58,7 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     elif dataset == "superconductivity":
         x,y = get_superconductivity()
     else:
-        raise ValueError
+        raise ValueError("Unknown dataset")
 
     if method == 'pca':
         x = PCA(n_components=n_components, whiten=True, random_state=0).fit_transform(x)
@@ -96,7 +92,7 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
                 d["label_default"] = y
             pickle.dump(d, f)
     else:
-        raise ValueError
+        raise ValueError("Unknown file format")
     print(f"Generated {dataset} data file '{path}'.")
 
 def splitgen(data, label, seed, samples):

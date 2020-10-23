@@ -29,7 +29,7 @@ The command *splitgen* generates train, val and test splits for a given seed and
 This is also stored as a file.
 
 ```
-esce splitgen data/mnist.h5 --seed=10 --samples 50 100 200 1000
+esce splitgen data/mnist_pca2.h5 --seed=10 --samples 50 100 200 1000
 ```
 
 Finally the sampling process can be started using the *run* command.
