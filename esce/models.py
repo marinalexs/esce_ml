@@ -13,6 +13,7 @@ from sklearn.model_selection import ParameterGrid
 from abc import ABC, abstractmethod
 import csv
 from pathlib import Path
+import pickle
 
 from esce.grid import GRID
 from esce.util import cached
@@ -108,15 +109,23 @@ class KernelSVMModel(BaseModel):
         return score_val, score_test
 
 def score_splits(outfile, x, y, seed, splits, warm_start=False):
-    prev_run_file = Path(outfile)
-    if prev_run_file.is_file() and warm_start:
+    if outfile.is_file() and warm_start:
         df = pd.read_csv(outfile)
     else:
-        with open(outfile, "w") as f:
+        with outfile.open("w") as f:
             f.write("model,n,seed,param_hash,score_val,score_test\n")
         df = pd.read_csv(outfile)
+
+        legend = dict()
+        for model_name in MODELS:
+            legend[model_name] = dict()
+            for params in ParameterGrid(GRID[model_name]):
+                param_hash = hash(params)
+                legend[model_name][param_hash] = params
+        with outfile.with_suffix(".hyp").open("wb") as f:
+            pickle.dump(legend, f)
     
-    with open(outfile, "a") as f:
+    with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
 
         for model_name in MODELS:

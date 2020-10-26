@@ -48,10 +48,6 @@ def run(data, label, split, warm_start):
     outfile.parent.mkdir(parents=True, exist_ok=True)
     score_splits(outfile, x, y, seed, splits, warm_start)
 
-    # path = Path(f'results/{method}_{n_components}_{noise}.csv')
-    # path.parent.mkdir(parents=True, exist_ok=True)
-    # results.to_csv(path)
-
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
     path = Path("data") / f"{dataset}_{method}{n_components}{noise_str}"
