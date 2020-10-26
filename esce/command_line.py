@@ -36,13 +36,17 @@ def load_dataset(data, label):
         raise ValueError("Unknown file format")
     return x,y    
 
+def load_split(split):
+    with open(split, "rb") as f:
+        return pickle.load(f)
+
 def run(data, label, split, warm_start):
     x,y = load_dataset(data, label)
-    with open(split, "rb") as f:
-        splits = pickle.load(f)
+    seed, splits = load_split(split)
+    
     outfile = Path(f"results/{Path(split).stem}.csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, splits, warm_start)
+    score_splits(outfile, x, y, seed, splits, warm_start)
 
     # path = Path(f'results/{method}_{n_components}_{noise}.csv')
     # path.parent.mkdir(parents=True, exist_ok=True)
@@ -106,13 +110,20 @@ def splitgen(data, label, seed, samples):
     splits = split_grid(y, n_samples=samples, seed=seed)
 
     with path.open("wb") as f:
-        pickle.dump(splits, f)
+        pickle.dump((seed, splits), f)
     print(f"Generated split file '{path}'.")
 
 def visualize(path):
-    df = pd.read_csv(path)
-    # hp_plot(df)
-    sc_plot(df)
+    if path.is_file():
+        df = pd.read_csv(path)
+        # hp_plot(df)
+        sc_plot(df)
+    else:
+        frames = []
+        for f in path.glob("*.csv"):
+            frames.append(pd.read_csv(f))
+        df = pd.concat(frames)
+        sc_plot(df)
 
     # from glob import glob
     # F=glob('./results/pca_*_None.csv')
@@ -154,7 +165,7 @@ def main():
     splitgen_parser.add_argument("--samples", nargs="+", help="list number of samples", required=True)
     splitgen_parser.set_defaults(splitgen=True)
 
-    viz_parser.add_argument('file', type=str, help="file containing the results to visualize")
+    viz_parser.add_argument('path', type=str, help="file/directory containing the results to visualize")
     viz_parser.set_defaults(visualize=True)
     args = parser.parse_args()
 
@@ -165,7 +176,7 @@ def main():
     elif args.splitgen:
         splitgen(args.data, args.label, args.seed, args.samples)
     elif args.visualize:
-        visualize(args.file)
+        visualize(Path(args.path))
 
 if __name__ == '__main__':
     main()

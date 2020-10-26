@@ -32,9 +32,10 @@ def hp_plot(df):
 
     pylab.plt.show()
 
-def sc_plot(df, ax=False):
-    idx = df.groupby(['n', 's', 'model'])['score_val'].idxmax()
+def sc_plot(df):
+    idx = df.groupby(['model', 'n'])['score_val'].idxmax()
     df_ = df.loc[idx]
+
     sns.lineplot(x='n', y='score_test', hue='model', data=df_, ci='sd')
     pylab.plt.xscale('log')
     pylab.plt.show()

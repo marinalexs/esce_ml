@@ -107,13 +107,13 @@ class KernelSVMModel(BaseModel):
 
         return score_val, score_test
 
-def score_splits(outfile, x, y, splits, warm_start=False):
+def score_splits(outfile, x, y, seed, splits, warm_start=False):
     prev_run_file = Path(outfile)
     if prev_run_file.is_file() and warm_start:
         df = pd.read_csv(outfile)
     else:
         with open(outfile, "w") as f:
-            f.write("model,n,param_hash,score_val,score_test\n")
+            f.write("model,n,seed,param_hash,score_val,score_test\n")
         df = pd.read_csv(outfile)
     
     with open(outfile, "a") as f:
@@ -130,7 +130,7 @@ def score_splits(outfile, x, y, splits, warm_start=False):
                         score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
                         print(model_name, n, param_hash, score_val, score_test)
 
-                        csvwriter.writerow([model_name, n, param_hash, score_val, score_test])
+                        csvwriter.writerow([model_name, n, seed, param_hash, score_val, score_test])
                         f.flush()
 
 MODELS = {
