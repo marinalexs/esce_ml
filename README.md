@@ -38,6 +38,15 @@ Finally the sampling process can be started using the *run* command.
 esce run data/mnist_pca2.h5 --label=default --split=splits/mnist_pca2_default_s10_50_100_200.split
 ```
 
+## Data file format
+
+Data files are either stored in HDF5 or pickle files.
+HDF5 files contain the datapoints in */data* and labels are stored in */labels/{label}*.
+The default label for a dataset is stored in */labels/default*.
+
+For pickle files, data and labels are stored in a dictionary.
+The data is stored in "data" and the individual labels a stored in "label_{label}".
+
 ## Run unit tests
 
 Tests can be run via the following command
