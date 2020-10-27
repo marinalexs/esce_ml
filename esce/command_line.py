@@ -19,8 +19,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import h5py
 
-def load_dataset(data, label):
-    data_path = Path(data)
+def load_dataset(data_path, label):
     x = None
     y = None
     if data_path.suffix == ".h5":
@@ -40,11 +39,11 @@ def load_split(split):
     with open(split, "rb") as f:
         return pickle.load(f)
 
-def run(data, label, split, warm_start):
-    x,y = load_dataset(data, label)
-    seed, splits = load_split(split)
+def run(data_path, label, split_path, warm_start):
+    x,y = load_dataset(data_path, label)
+    seed, splits = load_split(split_path)
     
-    outfile = Path(f"results/{Path(split).stem}.csv")
+    outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
     score_splits(outfile, x, y, seed, splits, warm_start)
 
@@ -53,8 +52,6 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     path = Path("data") / f"{dataset}_{method}{n_components}{noise_str}"
     if dataset == "mnist":
         x,y = get_mnist()
-    elif dataset == "mnist_binary":
-        x,y = get_mnist_binary()
     elif dataset == "fashion":
         x,y = get_fashion_mnist()
     elif dataset == "superconductivity":
@@ -97,12 +94,12 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
         raise ValueError("Unknown file format")
     print(f"Generated {dataset} data file '{path}'.")
 
-def splitgen(data, label, seed, samples):
-    path = Path(f"splits/{Path(data).stem}_{label}_s{seed}_{'_'.join(samples)}.split")
+def splitgen(data_path, label, seed, samples):
+    path = Path("splits") / f"{data_path.stem}_{label}_s{seed}_{'_'.join(samples)}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = [int(sample) for sample in samples]
 
-    _,y = load_dataset(data, label)
+    _,y = load_dataset(data_path, label)
     splits = split_grid(y, n_samples=samples, seed=seed)
 
     with path.open("wb") as f:
@@ -166,11 +163,11 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(args.data, args.label, args.split, args.warm)
+        run(Path(args.data), args.label, Path(args.split), args.warm)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
-        splitgen(args.data, args.label, args.seed, args.samples)
+        splitgen(Path(args.data), args.label, args.seed, args.samples)
     elif args.visualize:
         visualize(Path(args.path))
 
