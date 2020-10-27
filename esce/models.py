@@ -17,6 +17,7 @@ import pickle
 
 from esce.grid import GRID
 from esce.util import cached
+from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
 
 class KernelType(Enum):
     LINEAR = 1
@@ -75,9 +76,24 @@ class OLSModel(BaseModel):
     def score(self, x, y, idx_train, idx_val, idx_test): 
         self.model.fit(x[idx_train], y[idx_train])
 
-        score_val = self.model.score(x[idx_val], y[idx_val])
-        score_test = self.model.score(x[idx_test], y[idx_test])
-        return score_val, score_test
+        # Val score
+        y_hat_val = self.model.predict(x[idx_val])
+        r2_val = r2_score(y_hat_val, y[idx_val])
+        mae_val = mean_absolute_error(y_hat_val, y[idx_val])
+        mse_val = mean_squared_error(y_hat_val, y[idx_val])
+
+        # Test score
+        y_hat_test = self.model.predict(x[idx_test])
+        r2_test = r2_score(y_hat_test, y[idx_test])
+        mae_test = mean_absolute_error(y_hat_test, y[idx_test])
+        mse_test = mean_squared_error(y_hat_test, y[idx_test])
+
+        return { "r2_val": r2_val, 
+            "r2_test": r2_test, 
+            "mae_val": mae_val, 
+            "mae_test": mae_test, 
+            "mse_val": mse_val, 
+            "mse_test": mse_test }
 
 class KernelSVMModel(BaseModel):
     def __init__(self, kernel=KernelType.LINEAR):
@@ -97,23 +113,38 @@ class KernelSVMModel(BaseModel):
         gram = self.get_gram(x, gamma)
         model = SVC(C=C, kernel='precomputed', max_iter=1000)
 
+        # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
         model.fit(gram_, y[idx_train])
 
+        # Val score
         gram_ = gram[np.ix_(idx_val, idx_train)]
-        score_val = model.score(gram_, y[idx_val])
+        y_hat_val = model.predict(gram_)
+        acc_val = accuracy_score(y_hat_val, y[idx_val])
+        f1_val = f1_score(y_hat_val, y[idx_val], average="micro")
 
+        # Test score
         gram_ = gram[np.ix_(idx_test, idx_train)]
-        score_test = model.score(gram_, y[idx_test])
+        y_hat_test = model.predict(gram_)
+        acc_test = accuracy_score(y_hat_test, y[idx_test])
+        f1_test = f1_score(y_hat_test, y[idx_test], average="micro")
 
-        return score_val, score_test
+        return {"acc_val": acc_val, 
+            "acc_test": acc_test, 
+            "f1_val": f1_val,
+            "f1_test": f1_test }
 
 def score_splits(outfile, x, y, seed, splits, warm_start=False):
+    columns = ["model","n","seed","param_hash",
+        "acc_val","acc_test","f1_val","f1_test",
+        "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
+    col2idx = { c:i for i,c in enumerate(columns) }
+
     if outfile.is_file() and warm_start:
-        df = pd.read_csv(outfile)
+        df = pd.read_csv(outfile, index_col=False)
     else:
         with outfile.open("w") as f:
-            f.write("model,n,seed,param_hash,score_val,score_test\n")
+            f.write(','.join(columns)+"\n")
         df = pd.read_csv(outfile)
 
         legend = dict()
@@ -124,7 +155,7 @@ def score_splits(outfile, x, y, seed, splits, warm_start=False):
                 legend[model_name][param_hash] = params
         with outfile.with_suffix(".hyp").open("wb") as f:
             pickle.dump(legend, f)
-    
+
     with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
 
@@ -134,12 +165,20 @@ def score_splits(outfile, x, y, seed, splits, warm_start=False):
             for n in splits:
                 for params in ParameterGrid(GRID[model_name]):
                     param_hash = hash(params)
+
                     if not ((df["model"] == model_name) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
                         idx_train, idx_val, idx_test = splits[n]
-                        score_val, score_test = model.score(x, y, idx_train, idx_val, idx_test, **params)
-                        print(model_name, n, param_hash, score_val, score_test)
+                        scores = model.score(x, y, idx_train, idx_val, idx_test, **params)
 
-                        csvwriter.writerow([model_name, n, seed, param_hash, score_val, score_test])
+                        row = [np.nan] * (len(columns)-1)
+                        row[:3] = [model_name, n, seed, param_hash]
+                        for k,v in scores.items():
+                            row[col2idx[k]] = v
+
+                        # Removes NaNs, prints scores
+                        print(' '.join([str(r) for r in row if r == r]))
+
+                        csvwriter.writerow(row)
                         f.flush()
 
 MODELS = {
