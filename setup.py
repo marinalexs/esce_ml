@@ -9,13 +9,23 @@ setup(
     author = "Alexander Koch",
     author_email = "kochalexander@gmx.net",
     description = "Empirical Sample Complexity Estimator",
-    long_description= long_description,
-    long_description_content_type= "text/markdown",
+    long_description = long_description,
+    long_description_content_type = "text/markdown",
     url = "https://github.com/maschulz/esce",
     packages = find_packages(),
     classifiers = [],
     python_requires = '>=3.6',
     entry_points = {
         'console_scripts': ['esce=esce.command_line:main'],
-    }
+    },
+    install_requires = [
+        "numpy",
+        "pandas",
+        "scikit-learn",
+        "torchvision",
+        "h5py",
+        "seaborn",
+        "tqdm",
+        "requests"
+    ]
 )

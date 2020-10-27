@@ -2,7 +2,15 @@
 
 ## Quickstart
 
-Install development package locally via
+### Install from GitHub
+
+```
+pip3 install git+https://github.com/maschulz/esce.git@master
+```
+
+### Install locally
+
+Install the development package locally via
 
 ```
 python3 setup.py develop --user
