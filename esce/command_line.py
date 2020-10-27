@@ -20,8 +20,17 @@ from sklearn.preprocessing import StandardScaler
 import h5py
 
 def load_dataset(data_path, label):
-    x = None
-    y = None
+    """
+    Loads data and label from data file
+
+    Arguments:
+        data_path: Path to h5 or pkl file
+        label: Label to use contained in the file
+
+    Returns:
+        (x,y) Tuple of data and labels
+    """
+
     if data_path.suffix == ".h5":
         with h5py.File(data_path, "r") as f:
             x = f["/data"][...]
@@ -35,11 +44,31 @@ def load_dataset(data_path, label):
         raise ValueError("Unknown file format")
     return x,y    
 
-def load_split(split):
-    with open(split, "rb") as f:
+def load_split(split_path):
+    """
+    Loads a split file from a path.
+
+    Arguments:
+        split_path: Path to split file
+
+    Returns:
+        Tuple consisting of a seed and the splits
+    """
+
+    with open(split_path, "rb") as f:
         return pickle.load(f)
 
 def run(data_path, label, split_path, warm_start):
+    """
+    Performs sample complexity computation.
+
+    Arguments:
+        data_path: Path to data file
+        label: Label to use in data file
+        split_path: Path to split file
+        warm_start: Whether or not to continue previous computation
+    """
+
     x,y = load_dataset(data_path, label)
     seed, splits = load_split(split_path)
     
@@ -48,6 +77,18 @@ def run(data_path, label, split_path, warm_start):
     score_splits(outfile, x, y, seed, splits, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
+    """
+    Generates a data file.
+    The file will be placed in the 'data' directory.
+
+    Arguments:
+        dataset: Pre-defined dataset to load
+        method: Dimensionality reduction method to use
+        n_components: Number of components used for dimensionality reduction
+        noise: Noise factor
+        fmt: Data file format (hdf5 or pkl)
+    """
+
     noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
     path = Path("data") / f"{dataset}_{method}{n_components}{noise_str}"
     if dataset == "mnist":
@@ -95,6 +136,16 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     print(f"Generated {dataset} data file '{path}'.")
 
 def splitgen(data_path, label, seed, samples):
+    """
+    Generates a split file.
+    The file will be placed in the 'splits' directory.
+
+    Arguments:
+        data_path: Path to data file
+        label: Label to use contained in data file
+        seed: Seed to use in train_test_split
+        samples: List of sample counts
+    """
     path = Path("splits") / f"{data_path.stem}_{label}_s{seed}_{'_'.join(samples)}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = [int(sample) for sample in samples]
