@@ -19,13 +19,15 @@ setup(
         'console_scripts': ['esce=esce.command_line:main'],
     },
     install_requires = [
-        "numpy",
-        "pandas",
-        "scikit-learn",
-        "torchvision",
-        "h5py",
-        "seaborn",
-        "tqdm",
-        "requests"
+        "numpy>=1.19",
+        "pandas>=0.23",
+        "scikit-learn>=0.23",
+        "torchvision>=0.4",
+        "h5py>=2.8",
+        "joblib>=0.12",
+        "matplotlib>=3.0",
+        "seaborn>=0.9",
+        "tqdm>=4.26",
+        "requests>=2.22"
     ]
 )
