@@ -2,7 +2,7 @@ import shelve
 import numpy
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.svm import SVC, SVR
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from joblib import hash
 import numbers
 import pandas as pd
@@ -66,24 +66,25 @@ def get_gram(data, kernel=KernelType.LINEAR, gamma=0):
 
 class BaseModel(ABC):
     @abstractmethod
-    def score(self, x, y, idx_train, idx_val, idx_test, params):
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
         pass
 
-class OLSModel(BaseModel):
-    def __init__(self):
-        self.model = LinearRegression()
+class RegressionModel(BaseModel):
+    def __init__(self, model_generator):
+        self.model_generator = model_generator
 
-    def score(self, x, y, idx_train, idx_val, idx_test): 
-        self.model.fit(x[idx_train], y[idx_train])
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
+        model = self.model_generator(**kwargs)
+        model.fit(x[idx_train], y[idx_train])
 
         # Val score
-        y_hat_val = self.model.predict(x[idx_val])
+        y_hat_val = model.predict(x[idx_val])
         r2_val = r2_score(y_hat_val, y[idx_val])
         mae_val = mean_absolute_error(y_hat_val, y[idx_val])
         mse_val = mean_squared_error(y_hat_val, y[idx_val])
 
         # Test score
-        y_hat_test = self.model.predict(x[idx_test])
+        y_hat_test = model.predict(x[idx_test])
         r2_test = r2_score(y_hat_test, y[idx_test])
         mae_test = mean_absolute_error(y_hat_test, y[idx_test])
         mse_test = mean_squared_error(y_hat_test, y[idx_test])
@@ -121,16 +122,16 @@ class KernelSVMModel(BaseModel):
         gram_ = gram[np.ix_(idx_val, idx_train)]
         y_hat_val = model.predict(gram_)
         acc_val = accuracy_score(y_hat_val, y[idx_val])
-        f1_val = f1_score(y_hat_val, y[idx_val], average="micro")
+        f1_val = f1_score(y_hat_val, y[idx_val], average="weighted")
 
         # Test score
         gram_ = gram[np.ix_(idx_test, idx_train)]
         y_hat_test = model.predict(gram_)
         acc_test = accuracy_score(y_hat_test, y[idx_test])
-        f1_test = f1_score(y_hat_test, y[idx_test], average="micro")
+        f1_test = f1_score(y_hat_test, y[idx_test], average="weighted")
 
-        return {"acc_val": acc_val, 
-            "acc_test": acc_test, 
+        return {"acc_val": acc_val,
+            "acc_test": acc_test,
             "f1_val": f1_val,
             "f1_test": f1_test }
 
@@ -182,7 +183,9 @@ def score_splits(outfile, x, y, seed, splits, warm_start=False):
                         f.flush()
 
 MODELS = {
-    "ols": OLSModel(),
+    "ols": RegressionModel(LinearRegression),
+    "lasso": RegressionModel(Lasso),
+    "ridge": RegressionModel(Ridge),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF)
 }

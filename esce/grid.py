@@ -6,6 +6,8 @@ def logrange(start, stop, step=1., base=2.):
 
 GRID = {
     'ols': dict(),
+    'lasso': {'alpha': logrange(-15, 15, 1)},
+    'ridge': {'alpha': logrange(-15, 15, 1)},
     'svm-linear': {'C': logrange(-20, 10, 1)},
     'svm-rbf': {'C': logrange(-10, 20, 1), 'gamma': logrange(-25, 5, 1)},
 }
