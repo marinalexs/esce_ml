@@ -74,7 +74,7 @@ def run(data_path, label, split_path, warm_start):
     
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, seed, splits, warm_start)
+    score_splits(outfile, x, y, splits, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     """
@@ -135,7 +135,7 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
         raise ValueError("Unknown file format")
     print(f"Generated {dataset} data file '{path}'.")
 
-def splitgen(data_path, label, seed, samples):
+def splitgen(data_path, label, n_seeds, samples):
     """
     Generates a split file.
     The file will be placed in the 'splits' directory.
@@ -143,18 +143,18 @@ def splitgen(data_path, label, seed, samples):
     Arguments:
         data_path: Path to data file
         label: Label to use contained in data file
-        seed: Seed to use in train_test_split
+        n_seeds: Number of seeds to use in train_test_split
         samples: List of sample counts
     """
-    path = Path("splits") / f"{data_path.stem}_{label}_s{seed}_{'_'.join(samples)}.split"
+    path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{'_'.join(samples)}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = [int(sample) for sample in samples]
 
     _,y = load_dataset(data_path, label)
-    splits = split_grid(y, n_samples=samples, seed=seed)
+    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds)
 
     with path.open("wb") as f:
-        pickle.dump((seed, splits), f)
+        pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
 def visualize(path):
@@ -205,7 +205,7 @@ def main():
 
     splitgen_parser.add_argument("data", type=str, help="dataset file to use")
     splitgen_parser.add_argument("--label", default="default", type=str, help="label to use")
-    splitgen_parser.add_argument("--seed", type=int, help="seed to use", required=True)
+    splitgen_parser.add_argument("--seeds", type=int, help="number of seeds to use", required=True)
     splitgen_parser.add_argument("--samples", nargs="+", help="list number of samples", required=True)
     splitgen_parser.set_defaults(splitgen=True)
 
@@ -218,7 +218,7 @@ def main():
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
-        splitgen(Path(args.data), args.label, args.seed, args.samples)
+        splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.visualize:
         visualize(Path(args.path))
 

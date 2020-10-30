@@ -135,8 +135,8 @@ class KernelSVMModel(BaseModel):
             "f1_val": f1_val,
             "f1_test": f1_test }
 
-def score_splits(outfile, x, y, seed, splits, warm_start=False):
-    columns = ["model","n","seed","param_hash",
+def score_splits(outfile, x, y, splits, warm_start=False):
+    columns = ["model","n","s","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
     col2idx = { c:i for i,c in enumerate(columns) }
@@ -164,23 +164,24 @@ def score_splits(outfile, x, y, seed, splits, warm_start=False):
             model = MODELS[model_name]
 
             for n in splits:
-                for params in ParameterGrid(GRID[model_name]):
-                    param_hash = hash(params)
+                for s in splits[n]:
+                    idx_train, idx_val, idx_test = splits[n][s]
+                    for params in ParameterGrid(GRID[model_name]):
+                        param_hash = hash(params)
 
-                    if not ((df["model"] == model_name) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
-                        idx_train, idx_val, idx_test = splits[n]
-                        scores = model.score(x, y, idx_train, idx_val, idx_test, **params)
+                        if not ((df["model"] == model_name) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
+                            scores = model.score(x, y, idx_train, idx_val, idx_test, **params)
 
-                        row = [np.nan] * (len(columns)-1)
-                        row[:3] = [model_name, n, seed, param_hash]
-                        for k,v in scores.items():
-                            row[col2idx[k]] = v
+                            row = [np.nan] * (len(columns)-1)
+                            row[:3] = [model_name, n, s, param_hash]
+                            for k,v in scores.items():
+                                row[col2idx[k]] = v
 
-                        # Removes NaNs, prints scores
-                        print(' '.join([str(r) for r in row if r == r]))
+                            # Removes NaNs, prints scores
+                            print(' '.join([str(r) for r in row if r == r]))
 
-                        csvwriter.writerow(row)
-                        f.flush()
+                            csvwriter.writerow(row)
+                            f.flush()
 
 MODELS = {
     "ols": RegressionModel(LinearRegression),
