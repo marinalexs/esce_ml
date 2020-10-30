@@ -12,6 +12,7 @@ from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
 from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
+from esce.grid import GRID
 
 from sklearn.decomposition import PCA
 from sklearn.random_projection import GaussianRandomProjection
@@ -58,7 +59,7 @@ def load_split(split_path):
     with open(split_path, "rb") as f:
         return pickle.load(f)
 
-def run(data_path, label, split_path, n_seeds, warm_start):
+def run(data_path, label, split_path, n_seeds, grid_name="default", warm_start=False):
     """
     Performs sample complexity computation.
 
@@ -67,6 +68,7 @@ def run(data_path, label, split_path, n_seeds, warm_start):
         label: Label to use in data file
         split_path: Path to split file
         n_seeds: How many seeds to use
+        grid: Grid to use
         warm_start: Whether or not to continue previous computation
     """
 
@@ -77,9 +79,14 @@ def run(data_path, label, split_path, n_seeds, warm_start):
     elif n_seeds < 0:
         raise ValueError("You must at least use one seed")
 
+    if grid_name in ["fine", "default", "coarse"]:
+        grid = GRID[grid_name]
+    else:
+        raise NotImplementedError("Custom grids are not yet supported")
+
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, splits, n_seeds, warm_start)
+    score_splits(outfile, x, y, grid, splits, n_seeds, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     """
@@ -199,6 +206,7 @@ def main():
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
     run_parser.add_argument('--seeds', type=int, help="how many seeds to use")
+    run_parser.add_argument('--grid', type=str, help="grid to use", default="default")
     run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.set_defaults(run=True)
 
@@ -220,7 +228,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data), args.label, Path(args.split), args.seeds, args.warm)
+        run(Path(args.data), args.label, Path(args.split), args.seeds, args.grid, args.warm)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:

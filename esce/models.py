@@ -15,7 +15,6 @@ import csv
 from pathlib import Path
 import pickle
 
-from esce.grid import GRID
 from esce.util import cached
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
 
@@ -135,12 +134,13 @@ class KernelSVMModel(BaseModel):
             "f1_val": f1_val,
             "f1_test": f1_test }
 
-def score_splits(outfile, x, y, splits, n_seeds, warm_start=False):
+def score_splits(outfile, x, y, grid, splits, n_seeds, warm_start=False):
     columns = ["model","n","s","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
     col2idx = { c:i for i,c in enumerate(columns) }
 
+    # Read / Write results file
     if outfile.is_file() and warm_start:
         df = pd.read_csv(outfile, index_col=False)
     else:
@@ -148,28 +148,39 @@ def score_splits(outfile, x, y, splits, n_seeds, warm_start=False):
             f.write(','.join(columns)+"\n")
         df = pd.read_csv(outfile)
 
+    # Store hyperparameter hashes
+    hyp_file = outfile.with_suffix(".hyp")
+    if hyp_file.is_file():
         legend = dict()
+        with hyp_file.open("rb") as f:
+            legend = pickle.load(f)
+
         for model_name in MODELS:
             legend[model_name] = dict()
-            for params in ParameterGrid(GRID[model_name]):
+            for params in ParameterGrid(grid[model_name]):
                 param_hash = hash(params)
                 legend[model_name][param_hash] = params
-        with outfile.with_suffix(".hyp").open("wb") as f:
+        with hyp_file.open("wb") as f:
             pickle.dump(legend, f)
 
+    # Append results to csv file
     with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
 
         for model_name in MODELS:
             model = MODELS[model_name]
 
+            # For the n splis, only select n_seeds
             for n in splits:
                 for s in list(splits[n].keys())[:n_seeds]:
                     idx_train, idx_val, idx_test = splits[n][s]
-                    for params in ParameterGrid(GRID[model_name]):
+
+                    for params in ParameterGrid(grid[model_name]):
                         param_hash = hash(params)
 
-                        if not ((df["model"] == model_name) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
+                        # Check if there is already an entry
+                        # for the model, train size, seed and parameter combination
+                        if not ((df["model"] == model_name) & (df["s"] == s) & (df["n"] == n) & (df["param_hash"] == param_hash)).any():
                             scores = model.score(x, y, idx_train, idx_val, idx_test, **params)
 
                             row = [np.nan] * (len(columns)-1)
