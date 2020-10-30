@@ -135,7 +135,7 @@ class KernelSVMModel(BaseModel):
             "f1_val": f1_val,
             "f1_test": f1_test }
 
-def score_splits(outfile, x, y, splits, warm_start=False):
+def score_splits(outfile, x, y, splits, n_seeds, warm_start=False):
     columns = ["model","n","s","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
@@ -164,7 +164,7 @@ def score_splits(outfile, x, y, splits, warm_start=False):
             model = MODELS[model_name]
 
             for n in splits:
-                for s in splits[n]:
+                for s in list(splits[n].keys())[:n_seeds]:
                     idx_train, idx_val, idx_test = splits[n][s]
                     for params in ParameterGrid(GRID[model_name]):
                         param_hash = hash(params)

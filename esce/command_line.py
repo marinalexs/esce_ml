@@ -58,7 +58,7 @@ def load_split(split_path):
     with open(split_path, "rb") as f:
         return pickle.load(f)
 
-def run(data_path, label, split_path, warm_start):
+def run(data_path, label, split_path, n_seeds, warm_start):
     """
     Performs sample complexity computation.
 
@@ -66,15 +66,20 @@ def run(data_path, label, split_path, warm_start):
         data_path: Path to data file
         label: Label to use in data file
         split_path: Path to split file
+        n_seeds: How many seeds to use
         warm_start: Whether or not to continue previous computation
     """
 
     x,y = load_dataset(data_path, label)
-    seed, splits = load_split(split_path)
-    
+    found_seeds, splits = load_split(split_path)
+    if found_seeds < n_seeds:
+        print(f"More speeds selected than available, defaulting to {found_seeds}.")
+    elif n_seeds < 0:
+        raise ValueError("You must at least use one seed")
+
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, splits, warm_start)
+    score_splits(outfile, x, y, splits, n_seeds, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     """
@@ -193,6 +198,7 @@ def main():
     run_parser.add_argument('data', type=str, help="dataset file to use")
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
+    run_parser.add_argument('--seeds', type=int, help="how many seeds to use")
     run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.set_defaults(run=True)
 
@@ -214,7 +220,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data), args.label, Path(args.split), args.warm)
+        run(Path(args.data), args.label, Path(args.split), args.seeds, args.warm)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
