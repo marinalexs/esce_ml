@@ -59,7 +59,7 @@ def load_split(split_path):
     with open(split_path, "rb") as f:
         return pickle.load(f)
 
-def run(data_path, label, split_path, n_seeds, grid_name="default", warm_start=False):
+def run(data_path, label, split_path, seeds, grid_name="default", warm_start=False):
     """
     Performs sample complexity computation.
 
@@ -74,10 +74,12 @@ def run(data_path, label, split_path, n_seeds, grid_name="default", warm_start=F
 
     x,y = load_dataset(data_path, label)
     found_seeds, splits = load_split(split_path)
-    if found_seeds < n_seeds:
-        print(f"More speeds selected than available, defaulting to {found_seeds}.")
-    elif n_seeds < 0:
-        raise ValueError("You must at least use one seed")
+    if found_seeds < len(seeds):
+        raise ValueError(f"More speeds selected than available, found {found_seeds} seeds.")
+
+    seeds = [int(seed) for seed in seeds]
+    if len(seeds) == 0:
+        seeds = list(range(found_seeds))
 
     if grid_name in ["fine", "default", "coarse"]:
         grid = GRID[grid_name]
@@ -86,7 +88,7 @@ def run(data_path, label, split_path, n_seeds, grid_name="default", warm_start=F
 
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, grid, splits, n_seeds, warm_start)
+    score_splits(outfile, x, y, grid, splits, seeds, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     """
@@ -205,7 +207,7 @@ def main():
     run_parser.add_argument('data', type=str, help="dataset file to use")
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
-    run_parser.add_argument('--seeds', type=int, help="how many seeds to use")
+    run_parser.add_argument('--seeds', nargs="+", help="seeds to use", default=[])
     run_parser.add_argument('--grid', type=str, help="grid to use", default="default")
     run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.set_defaults(run=True)
