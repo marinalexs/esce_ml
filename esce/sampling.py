@@ -15,7 +15,7 @@ def split(y, n_train, n_val=1000, n_test=1000, do_stratify=True, seed=0):
 def split_grid(y, n_seeds, n_samples=(100, 200, 500), n_val=1000, n_test=1000, do_stratify=True):
     splits = {}
     for n in n_samples:
-        splits[n] = {}
+        splits[n] = [None] * n_seeds
         for s in range(n_seeds):
             splits[n][s] = split(y, seed=s, n_train=n, n_val=n_val, n_test=n_test, do_stratify=do_stratify)
     return splits

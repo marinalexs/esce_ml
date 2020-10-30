@@ -78,6 +78,10 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
         raise ValueError(f"More speeds selected than available, found {found_seeds} seeds.")
 
     seeds = [int(seed) for seed in seeds]
+    for seed in seeds:
+        if seed >= found_seeds or seed < 0:
+            raise ValueError(f"Invalid seed {seed}. Seed must be in [0,{found_seeds-1}].")
+
     if len(seeds) == 0:
         seeds = list(range(found_seeds))
 
