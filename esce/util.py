@@ -4,6 +4,35 @@ import h5py
 from joblib import hash
 import requests
 from tqdm import tqdm
+import yaml
+
+def load_grid(grid_name):
+    """
+    Loads a grid from a YAML file.
+    Grid YAML files may contain multiple grids.
+    These grid can be selected by adding @<entry> to
+    the file path, e.g. grid.yaml@grid1
+
+    Arguments:
+        grid_name: Path to the YAML file.
+
+    Returns:
+        Grid dictionary
+    """
+    if "@" in grid_name:
+        grid_path, grid_key = grid_name.split("@")
+    else:
+        grid_path, grid_key = grid_name, None
+
+    grid_file = Path(grid_path)
+    if grid_file.is_file():
+        with grid_file.open("r") as f:
+            grid = yaml.safe_load(f)
+            if grid_key is not None:
+                grid = grid[grid_key]
+            return grid
+    else:
+        raise ValueError("Invalid grid file path")
 
 def load_dataset(data_path, label):
     """

@@ -13,14 +13,13 @@ from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
 from esce.grid import GRID
-from esce.util import load_dataset, load_split
+from esce.util import load_dataset, load_split, load_grid
 
 from sklearn.decomposition import PCA
 from sklearn.random_projection import GaussianRandomProjection
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-import h5py
-import yaml  
+import h5py 
 
 def run(data_path, label, split_path, seeds, grid_name="default", warm_start=False):
     """
@@ -51,13 +50,7 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
     if grid_name in ["fine", "default", "coarse"]:
         grid = GRID[grid_name]
     else:
-        grid_file = Path(grid_name)
-        if grid_file.is_file():
-            with grid_file.open("r") as f:
-                grid = yaml.safe_load(f)
-                print(grid)
-        else:
-            raise ValueError("Invalid grid file path")
+        grid = load_grid(grid_name)
 
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
