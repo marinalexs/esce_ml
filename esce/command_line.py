@@ -139,13 +139,13 @@ def splitgen(data_path, label, n_seeds, samples):
 
 def visualize(path):
     if path.is_file():
-        df = pd.read_csv(path)
+        df = pd.read_csv(path, index_col=False)
         # hp_plot(df)
         sc_plot(df)
     else:
         frames = []
         for f in path.glob("*.csv"):
-            frames.append(pd.read_csv(f))
+            frames.append(pd.read_csv(f, index_col=False))
         df = pd.concat(frames)
         sc_plot(df)
 

@@ -37,7 +37,6 @@ def sc_plot(df):
     df_ = df.loc[idx]
 
     sns.lineplot(x='n', y='acc_test', hue='model', data=df_, ci='sd')
-    pylab.plt.xscale('log')
     pylab.plt.show()
 
 

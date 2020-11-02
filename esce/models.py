@@ -135,7 +135,7 @@ class KernelSVMModel(BaseModel):
             "f1_test": f1_test }
 
 def score_splits(outfile, x, y, grid, splits, seeds, warm_start=False):
-    columns = ["model","n","s","param_hash",
+    columns = ["model","n","s","params","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
     col2idx = { c:i for i,c in enumerate(columns) }
@@ -147,21 +147,6 @@ def score_splits(outfile, x, y, grid, splits, seeds, warm_start=False):
         with outfile.open("w") as f:
             f.write(','.join(columns)+"\n")
         df = pd.read_csv(outfile)
-
-    # Store hyperparameter hashes
-    hyp_file = outfile.with_suffix(".hyp")
-    if hyp_file.is_file():
-        legend = dict()
-        with hyp_file.open("rb") as f:
-            legend = pickle.load(f)
-
-        for model_name in MODELS:
-            legend[model_name] = dict()
-            for params in ParameterGrid(grid[model_name]):
-                param_hash = hash(params)
-                legend[model_name][param_hash] = params
-        with hyp_file.open("wb") as f:
-            pickle.dump(legend, f)
 
     # Append results to csv file
     with outfile.open("a") as f:
@@ -184,7 +169,7 @@ def score_splits(outfile, x, y, grid, splits, seeds, warm_start=False):
                             scores = model.score(x, y, idx_train, idx_val, idx_test, **params)
 
                             row = [np.nan] * (len(columns)-1)
-                            row[:3] = [model_name, n, s, param_hash]
+                            row[:3] = [model_name, n, s, params, param_hash]
                             for k,v in scores.items():
                                 row[col2idx[k]] = v
 
