@@ -21,7 +21,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import h5py 
 
-def run(data_path, label, split_path, seeds, grid_name="default", warm_start=False):
+def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False):
     """
     Performs sample complexity computation.
 
@@ -29,8 +29,9 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
         data_path: Path to data file
         label: Label to use in data file
         split_path: Path to split file
-        n_seeds: How many seeds to use
-        grid: Grid to use
+        seeds: Which seeds to use
+        samples: Which samples to use
+        grid: Grid to use / grid file to use
         warm_start: Whether or not to continue previous computation
     """
 
@@ -39,6 +40,7 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
     if found_seeds < len(seeds):
         raise ValueError(f"More speeds selected than available, found {found_seeds} seeds.")
 
+    samples = [int(sample) for sample in samples]
     seeds = [int(seed) for seed in seeds]
     for seed in seeds:
         if seed >= found_seeds or seed < 0:
@@ -46,6 +48,12 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
 
     if len(seeds) == 0:
         seeds = list(range(found_seeds))
+
+    if len(samples) > 0:
+        new_splits = dict()
+        for sample in samples:
+            new_splits[sample] = splits[sample]
+        splits = new_splits
 
     if grid_name in ["fine", "default", "coarse"]:
         grid = GRID[grid_name]
@@ -174,6 +182,7 @@ def main():
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
     run_parser.add_argument('--split', type=str, help="split file to use", required=True)
     run_parser.add_argument('--seeds', nargs="+", help="seeds to use", default=[])
+    run_parser.add_argument('--samples', nargs="+", help="select a subset of samples", default=[])
     run_parser.add_argument('--grid', type=str, help="grid to use", default="default")
     run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.set_defaults(run=True)
@@ -196,7 +205,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data), args.label, Path(args.split), args.seeds, args.grid, args.warm)
+        run(Path(args.data), args.label, Path(args.split), args.seeds, args.samples, args.grid, args.warm)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
