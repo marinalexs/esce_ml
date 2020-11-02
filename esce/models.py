@@ -78,15 +78,15 @@ class RegressionModel(BaseModel):
 
         # Val score
         y_hat_val = model.predict(x[idx_val])
-        r2_val = r2_score(y_hat_val, y[idx_val])
-        mae_val = mean_absolute_error(y_hat_val, y[idx_val])
-        mse_val = mean_squared_error(y_hat_val, y[idx_val])
+        r2_val = r2_score(y[idx_val], y_hat_val)
+        mae_val = mean_absolute_error(y[idx_val], y_hat_val)
+        mse_val = mean_squared_error(y[idx_val], y_hat_val)
 
         # Test score
         y_hat_test = model.predict(x[idx_test])
-        r2_test = r2_score(y_hat_test, y[idx_test])
-        mae_test = mean_absolute_error(y_hat_test, y[idx_test])
-        mse_test = mean_squared_error(y_hat_test, y[idx_test])
+        r2_test = r2_score(y[idx_test], y_hat_test)
+        mae_test = mean_absolute_error(y[idx_test], y_hat_test)
+        mse_test = mean_squared_error(y[idx_test], y_hat_test)
 
         return { "r2_val": r2_val, 
             "r2_test": r2_test, 
@@ -120,14 +120,14 @@ class KernelSVMModel(BaseModel):
         # Val score
         gram_ = gram[np.ix_(idx_val, idx_train)]
         y_hat_val = model.predict(gram_)
-        acc_val = accuracy_score(y_hat_val, y[idx_val])
-        f1_val = f1_score(y_hat_val, y[idx_val], average="weighted")
+        acc_val = accuracy_score(y[idx_val], y_hat_val)
+        f1_val = f1_score(y[idx_val], y_hat_val, average="weighted")
 
         # Test score
         gram_ = gram[np.ix_(idx_test, idx_train)]
         y_hat_test = model.predict(gram_)
-        acc_test = accuracy_score(y_hat_test, y[idx_test])
-        f1_test = f1_score(y_hat_test, y[idx_test], average="weighted")
+        acc_test = accuracy_score(y[idx_test], y_hat_test)
+        f1_test = f1_score(y[idx_test], y_hat_test, average="weighted")
 
         return {"acc_val": acc_val,
             "acc_test": acc_test,
