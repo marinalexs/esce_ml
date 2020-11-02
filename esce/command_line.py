@@ -13,51 +13,14 @@ from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
 from esce.grid import GRID
+from esce.util import load_dataset, load_split
 
 from sklearn.decomposition import PCA
 from sklearn.random_projection import GaussianRandomProjection
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import h5py
-
-def load_dataset(data_path, label):
-    """
-    Loads data and label from data file
-
-    Arguments:
-        data_path: Path to h5 or pkl file
-        label: Label to use contained in the file
-
-    Returns:
-        (x,y) Tuple of data and labels
-    """
-
-    if data_path.suffix == ".h5":
-        with h5py.File(data_path, "r") as f:
-            x = f["/data"][...]
-            y = f[f"/labels/{label}"][...]
-    elif data_path.suffix == ".pkl":
-        with data_path.open("rb") as f:
-            d = pickle.load(f)
-            x = d["data"]
-            y = d[f"label_{label}"]
-    else:
-        raise ValueError("Unknown file format")
-    return x,y    
-
-def load_split(split_path):
-    """
-    Loads a split file from a path.
-
-    Arguments:
-        split_path: Path to split file
-
-    Returns:
-        Tuple consisting of a seed and the splits
-    """
-
-    with open(split_path, "rb") as f:
-        return pickle.load(f)
+import yaml  
 
 def run(data_path, label, split_path, seeds, grid_name="default", warm_start=False):
     """
@@ -88,7 +51,13 @@ def run(data_path, label, split_path, seeds, grid_name="default", warm_start=Fal
     if grid_name in ["fine", "default", "coarse"]:
         grid = GRID[grid_name]
     else:
-        raise NotImplementedError("Custom grids are not yet supported")
+        grid_file = Path(grid_name)
+        if grid_file.is_file():
+            with grid_file.open("r") as f:
+                grid = yaml.safe_load(f)
+                print(grid)
+        else:
+            raise ValueError("Invalid grid file path")
 
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)

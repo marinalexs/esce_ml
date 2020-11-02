@@ -5,6 +5,45 @@ from joblib import hash
 import requests
 from tqdm import tqdm
 
+def load_dataset(data_path, label):
+    """
+    Loads data and label from data file
+
+    Arguments:
+        data_path: Path to h5 or pkl file
+        label: Label to use contained in the file
+
+    Returns:
+        (x,y) Tuple of data and labels
+    """
+
+    if data_path.suffix == ".h5":
+        with h5py.File(data_path, "r") as f:
+            x = f["/data"][...]
+            y = f[f"/labels/{label}"][...]
+    elif data_path.suffix == ".pkl":
+        with data_path.open("rb") as f:
+            d = pickle.load(f)
+            x = d["data"]
+            y = d[f"label_{label}"]
+    else:
+        raise ValueError("Unknown file format")
+    return x,y
+
+def load_split(split_path):
+    """
+    Loads a split file from a path.
+
+    Arguments:
+        split_path: Path to split file
+
+    Returns:
+        Tuple consisting of a seed and the splits
+    """
+
+    with open(split_path, "rb") as f:
+        return pickle.load(f)
+
 def download_file(url, path):
     """
     Download the URL and save it in the given path.

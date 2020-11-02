@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name = "esce",
-    version = "0.0.3",
+    version = "0.1.3",
     author = "Alexander Koch",
     author_email = "kochalexander@gmx.net",
     description = "Empirical Sample Complexity Estimator",
@@ -28,6 +28,7 @@ setup(
         "matplotlib>=3.0",
         "seaborn>=0.9",
         "tqdm>=4.26",
-        "requests>=2.22"
+        "requests>=2.22",
+        "PyYAML>=3.13"
     ]
 )
