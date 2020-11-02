@@ -12,14 +12,16 @@ from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
 from esce.models import score_splits
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
-from esce.grid import GRID
-from esce.util import load_dataset, load_split, load_grid
+from esce.grid import GRID, load_grid
+from esce.util import load_dataset, load_split
 
 from sklearn.decomposition import PCA
 from sklearn.random_projection import GaussianRandomProjection
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
-import h5py 
+import h5py
+from sklearn.model_selection import ParameterGrid
+from joblib import hash
 
 def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False):
     """
@@ -55,11 +57,7 @@ def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_
             new_splits[sample] = splits[sample]
         splits = new_splits
 
-    if grid_name in ["fine", "default", "coarse"]:
-        grid = GRID[grid_name]
-    else:
-        grid = load_grid(grid_name)
-
+    grid = load_grid(grid_name)
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
     score_splits(outfile, x, y, grid, splits, seeds, warm_start)
@@ -145,18 +143,31 @@ def splitgen(data_path, label, n_seeds, samples):
         pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
-def visualize(path):
-    if path.is_file():
-        df = pd.read_csv(path, index_col=False)
-        # hp_plot(df)
-        sc_plot(df)
-    else:
+def visualize(path, grid_name):
+    grid = load_grid(grid_name)
+
+    if not path.is_file():
+        # Concat files into one, if not one
         frames = []
         for f in path.glob("*.csv"):
             frames.append(pd.read_csv(f, index_col=False))
         df = pd.concat(frames)
-        sc_plot(df)
+    else:
+        df = pd.read_csv(path, index_col=False)
 
+    # Select entries for a specified grid
+    frames = []
+    for model in grid:
+        rows_per_model = df[df["model"] == model]
+
+        for params in ParameterGrid(grid[model]):
+            param_hash = hash(params)
+            frames.append(rows_per_model[rows_per_model["param_hash"] == param_hash])
+    df = pd.concat(frames)
+
+    # hp_plot(df)
+    sc_plot(df)
+        
     # from glob import glob
     # F=glob('./results/pca_*_None.csv')
     # df = pandas.DataFrame()
@@ -201,6 +212,7 @@ def main():
     splitgen_parser.set_defaults(splitgen=True)
 
     viz_parser.add_argument('path', type=str, help="file/directory containing the results to visualize")
+    viz_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
     viz_parser.set_defaults(visualize=True)
     args = parser.parse_args()
 
@@ -211,7 +223,7 @@ def main():
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.visualize:
-        visualize(Path(args.path))
+        visualize(Path(args.path), args.grid)
 
 if __name__ == '__main__':
     main()

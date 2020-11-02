@@ -6,7 +6,7 @@ import requests
 from tqdm import tqdm
 import yaml
 
-def load_grid(grid_name):
+def load_grid_file(grid_name):
     """
     Loads a grid from a YAML file.
     Grid YAML files may contain multiple grids.

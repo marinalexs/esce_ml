@@ -1,4 +1,5 @@
 import numpy as np
+from esce.util import load_grid_file
 
 def logrange(start, stop, step=1., base=2.):
     base = float(base)
@@ -17,3 +18,10 @@ GRID = {
     "default": grid(2),
     "coarse": grid(4)
 }
+
+def load_grid(grid_name):
+    if grid_name in ["fine", "default", "coarse"]:
+        grid = GRID[grid_name]
+    else:
+        grid = load_grid_file(grid_name)
+    return grid
