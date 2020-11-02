@@ -55,6 +55,54 @@ The default label for a dataset is stored in */labels/default*.
 For pickle files, data and labels are stored in a dictionary.
 The data is stored in "data" and the individual labels a stored in "label_{label}".
 
+## Creating grid files
+
+Grid files allow you to create custom model grids.
+They are stored in YAML format and passed to the *run* subcommand via the `--grid` flag.
+
+```yaml
+ols: {}
+lasso:
+  alpha: [0.01, 0.1]
+ridge:
+  alpha: [0.02, 0.4]
+svm-linear:
+  C: [0.05, 0.3]
+svm-rbf:
+  C: [0.001, 0.2, 0.6]
+  gamma: [0.2, 0.3, 0.6]
+```
+
+Multiple grids may be defined in the same file.
+To select the grid, simply add `@<key>` to the file path,
+for instance `grids/grid.yaml@grid1`
+
+```yaml
+grid1:
+  ols: {}
+  lasso:
+    alpha: [0.01, 0.1]
+  ridge:
+    alpha: [0.02, 0.4]
+  svm-linear:
+    C: [0.05, 0.3]
+  svm-rbf:
+    C: [0.001, 0.2, 0.6]
+    gamma: [0.2, 0.3, 0.6]
+
+grid2:
+  ols: {}
+  lasso:
+    alpha: [0.25]
+  ridge:
+    alpha: [0.02, 0.01]
+  svm-linear:
+    C: [0.02, 0.003]
+  svm-rbf:
+    C: [0.01, 0.2, 0.3]
+    gamma: [0.2, 0.13, 0.6]
+```
+
 ## Run unit tests
 
 Tests can be run via the following command
