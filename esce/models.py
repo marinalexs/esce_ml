@@ -2,7 +2,9 @@ import shelve
 import numpy
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
 from sklearn.svm import SVC, SVR
-from sklearn.linear_model import LinearRegression, Lasso, Ridge
+from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
 from joblib import hash
 import numbers
 import pandas as pd
@@ -68,22 +70,27 @@ class BaseModel(ABC):
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
         pass
 
-class RegressionModel(BaseModel):
-    def __init__(self, model_generator):
-        self.model_generator = model_generator
-
-    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
-        model = self.model_generator(**kwargs)
-        model.fit(x[idx_train], y[idx_train])
-
+    def compute_clf_metrics(self, y_hat_val, y_hat_test, y_val, y_test):
         # Val score
-        y_hat_val = model.predict(x[idx_val])
+        acc_val = accuracy_score(y_val, y_hat_val)
+        f1_val = f1_score(y_val, y_hat_val, average="weighted")
+
+        # Test score
+        acc_test = accuracy_score(y_test, y_hat_test)
+        f1_test = f1_score(y_test, y_hat_test, average="weighted")
+
+        return {"acc_val": acc_val,
+            "acc_test": acc_test,
+            "f1_val": f1_val,
+            "f1_test": f1_test }
+
+    def compute_regr_metrics(self, y_hat_val, y_hat_test, y, idx_val, idx_test):
+        # Val score
         r2_val = r2_score(y[idx_val], y_hat_val)
         mae_val = mean_absolute_error(y[idx_val], y_hat_val)
         mse_val = mean_squared_error(y[idx_val], y_hat_val)
 
         # Test score
-        y_hat_test = model.predict(x[idx_test])
         r2_test = r2_score(y[idx_test], y_hat_test)
         mae_test = mean_absolute_error(y[idx_test], y_hat_test)
         mse_test = mean_squared_error(y[idx_test], y_hat_test)
@@ -94,6 +101,30 @@ class RegressionModel(BaseModel):
             "mae_test": mae_test, 
             "mse_val": mse_val, 
             "mse_test": mse_test }
+
+class ClassifierModel(BaseModel):
+    def __init__(self, model_generator):
+        self.model_generator = model_generator
+
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
+        model = self.model_generator(**kwargs)
+        model.fit(x[idx_train], y[idx_train])
+
+        y_hat_val = model.predict(x[idx_val])
+        y_hat_test = model.predict(x[idx_test])
+        return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+class RegressionModel(BaseModel):
+    def __init__(self, model_generator):
+        self.model_generator = model_generator
+
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):
+        model = self.model_generator(**kwargs)
+        model.fit(x[idx_train], y[idx_train])
+
+        y_hat_val = model.predict(x[idx_val])
+        y_hat_test = model.predict(x[idx_test])
+        return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 class KernelSVMModel(BaseModel):
     def __init__(self, kernel=KernelType.LINEAR):
@@ -120,19 +151,12 @@ class KernelSVMModel(BaseModel):
         # Val score
         gram_ = gram[np.ix_(idx_val, idx_train)]
         y_hat_val = model.predict(gram_)
-        acc_val = accuracy_score(y[idx_val], y_hat_val)
-        f1_val = f1_score(y[idx_val], y_hat_val, average="weighted")
 
         # Test score
         gram_ = gram[np.ix_(idx_test, idx_train)]
         y_hat_test = model.predict(gram_)
-        acc_test = accuracy_score(y[idx_test], y_hat_test)
-        f1_test = f1_score(y[idx_test], y_hat_test, average="weighted")
-
-        return {"acc_val": acc_val,
-            "acc_test": acc_test,
-            "f1_val": f1_val,
-            "f1_test": f1_test }
+        
+        return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     columns = ["model","n","s","params","param_hash",
@@ -180,6 +204,9 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
                             f.flush()
 
 MODELS = {
+    "lda": ClassifierModel(lambda **args: LinearDiscriminantAnalysis(solver='lsqr', shrinkage='auto', **args)),
+    "logit": ClassifierModel(lambda **args: LogisticRegression(solver='lbfgs', max_iter=100, **args)),
+    "forest": ClassifierModel(RandomForestClassifier),
     "ols": RegressionModel(LinearRegression),
     "lasso": RegressionModel(Lasso),
     "ridge": RegressionModel(Ridge),

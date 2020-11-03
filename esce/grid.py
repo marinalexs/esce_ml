@@ -6,7 +6,12 @@ def logrange(start, stop, step=1., base=2.):
     return np.power(base, np.arange(start, stop + step, step))
 
 grid = lambda n: {
-    'ols': dict(),
+    'lda': {},
+    'logit': {'C': logrange(-20, 10, n)},
+    'forest': {'n_estimators': [1000, ],
+               'max_features': [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.75, 1.0],
+               'max_depth': [4, 6, 8, 10, 10000]},
+    'ols': {},
     'lasso': {'alpha': logrange(-15, 15, n)},
     'ridge': {'alpha': logrange(-15, 15, n)},
     'svm-linear': {'C': logrange(-20, 10, n)},
