@@ -134,7 +134,7 @@ class KernelSVMModel(BaseModel):
             "f1_val": f1_val,
             "f1_test": f1_test }
 
-def score_splits(outfile, x, y, grid, splits, seeds, warm_start=False):
+def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     columns = ["model","n","s","params","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
@@ -152,8 +152,8 @@ def score_splits(outfile, x, y, grid, splits, seeds, warm_start=False):
     with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
 
-        for model_name in MODELS:
-            model = MODELS[model_name]
+        for model_name in models:
+            model = models[model_name]
 
             # For the n splis, only select n_seeds
             for n in splits:

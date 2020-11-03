@@ -9,7 +9,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
 from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
-from esce.models import score_splits
+from esce.models import score_splits, MODELS
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
 from esce.grid import GRID, load_grid
@@ -23,7 +23,7 @@ import h5py
 from sklearn.model_selection import ParameterGrid
 from joblib import hash
 
-def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False):
+def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False, include=None, exclude=None):
     """
     Performs sample complexity computation.
 
@@ -57,10 +57,17 @@ def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_
             new_splits[sample] = splits[sample]
         splits = new_splits
 
+    models = MODELS
+    if include is not None:
+        models = {k:v for k,v in models.items() if k in include}
+
+    if exclude is not None:
+        models = {k:v for k,v in models.items() if k not in exclude}
+
     grid = load_grid(grid_name)
     outfile = Path("results") / (split_path.stem + ".csv")
     outfile.parent.mkdir(parents=True, exist_ok=True)
-    score_splits(outfile, x, y, grid, splits, seeds, warm_start)
+    score_splits(outfile, x, y, models, grid, splits, seeds, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
     """
@@ -203,6 +210,8 @@ def main():
     run_parser.add_argument('--samples', nargs="+", help="select a subset of samples", default=[])
     run_parser.add_argument('--grid', type=str, help="grid to use", default="default")
     run_parser.add_argument('--warm', action="store_true", help="warm start")
+    run_parser.add_argument('--include', nargs="+", help="include only the specified models", default=None)
+    run_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
     run_parser.set_defaults(run=True)
 
     datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity)")
@@ -225,7 +234,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data), args.label, Path(args.split), args.seeds, args.samples, args.grid, args.warm)
+        run(Path(args.data), args.label, Path(args.split), args.seeds, args.samples, args.grid, args.warm, args.include, args.exclude)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
