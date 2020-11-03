@@ -84,16 +84,16 @@ class BaseModel(ABC):
             "f1_val": f1_val,
             "f1_test": f1_test }
 
-    def compute_regr_metrics(self, y_hat_val, y_hat_test, y, idx_val, idx_test):
+    def compute_regr_metrics(self, y_hat_val, y_hat_test, y_val, y_test):
         # Val score
-        r2_val = r2_score(y[idx_val], y_hat_val)
-        mae_val = mean_absolute_error(y[idx_val], y_hat_val)
-        mse_val = mean_squared_error(y[idx_val], y_hat_val)
+        r2_val = r2_score(y_val, y_hat_val)
+        mae_val = mean_absolute_error(y_val, y_hat_val)
+        mse_val = mean_squared_error(y_val, y_hat_val)
 
         # Test score
-        r2_test = r2_score(y[idx_test], y_hat_test)
-        mae_test = mean_absolute_error(y[idx_test], y_hat_test)
-        mse_test = mean_squared_error(y[idx_test], y_hat_test)
+        r2_test = r2_score(y_test, y_hat_test)
+        mae_test = mean_absolute_error(y_test, y_hat_test)
+        mse_test = mean_squared_error(y_test, y_hat_test)
 
         return { "r2_val": r2_val, 
             "r2_test": r2_test, 
@@ -176,9 +176,8 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
 
-        for model_name in models:
-            model = models[model_name]
-
+        for model_name, model in models.items():
+            
             # For the n splis, only select n_seeds
             for n in splits:
                 for s in seeds:
@@ -212,4 +211,15 @@ MODELS = {
     "ridge": RegressionModel(Ridge),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF)
+}
+
+MODEL_NAMES = {
+    "lda": "Linear Discriminant Analysis",
+    "logit": "Logistic Regression",
+    "forest": "Random Forest Classifier",
+    "ols": "Ordinary Least Squared",
+    "lasso": "Lasso Regression",
+    "ridge": "Ridge Regression",
+    "svm-linear": "Support Vector Machine (Linear)",
+    "svm-rbf": "Support Vector Machine (RBF)"
 }

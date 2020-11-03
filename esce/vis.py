@@ -1,44 +1,53 @@
 import seaborn as sns
 from matplotlib import pylab
+import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
+from esce.models import MODEL_NAMES, MODELS
+import ast
+from itertools import chain
+
+pylab.rc('font', family='serif', serif='Times')
+pylab.rc('xtick', labelsize=8)
+pylab.rc('ytick', labelsize=8)
+pylab.rc('axes', labelsize=8)
 
 def hp_plot(df):
-    df['log2_C'] = np.log2(df['C'])
-    df['log2_gamma'] = np.log2(df['gamma'])
+    df["params"] = [ast.literal_eval(x) for x in df["params"]]
+    hp_names = set().union(*df["params"])
 
-    fig, ax = pylab.subplots(1, 3, dpi=200, sharey='row')
+    hp_table = pd.DataFrame(columns=list(hp_names))
+    type_dict = {}
+    for i, param in enumerate(df["params"]):
+        for k,v in param.items():
+            type_dict[k] = type(v)
+            hp_table.loc[i, k] = v
+    hp_table = hp_table.reindex(df.index)
 
-    ax_ = ax[0]
-    df_ = df[(df.model == 'linear')]
-    sns.lineplot(x='log2_C', y='score_val', hue='n', data=df_, ax=ax_,
-                     legend=False, ci='sd')
-    ax_.set_ylabel(f'score_val')
-    ax_.set_xlabel('linear, log2_C')
+    df = pd.concat([df, hp_table], axis=1)
+    print(df)
 
-    ax_ = ax[1]
-    df_ = df[(df.model == 'rbf')]
-    df_ = df_.groupby(['log2_C', 's','n'])['score_val'].max().reset_index()
-    sns.lineplot(x='log2_C', y='score_val', hue='n', data=df_, ax=ax_,
-                     legend=False, ci='sd')
-    ax_.set_xlabel('rbf, log2_C')
+    model_names = MODELS.keys()
+    fig, ax = pylab.subplots(len(model_names), len(hp_names), dpi=200, sharey='row')
+    i = 0
 
-    ax_ = ax[2]
-    df_ = df[(df.model == 'rbf')]
-    df_ = df_.groupby(['log2_gamma', 's','n'])['score_val'].max().reset_index()
-    sns.lineplot(x='log2_gamma', y='score_val', hue='n', data=df_, ax=ax_,
-                     legend='full', ci='sd')
-    ax_.set_xlabel('rbf, log2_gamma')
+    for j, model_name in enumerate(model_names):
+        df_ = df[df["model"] == model_name]
+
+        for i, param_name in enumerate(hp_names):
+            ax_ = ax[j][i]
+            ax_.set_ylabel("Accuracy")
+            ax_.set_xlabel(param_name)
+
+            sns.scatterplot(x=param_name, y='acc_test', hue='n', data=df_, ax=ax_, legend=False, ci='sd')
 
     pylab.plt.show()
 
 def sc_plot(df):
-    idx = df.groupby(['model', 'n'])['acc_val'].idxmax()
-    df_ = df.loc[idx]
-
-    sns.lineplot(x='n', y='acc_test', hue='model', data=df_, ci='sd')
+    ax = sns.lineplot(x='n', y='acc_test', hue='model', data=df, ci='sd')
+    ax.set_ylabel('Accuracy')
+    ax.set_xlabel('Sample Size')
     pylab.plt.show()
-
 
 # df = pandas.read_csv('results/pca_2_None.csv')
 # hp_plot(df)

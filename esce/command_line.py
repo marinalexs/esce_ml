@@ -188,11 +188,17 @@ def retrieve(path, grid_name, output, visualize=False):
         outer_frames.append(df_)
 
     df = pd.concat(outer_frames)
+    df.reset_index(inplace=True)
     print(df)
-    df.to_csv(output)
+    if output is not None:
+        df.to_csv(output)
 
     if visualize:
-        # hp_plot(df)
+        regr_missing = df['acc_val'].isnull()
+        df.loc[regr_missing, 'acc_val'] = df[regr_missing]['r2_val']
+        df.loc[regr_missing, 'acc_test'] = df[regr_missing]['r2_test']
+
+        hp_plot(df)
         sc_plot(df)
 
         # from glob import glob
@@ -243,7 +249,7 @@ def main():
     retrieve_parser.add_argument('path', type=str, help="file/directory containing the results to retrieve")
     retrieve_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
     retrieve_parser.add_argument('--visualize', action="store_true", help="visualize results")
-    retrieve_parser.add_argument('--output', type=str, help="output file location", required=True)
+    retrieve_parser.add_argument('--output', type=str, help="output file location", default=None)
     retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
 
