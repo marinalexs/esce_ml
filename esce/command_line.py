@@ -9,7 +9,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
 from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
-from esce.models import score_splits, MODELS
+from esce.models import score_splits, MODELS, RegressionModel
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
 from esce.grid import GRID, load_grid
@@ -163,20 +163,32 @@ def retrieve(path, grid_name, visualize):
         df = pd.read_csv(path, index_col=False)
 
     # Select entries for a specified grid
-    frames = []
-    for model in grid:
-        rows_per_model = df[df["model"] == model]
+    outer_frames = []
+    for model_name in grid:
+        rows_per_model = df[df["model"] == model_name]
+        
+        model = MODELS[model_name]
+        is_regression = isinstance(model, RegressionModel)
 
-        for params in ParameterGrid(grid[model]):
+        # Select relevant grid
+        inner_frames = []
+        for params in ParameterGrid(grid[model_name]):
             param_hash = hash(params)
+            df_ = rows_per_model[rows_per_model["param_hash"] == param_hash]
+            inner_frames.append(df_)
 
-            # TODO filtering
-            # idx = df.groupby(['model', 'n'])['acc_val'].idxmax()
-            # df_ = df.loc[idx]
-            frames.append(rows_per_model[rows_per_model["param_hash"] == param_hash])
-    df = pd.concat(frames)
+        # Select best args
+        df_ = pd.concat(inner_frames)
+        if is_regression:
+            idx = df_.groupby(['model', 'n'])['r2_val'].idxmax()
+            df_ = df_.loc[idx]
+        else:
+            idx = df_.groupby(['model', 'n'])['acc_val'].idxmax()
+            df_ = df_.loc[idx]
+        outer_frames.append(df_)
 
-    print(df.head())    
+    df = pd.concat(outer_frames)
+    print(df)
 
     if visualize:
         # hp_plot(df)
