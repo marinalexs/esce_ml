@@ -143,10 +143,10 @@ def splitgen(data_path, label, n_seeds, samples):
         pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
-def visualize(path, grid_name):
+def retrieve(path, grid_name, visualize):
     grid = load_grid(grid_name)
 
-    if not path.is_file():
+    if path.is_dir():
         # Concat files into one, if not one
         frames = []
         for f in path.glob("*.csv"):
@@ -162,21 +162,28 @@ def visualize(path, grid_name):
 
         for params in ParameterGrid(grid[model]):
             param_hash = hash(params)
+
+            # TODO filtering
+            # idx = df.groupby(['model', 'n'])['acc_val'].idxmax()
+            # df_ = df.loc[idx]
             frames.append(rows_per_model[rows_per_model["param_hash"] == param_hash])
     df = pd.concat(frames)
 
-    # hp_plot(df)
-    sc_plot(df)
-        
-    # from glob import glob
-    # F=glob('./results/pca_*_None.csv')
-    # df = pandas.DataFrame()
+    print(df.head())    
 
-    # for i,f in enumerate(F):
-    #     ax = pylab.subplot(5,5,1+i)
-    #     df = pandas.read_csv(f)
-    #     sc_plot(df, ax)
-    # pylab.plt.show()
+    if visualize:
+        # hp_plot(df)
+        sc_plot(df)
+
+        # from glob import glob
+        # F=glob('./results/pca_*_None.csv')
+        # df = pandas.DataFrame()
+
+        # for i,f in enumerate(F):
+        #     ax = pylab.subplot(5,5,1+i)
+        #     df = pandas.read_csv(f)
+        #     sc_plot(df, ax)
+        # pylab.plt.show()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -186,8 +193,8 @@ def main():
     run_parser = subparsers.add_parser("run", help="perform estimation on dataset and split")
     datagen_parser = subparsers.add_parser("datagen", help="generate dataset file")
     splitgen_parser = subparsers.add_parser("splitgen", help="generate split file")
-    viz_parser = subparsers.add_parser("visualize", help="visualize results")
-    parser.set_defaults(run=False, visualize=False, datagen=False, splitgen=False)
+    retrieve_parser = subparsers.add_parser("retrieve", help="retrieve results")
+    parser.set_defaults(run=False, retrieve=False, datagen=False, splitgen=False)
 
     run_parser.add_argument('data', type=str, help="dataset file to use")
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
@@ -211,9 +218,10 @@ def main():
     splitgen_parser.add_argument("--samples", nargs="+", help="list number of samples", required=True)
     splitgen_parser.set_defaults(splitgen=True)
 
-    viz_parser.add_argument('path', type=str, help="file/directory containing the results to visualize")
-    viz_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
-    viz_parser.set_defaults(visualize=True)
+    retrieve_parser.add_argument('path', type=str, help="file/directory containing the results to retrieve")
+    retrieve_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
+    retrieve_parser.add_argument('--visualize', action="store_true", help="visualize results")
+    retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
 
     if args.run:
@@ -222,8 +230,8 @@ def main():
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
-    elif args.visualize:
-        visualize(Path(args.path), args.grid)
+    elif args.retrieve:
+        retrieve(Path(args.path), args.grid, args.visualize)
 
 if __name__ == '__main__':
     main()
