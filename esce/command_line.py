@@ -150,7 +150,7 @@ def splitgen(data_path, label, n_seeds, samples):
         pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
-def retrieve(path, grid_name, visualize):
+def retrieve(path, grid_name, output, visualize=False):
     grid = load_grid(grid_name)
 
     if path.is_dir():
@@ -189,6 +189,7 @@ def retrieve(path, grid_name, visualize):
 
     df = pd.concat(outer_frames)
     print(df)
+    df.to_csv(output)
 
     if visualize:
         # hp_plot(df)
@@ -242,6 +243,7 @@ def main():
     retrieve_parser.add_argument('path', type=str, help="file/directory containing the results to retrieve")
     retrieve_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
     retrieve_parser.add_argument('--visualize', action="store_true", help="visualize results")
+    retrieve_parser.add_argument('--output', type=str, help="output file location", required=True)
     retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
 
@@ -252,7 +254,7 @@ def main():
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
-        retrieve(Path(args.path), args.grid, args.visualize)
+        retrieve(Path(args.path), args.grid, args.output, args.visualize)
 
 if __name__ == '__main__':
     main()
