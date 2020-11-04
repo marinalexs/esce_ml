@@ -1,7 +1,8 @@
-# Created by .ignore support plugin (hsz.mobi)
 results/
 data/
 splits/
+plots/
+*.yaml
 
 ### Python template
 # Byte-compiled / optimized / DLL files
