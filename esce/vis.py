@@ -8,11 +8,14 @@ from esce.models import MODEL_NAMES, MODELS
 from esce.grid import GRID
 import ast
 from itertools import chain
+from pathlib import Path
 
 pylab.rc('font', family='serif', serif='Times')
 pylab.rc('xtick', labelsize=8)
 pylab.rc('ytick', labelsize=8)
 pylab.rc('axes', labelsize=8)
+
+PLOT_PATH = Path("plots")
 
 def hp_plot(df, grid):
     # TODO fix grid
@@ -57,9 +60,11 @@ def hp_plot(df, grid):
     pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.0)
     pylab.plt.show()
 
+    PLOT_PATH.mkdir(exist_ok=True)
+    fig.savefig('plots/hp_plot.png')
+
 def sc_plot(df):
     fig, ax = pylab.subplots(1, 1, dpi=200)
-
     models = list(df["model"].unique())
 
     names = [MODEL_NAMES[i] for i in models]
@@ -79,7 +84,9 @@ def sc_plot(df):
 
     pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
     pylab.plt.show()
-    fig.savefig(f'sc_plot.png')
+
+    PLOT_PATH.mkdir(exist_ok=True)
+    fig.savefig('plots/sc_plot.png')
 
 MODEL_COLORS = {
     "lda": "purple",
