@@ -199,17 +199,7 @@ def retrieve(path, grid_name, output, visualize=False):
         sc_df.loc[regr_missing, 'acc_test'] = sc_df[regr_missing]['r2_test']
 
         hp_plot(df)
-        #sc_plot(sc_df)
-
-        # from glob import glob
-        # F=glob('./results/pca_*_None.csv')
-        # df = pandas.DataFrame()
-
-        # for i,f in enumerate(F):
-        #     ax = pylab.subplot(5,5,1+i)
-        #     df = pandas.read_csv(f)
-        #     sc_plot(df, ax)
-        # pylab.plt.show()
+        sc_plot(sc_df)
 
 def main():
     parser = argparse.ArgumentParser()
