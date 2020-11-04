@@ -187,19 +187,19 @@ def retrieve(path, grid_name, output, visualize=False):
             df_ = df_.loc[idx]
         outer_frames.append(df_)
 
-    df = pd.concat(outer_frames)
-    df.reset_index(inplace=True)
-    print(df)
+    sc_df = pd.concat(outer_frames)
+    sc_df.reset_index(inplace=True)
+    print(sc_df)
     if output is not None:
-        df.to_csv(output)
+        sc_df.to_csv(output)
 
     if visualize:
-        regr_missing = df['acc_val'].isnull()
-        df.loc[regr_missing, 'acc_val'] = df[regr_missing]['r2_val']
-        df.loc[regr_missing, 'acc_test'] = df[regr_missing]['r2_test']
+        regr_missing = sc_df['acc_val'].isnull()
+        sc_df.loc[regr_missing, 'acc_val'] = sc_df[regr_missing]['r2_val']
+        sc_df.loc[regr_missing, 'acc_test'] = sc_df[regr_missing]['r2_test']
 
         hp_plot(df)
-        sc_plot(df)
+        #sc_plot(sc_df)
 
         # from glob import glob
         # F=glob('./results/pca_*_None.csv')
