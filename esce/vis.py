@@ -16,7 +16,7 @@ pylab.rc('axes', labelsize=8)
 
 def hp_plot(df):
     # TODO fix grid
-    model_names = MODELS.keys()
+    model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
         params = GRID["default"][model_name].keys()
@@ -26,7 +26,7 @@ def hp_plot(df):
     root = np.sqrt(total_plots)
     if np.floor(root) != root:
         w = np.ceil(root)
-        h = np.foor(root)
+        h = np.floor(root)
     else:
         w = root
         h = root
@@ -42,19 +42,19 @@ def hp_plot(df):
 
         for param_name in GRID["default"][model_name].keys():
             x = i % w
-            y = i // h
+            y = i // w
             ax_ = ax[x][y]
             
             tmp = df_[["n", "acc_test"]].copy()
             tmp[param_name] = df_["params"].apply(lambda x: ast.literal_eval(x)[param_name])
 
-            ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, legend=False, err_style="bars", ci='sd')
+            ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, legend=False, ci='sd')
             ax1.set_ylabel("Accuracy")
             ax1.set_xlabel(param_name)
             ax1.set_title(model_name)
             i += 1            
 
-    pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.5)
+    pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.0)
     pylab.plt.show()
 
 def sc_plot(df):

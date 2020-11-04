@@ -158,7 +158,7 @@ def retrieve(path, grid_name, output, visualize=False):
         frames = []
         for f in path.glob("*.csv"):
             frames.append(pd.read_csv(f, index_col=False))
-        df = pd.concat(frames)
+        df = pd.concat(frames, ignore_index=True)
     else:
         df = pd.read_csv(path, index_col=False)
 
@@ -166,6 +166,8 @@ def retrieve(path, grid_name, output, visualize=False):
     outer_frames = []
     for model_name in grid:
         rows_per_model = df[df["model"] == model_name]
+        if rows_per_model.empty:
+            continue
         
         model = MODELS[model_name]
         is_regression = isinstance(model, RegressionModel)
@@ -178,17 +180,20 @@ def retrieve(path, grid_name, output, visualize=False):
             inner_frames.append(df_)
 
         # Select best args
-        df_ = pd.concat(inner_frames)
+        df_ = pd.concat(inner_frames, ignore_index=True)
+
         if is_regression:
             idx = df_.groupby(['model', 'n'])['r2_val'].idxmax()
             df_ = df_.loc[idx]
         else:
             idx = df_.groupby(['model', 'n'])['acc_val'].idxmax()
             df_ = df_.loc[idx]
+
+        df_.reset_index(drop=True, inplace=True)
         outer_frames.append(df_)
 
-    sc_df = pd.concat(outer_frames)
-    sc_df.reset_index(inplace=True)
+    sc_df = pd.concat(outer_frames, ignore_index=True)
+    sc_df.reset_index(inplace=True, drop=True)
     print(sc_df)
     if output is not None:
         sc_df.to_csv(output)
@@ -199,7 +204,7 @@ def retrieve(path, grid_name, output, visualize=False):
         sc_df.loc[regr_missing, 'acc_test'] = sc_df[regr_missing]['r2_test']
 
         hp_plot(df)
-        sc_plot(sc_df)
+        #sc_plot(sc_df)
 
 def main():
     parser = argparse.ArgumentParser()
