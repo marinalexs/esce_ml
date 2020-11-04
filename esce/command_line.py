@@ -150,7 +150,7 @@ def splitgen(data_path, label, n_seeds, samples):
         pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
-def retrieve(path, grid_name, output, visualize=False):
+def retrieve(path, grid_name, output, plot=None):
     grid = load_grid(grid_name)
 
     if path.is_dir():
@@ -198,13 +198,18 @@ def retrieve(path, grid_name, output, visualize=False):
     if output is not None:
         sc_df.to_csv(output)
 
-    if visualize:
-        regr_missing = sc_df['acc_val'].isnull()
-        sc_df.loc[regr_missing, 'acc_val'] = sc_df[regr_missing]['r2_val']
-        sc_df.loc[regr_missing, 'acc_test'] = sc_df[regr_missing]['r2_test']
+    if plot is not None:
+        plot_hp = plot == "all" or plot == "hp"
+        plot_sc = plot == "all" or plot == "sc"
 
-        hp_plot(df)
-        #sc_plot(sc_df)
+        if plot_hp:
+            hp_plot(df)
+        
+        if plot_sc:
+            regr_missing = sc_df['acc_val'].isnull()
+            sc_df.loc[regr_missing, 'acc_val'] = sc_df[regr_missing]['r2_val']
+            sc_df.loc[regr_missing, 'acc_test'] = sc_df[regr_missing]['r2_test']
+            sc_plot(sc_df)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -243,7 +248,7 @@ def main():
 
     retrieve_parser.add_argument('path', type=str, help="file/directory containing the results to retrieve")
     retrieve_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
-    retrieve_parser.add_argument('--visualize', action="store_true", help="visualize results")
+    retrieve_parser.add_argument('--plot', type=str, help="plot results (all/hp/sc)", default=None)
     retrieve_parser.add_argument('--output', type=str, help="output file location", default=None)
     retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
@@ -255,7 +260,7 @@ def main():
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
-        retrieve(Path(args.path), args.grid, args.output, args.visualize)
+        retrieve(Path(args.path), args.grid, args.output, args.plot)
 
 if __name__ == '__main__':
     main()
