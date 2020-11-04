@@ -203,7 +203,7 @@ def retrieve(path, grid_name, output, plot=None):
         plot_sc = plot == "all" or plot == "sc"
 
         if plot_hp:
-            hp_plot(df)
+            hp_plot(df, grid)
         
         if plot_sc:
             regr_missing = sc_df['acc_val'].isnull()

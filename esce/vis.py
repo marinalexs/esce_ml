@@ -14,12 +14,12 @@ pylab.rc('xtick', labelsize=8)
 pylab.rc('ytick', labelsize=8)
 pylab.rc('axes', labelsize=8)
 
-def hp_plot(df):
+def hp_plot(df, grid):
     # TODO fix grid
     model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
-        params = GRID["default"][model_name].keys()
+        params = grid[model_name].keys()
         plots_per_model[model_name] = len(params)
     total_plots = sum([v for k,v in plots_per_model.items()])
 
@@ -40,7 +40,7 @@ def hp_plot(df):
         if plots_per_model[model_name] == 0:
             continue
 
-        for param_name in GRID["default"][model_name].keys():
+        for param_name in grid[model_name].keys():
             x = i % w
             y = i // w
             ax_ = ax[x][y]
