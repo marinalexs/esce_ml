@@ -37,8 +37,16 @@ def hp_plot(df, grid, show=False):
         for i, param_name in enumerate(grid[model_name].keys()):
             ax_ = ax[0,i]
             
+            # Create small table, infer type back
             tmp = df_[["n", "acc_test"]].copy()
             tmp[param_name] = df_["params"].apply(lambda x: ast.literal_eval(x)[param_name])
+            tmp.infer_objects()
+
+            # Convert data to log if float
+            if tmp[param_name].dtype in [np.float64, np.float32]:
+                log_param = np.log2(tmp[param_name])
+                param_name = "log " + param_name
+                tmp[param_name] = log_param
 
             ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, legend=False, ci='sd')
             ax1.set_ylabel("Accuracy")
