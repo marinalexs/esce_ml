@@ -10,6 +10,7 @@ import ast
 from itertools import chain
 from pathlib import Path
 
+# pylab.plt.ioff()
 pylab.rc('font', family='serif', serif='Times')
 pylab.rc('xtick', labelsize=8)
 pylab.rc('ytick', labelsize=8)
@@ -17,36 +18,24 @@ pylab.rc('axes', labelsize=8)
 
 PLOT_PATH = Path("plots")
 
-def hp_plot(df, grid):
-    # TODO fix grid
+def hp_plot(df, grid, show=False):
+    PLOT_PATH.mkdir(exist_ok=True)
+
     model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
         params = grid[model_name].keys()
         plots_per_model[model_name] = len(params)
-    total_plots = sum([v for k,v in plots_per_model.items()])
 
-    root = np.sqrt(total_plots)
-    if np.floor(root) != root:
-        w = np.ceil(root)
-        h = np.floor(root)
-    else:
-        w = root
-        h = root
-    w, h = int(w), int(h)
-
-    fig, ax = pylab.subplots(w,h, dpi=200, sharey='row')
-    i = 0
-
+    # Plots hyperparameters per model
     for model_name in model_names:
         df_ = df[df["model"] == model_name]
         if plots_per_model[model_name] == 0:
             continue
 
-        for param_name in grid[model_name].keys():
-            x = i % w
-            y = i // w
-            ax_ = ax[x][y]
+        fig, ax = pylab.subplots(1,plots_per_model[model_name], dpi=200, sharey='row', squeeze=False)
+        for i, param_name in enumerate(grid[model_name].keys()):
+            ax_ = ax[0,i]
             
             tmp = df_[["n", "acc_test"]].copy()
             tmp[param_name] = df_["params"].apply(lambda x: ast.literal_eval(x)[param_name])
@@ -54,16 +43,17 @@ def hp_plot(df, grid):
             ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, legend=False, ci='sd')
             ax1.set_ylabel("Accuracy")
             ax1.set_xlabel(param_name)
-            ax1.set_title(model_name)
-            i += 1            
 
-    pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.0)
-    pylab.plt.show()
+        pylab.plt.suptitle(MODEL_NAMES[model_name])
+        pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.0)
+        fig.savefig(PLOT_PATH / f'hp_{model_name}.png')
+        if show:
+            pylab.plt.show()
+    
+    pylab.plt.close("all")
 
+def sc_plot(df, show=False):
     PLOT_PATH.mkdir(exist_ok=True)
-    fig.savefig('plots/hp_plot.png')
-
-def sc_plot(df):
     fig, ax = pylab.subplots(1, 1, dpi=200)
     models = list(df["model"].unique())
 
@@ -83,10 +73,9 @@ def sc_plot(df):
     fig.subplots_adjust(bottom=0.3)
 
     pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
-    pylab.plt.show()
-
-    PLOT_PATH.mkdir(exist_ok=True)
-    fig.savefig('plots/sc_plot.png')
+    fig.savefig(PLOT_PATH / 'sc_plot.png')
+    if show:
+        pylab.plt.show()
 
 MODEL_COLORS = {
     "lda": "purple",
