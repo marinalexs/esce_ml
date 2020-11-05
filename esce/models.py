@@ -137,19 +137,20 @@ class RegressionModel(BaseModel):
 class KernelSVMModel(BaseModel):
     def __init__(self, kernel=KernelType.LINEAR):
         self.kernel = kernel
-        self.prev_gamma = None
+        self.curr_config = None
         self.cached_gram = None
 
-    def get_gram(self, x, gamma):
-        if self.prev_gamma == gamma:
+    def get_gram(self, x, config):
+        if self.curr_config == config:
             return self.cached_gram
         else:
-            self.prev_gamma = gamma
-            self.cached_gram = get_gram(x, kernel=self.kernel, gamma=gamma)
+            gamma, coef0, degree = config
+            self.cached_gram = get_gram(x, kernel=self.kernel, gamma=gamma, coef0=coef0, degree=degree)
+            self.curr_config = config
             return self.cached_gram
 
-    def score(self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0):
-        gram = self.get_gram(x, gamma)
+    def score(self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0, coef0=0, degree=0):
+        gram = self.get_gram(x, (gamma, coef0, degree))
         model = SVC(C=C, kernel='precomputed', max_iter=1000)
 
         # Fit on train
@@ -218,7 +219,9 @@ MODELS = {
     "lasso": RegressionModel(Lasso),
     "ridge": RegressionModel(Ridge),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
-    "svm-rbf": KernelSVMModel(kernel=KernelType.RBF)
+    "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
+    "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
+    "svm-polynomial": KernelSVMModel(kernel=KernelType.POLYNOMIAL)
 }
 
 MODEL_NAMES = {
@@ -229,5 +232,7 @@ MODEL_NAMES = {
     "lasso": "Lasso Regression",
     "ridge": "Ridge Regression",
     "svm-linear": "Support Vector Machine (Linear)",
-    "svm-rbf": "Support Vector Machine (RBF)"
+    "svm-rbf": "Support Vector Machine (RBF)",
+    "svm-sigmoid": "Support Vector Machine (Sigmoid)",
+    "svm-polynomial": "Support Vector Machine (Polynomial)"
 }

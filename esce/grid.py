@@ -16,6 +16,8 @@ grid = lambda n: {
     'ridge': {'alpha': logrange(-15, 15, n)},
     'svm-linear': {'C': logrange(-20, 10, n)},
     'svm-rbf': {'C': logrange(-10, 20, n), 'gamma': logrange(-25, 5, n)},
+    'svm-sigmoid': {'C': logrange(-10, 20, n), 'gamma': logrange(-25, 5, n), 'coef0': [-1, 0, 1]},
+    'svm-polynomial': {'C': logrange(-10, 20, n), 'gamma': logrange(-25, 5, n), 'coef0': [-1, 0, 1], 'degree': [2, 3]},
 }
 
 GRID = {

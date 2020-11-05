@@ -98,5 +98,7 @@ MODEL_COLORS = {
     "lasso": "brown",
     "ridge": "red",
     "svm-linear": "light blue",
-    "svm-rbf": "teal"
+    "svm-rbf": "teal",
+    "svm-sigmoid": "orange",
+    "svm-polynomial": "light green"
 }
