@@ -33,6 +33,10 @@ def hp_plot(df, grid, show=False):
         if plots_per_model[model_name] == 0:
             continue
 
+        names = df_.n
+        palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
+        legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
+
         fig, ax = pylab.subplots(1,plots_per_model[model_name], dpi=200, sharey='row', squeeze=False)
         for i, param_name in enumerate(grid[model_name].keys()):
             ax_ = ax[0,i]
@@ -48,12 +52,14 @@ def hp_plot(df, grid, show=False):
                 param_name = "log " + param_name
                 tmp[param_name] = log_param
 
-            ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, legend=False, ci='sd')
+            ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, ci='sd', palette=palette, legend=False)
             ax1.set_ylabel("Accuracy")
             ax1.set_xlabel(param_name)
 
+        fig.subplots_adjust(bottom=0.2)
+
         pylab.plt.suptitle(MODEL_NAMES[model_name])
-        pylab.plt.subplots_adjust(0.125, 0.1, 0.9, 0.9, 0.5, 1.0)
+        pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
         fig.savefig(PLOT_PATH / f'hp_{model_name}.png')
         if show:
             pylab.plt.show()

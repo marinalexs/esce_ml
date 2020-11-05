@@ -196,8 +196,6 @@ def retrieve(path, grid_name, output, show=None):
 
     show_hp = show == "all" or show == "hp"
     show_sc = show == "all" or show == "sc"
-
-    print(show_hp, show_sc)
     hp_plot(df, grid, show_hp)
     
     regr_missing = sc_df['acc_val'].isnull()
