@@ -8,7 +8,7 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
-from esce.data import get_mnist, get_fashion_mnist, get_superconductivity
+from esce.data import DATA
 from esce.models import score_splits, MODELS, RegressionModel
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
@@ -82,17 +82,13 @@ def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
         fmt: Data file format (hdf5 or pkl)
     """
 
+    method_str = f"_{method}{n_components}" if method is not None else ""
     noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
-    path = Path("data") / f"{dataset}_{method}{n_components}{noise_str}"
-    if dataset == "mnist":
-        x,y = get_mnist()
-    elif dataset == "fashion":
-        x,y = get_fashion_mnist()
-    elif dataset == "superconductivity":
-        x,y = get_superconductivity()
-    else:
+    path = Path("data") / f"{dataset}{method_str}{noise_str}"
+    if dataset not in DATA:
         raise ValueError("Unknown dataset")
-
+    
+    x, y = DATA[dataset]()
     if method == 'pca':
         x = PCA(n_components=n_components, whiten=True, random_state=0).fit_transform(x)
     elif method == 'rp':
@@ -233,7 +229,7 @@ def main():
     run_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
     run_parser.set_defaults(run=True)
 
-    datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity)")
+    datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity,higgs)")
     datagen_parser.add_argument('--method', default=None, type=str, help="dimensionality reduction method (pca,rp,tsne)")
     datagen_parser.add_argument('--components', default=2, type=int, help="number of components used in dimensionality reduction")
     datagen_parser.add_argument('--noise', default=None, type=float, help="whether or not to add noise")
