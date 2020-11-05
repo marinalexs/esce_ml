@@ -1,6 +1,6 @@
 import shelve
 import numpy
-from sklearn.metrics.pairwise import rbf_kernel, linear_kernel
+from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, sigmoid_kernel, polynomial_kernel
 from sklearn.svm import SVC, SVR
 from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -23,9 +23,11 @@ from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_er
 class KernelType(Enum):
     LINEAR = 1
     RBF = 2
+    SIGMOID = 3
+    POLYNOMIAL = 4
 
 @cached("cache/gram.h5")
-def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0):
+def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Calculates the upper triangle of the gram matrix.
 
     Args:
@@ -42,16 +44,22 @@ def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0):
         K = linear_kernel(x, x)
     elif kernel == KernelType.RBF:
         K = rbf_kernel(x, x, gamma=gamma)
+    elif kernel == KernelType.SIGMOID:
+        K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+    elif kernel == KernelType.POLYNOMIAL:
+        K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
     else:
         raise ValueError
     return K[np.triu_indices(K.shape[0])]
 
-def get_gram(data, kernel=KernelType.LINEAR, gamma=0):
+def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Reconstructs the gram matrix based on upper triangle.
 
     Args:
         data: Data to compute gram matrix of.
-        gamma: RBF kernel gamma.
+        gamma: Kernel gamma for RBF/sigmoid/polynomial
+        coef0: Coefficient for sigmoid/polynomial
+        degree: Degree of polynomial kernel
 
     Returns:
         Two-dimensional gram matrix of the data.

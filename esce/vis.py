@@ -10,7 +10,6 @@ import ast
 from itertools import chain
 from pathlib import Path
 
-# pylab.plt.ioff()
 pylab.rc('font', family='serif', serif='Times')
 pylab.rc('xtick', labelsize=8)
 pylab.rc('ytick', labelsize=8)
