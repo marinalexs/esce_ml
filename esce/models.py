@@ -199,16 +199,13 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
         csvwriter = csv.writer(f, delimiter=",")
 
         for model_name, model in models.items():
-            
-            # For the n splis, only select n_seeds
-            for n in splits:
-                for s in seeds:
-                    idx_train, idx_val, idx_test = splits[n][s]
-                    param_grid = model.order(ParameterGrid(grid[model_name]))
+            for params in model.order(ParameterGrid(grid[model_name])):
+                param_hash = hash(params)
 
-                    for params in param_grid:
-                        print(params)
-                        param_hash = hash(params)
+                # For the n splis, only select n_seeds
+                for n in splits:
+                    for s in seeds:
+                        idx_train, idx_val, idx_test = splits[n][s]
 
                         # Check if there is already an entry
                         # for the model, train size, seed and parameter combination
