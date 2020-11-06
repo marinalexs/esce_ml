@@ -91,6 +91,9 @@ class BaseModel(ABC):
             "acc_test": acc_test,
             "f1_val": f1_val,
             "f1_test": f1_test }
+    
+    def order(self, param_grid):
+        return param_grid
 
     def compute_regr_metrics(self, y_hat_val, y_hat_test, y_val, y_test):
         # Val score
@@ -149,6 +152,16 @@ class KernelSVMModel(BaseModel):
             self.curr_config = config
             return self.cached_gram
 
+    def order(self, param_grid):
+        if self.kernel == KernelType.RBF:
+            return sorted(param_grid, key=lambda d: d["gamma"])
+        elif self.kernel == KernelType.SIGMOID:
+            return sorted(param_grid, key=lambda d: (d["gamma"], d["coef0"]))
+        elif self.kernel == KernelType.POLYNOMIAL:
+            return sorted(param_grid, key=lambda d: (d["gamma"], d["coef0"], d["degree"]))
+        else:
+            return param_grid
+
     def score(self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0, coef0=0, degree=0):
         gram = self.get_gram(x, (gamma, coef0, degree))
         model = SVC(C=C, kernel='precomputed', max_iter=1000)
@@ -191,8 +204,10 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
             for n in splits:
                 for s in seeds:
                     idx_train, idx_val, idx_test = splits[n][s]
+                    param_grid = model.order(ParameterGrid(grid[model_name]))
 
-                    for params in ParameterGrid(grid[model_name]):
+                    for params in param_grid:
+                        print(params)
                         param_hash = hash(params)
 
                         # Check if there is already an entry
