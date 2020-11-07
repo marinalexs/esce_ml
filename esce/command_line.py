@@ -9,7 +9,7 @@ from sklearn.exceptions import ConvergenceWarning
 warnings.simplefilter(action='ignore', category=ConvergenceWarning)
 
 from esce.data import DATA
-from esce.models import score_splits, MODELS, RegressionModel
+from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
 from esce.sampling import split_grid
 from esce.vis import hp_plot, sc_plot
 from esce.grid import GRID, load_grid
@@ -22,6 +22,18 @@ from sklearn.preprocessing import StandardScaler
 import h5py
 from sklearn.model_selection import ParameterGrid
 from joblib import hash
+
+def precomp(data_path, grid_name="default", include=None, exclude=None):
+    x = load_dataset(data_path)
+    grid = load_grid(grid_name)
+    models = MODELS
+    if include is not None:
+        models = {k:v for k,v in models.items() if k in include}
+
+    if exclude is not None:
+        models = {k:v for k,v in models.items() if k not in exclude}
+
+    precompute_kernels(x, models, grid)
 
 def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False, include=None, exclude=None):
     """
@@ -212,7 +224,8 @@ def main():
     datagen_parser = subparsers.add_parser("datagen", help="generate dataset file")
     splitgen_parser = subparsers.add_parser("splitgen", help="generate split file")
     retrieve_parser = subparsers.add_parser("retrieve", help="retrieve results")
-    parser.set_defaults(run=False, retrieve=False, datagen=False, splitgen=False)
+    precomp_parser = subparsers.add_parser("precomp", help="precompute kernel matrices")
+    parser.set_defaults(run=False, retrieve=False, datagen=False, splitgen=False, precomp=False)
 
     run_parser.add_argument('data', type=str, help="dataset file to use")
     run_parser.add_argument('--label', default="default", type=str, help="which label to use")
@@ -224,6 +237,12 @@ def main():
     run_parser.add_argument('--include', nargs="+", help="include only the specified models", default=None)
     run_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
     run_parser.set_defaults(run=True)
+
+    precomp_parser.add_argument('data', type=str, help="dataset file to use")
+    precomp_parser.add_argument('--grid', type=str, help="grid to use", default="default")
+    precomp_parser.add_argument('--include', nargs="+", help="include only the specified models", default=None)
+    precomp_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
+    precomp_parser.set_defaults(precomp=True)
 
     datagen_parser.add_argument('dataset', default='mnist', type=str, help="dataset to use (mnist,fashion,superconductivity,higgs)")
     datagen_parser.add_argument('--method', default=None, type=str, help="dimensionality reduction method (pca,rp,tsne)")
@@ -253,6 +272,8 @@ def main():
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
         retrieve(Path(args.path), args.grid, args.output, args.show)
+    elif args.precomp:
+        precomp(Path(args.data), args.grid, args.include, args.exclude)
 
 if __name__ == '__main__':
     main()

@@ -19,6 +19,7 @@ import pickle
 
 from esce.util import cached
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
+import h5py
 
 class KernelType(Enum):
     LINEAR = 1
@@ -26,8 +27,19 @@ class KernelType(Enum):
     SIGMOID = 3
     POLYNOMIAL = 4
 
-@cached("cache/gram.h5")
-def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
+GRAM_PATH = Path("cache/gram.h5")
+
+def get_gram_triu_key(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
+    return f"/{hash(x)}/{kernel}_{gamma}_{coef0}_{degree}"
+
+def probe_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
+    key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
+    if not GRAM_PATH.is_file():
+        return False
+    with h5py.File(GRAM_PATH, 'r') as f:
+        return key in f
+
+def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Calculates the upper triangle of the gram matrix.
 
     Args:
@@ -39,18 +51,25 @@ def get_gram_triu(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
         One-dimensional array containing the upper triangle
         of the computed gram matrix.
     """
-    x = data.astype(np.float32)
-    if kernel == KernelType.LINEAR:
-        K = linear_kernel(x, x)
-    elif kernel == KernelType.RBF:
-        K = rbf_kernel(x, x, gamma=gamma)
-    elif kernel == KernelType.SIGMOID:
-        K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
-    elif kernel == KernelType.POLYNOMIAL:
-        K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
-    else:
-        raise ValueError
-    return K[np.triu_indices(K.shape[0])]
+    GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
+    key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
+    with h5py.File(GRAM_PATH, 'a') as f:
+        if key in f:
+            return f[key][...]
+        else:
+            if kernel == KernelType.LINEAR:
+                K = linear_kernel(x, x)
+            elif kernel == KernelType.RBF:
+                K = rbf_kernel(x, x, gamma=gamma)
+            elif kernel == KernelType.SIGMOID:
+                K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+            elif kernel == KernelType.POLYNOMIAL:
+                K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
+            else:
+                raise ValueError
+            res = K[np.triu_indices(K.shape[0])]
+            f.create_dataset(key, res.shape, dtype='f', data=res)
+            return res
 
 def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Reconstructs the gram matrix based on upper triangle.
@@ -64,7 +83,8 @@ def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     Returns:
         Two-dimensional gram matrix of the data.
     """
-    tri = get_gram_triu(data, kernel, gamma)
+    x = data.astype(np.float32)
+    tri = get_gram_triu(x, kernel, gamma, coef0, degree)
     n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
     K = np.zeros((n,n), dtype=np.float32)
     K[np.triu_indices(n)] = tri
@@ -179,6 +199,20 @@ class KernelSVMModel(BaseModel):
         y_hat_test = model.predict(gram_)
         
         return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+def precompute_kernels(x, models, grid):
+    required = ["gamma", "coef0", "degree"]
+    for model_name, model in models.items():
+        if isinstance(model, KernelSVMModel):
+            print(f"Precomputing {model_name}...")
+            for params in ParameterGrid(grid[model_name]):
+                print(f"=> Parameters: {params}")
+                
+                params = {k:v for k,v in params.items() if k in required}
+                x = x.astype(np.float32)
+
+                if not probe_gram_triu(x, model.kernel, **params):
+                    get_gram_triu(x, model.kernel, **params)
 
 def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     columns = ["model","n","s","params","param_hash",

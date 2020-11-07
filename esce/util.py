@@ -34,7 +34,7 @@ def load_grid_file(grid_name):
     else:
         raise ValueError("Invalid grid file path")
 
-def load_dataset(data_path, label):
+def load_dataset(data_path, label=None):
     """
     Loads data and label from data file
 
@@ -49,11 +49,15 @@ def load_dataset(data_path, label):
     if data_path.suffix == ".h5":
         with h5py.File(data_path, "r") as f:
             x = f["/data"][...]
+            if label is None:
+                return x
             y = f[f"/labels/{label}"][...]
     elif data_path.suffix == ".pkl":
         with data_path.open("rb") as f:
             d = pickle.load(f)
             x = d["data"]
+            if label is None:
+                return x
             y = d[f"label_{label}"]
     else:
         raise ValueError("Unknown file format")
