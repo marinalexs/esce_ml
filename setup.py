@@ -24,6 +24,7 @@ setup(
         "scikit-learn>=0.23",
         "torchvision>=0.4",
         "h5py>=2.8",
+        "hdf5plugin>=2.3",
         "joblib>=0.12",
         "matplotlib>=3.0",
         "seaborn>=0.9",

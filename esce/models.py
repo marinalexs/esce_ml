@@ -20,6 +20,7 @@ import pickle
 from esce.util import cached
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
 import h5py
+import hdf5plugin
 
 class KernelType(Enum):
     LINEAR = 1
@@ -68,7 +69,7 @@ def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
             else:
                 raise ValueError
             res = K[np.triu_indices(K.shape[0])]
-            f.create_dataset(key, res.shape, dtype='f', data=res)
+            f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.LZ4())
             return res
 
 def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
