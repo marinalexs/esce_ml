@@ -23,17 +23,6 @@ class TestSampling(TestCase):
         for s in samples:
             self.assertTrue(len(splits[s]) == num_seeds)
 
-class TestAlgorithm(TestCase):
-    def test_rbf_triu(self):
-        gamma = 0.4
-        for k in range(0, 4):
-            for i in range(2,4):
-                X, y = make_blobs(n_samples=4, centers=3, n_features=i, random_state=k)
-
-                triu_custom = fast_rbf(X, gamma)
-                triu_sk = rbf_kernel(X, X, gamma=gamma)[np.triu_indices(len(X),0)].astype(np.float32)
-                assert_array_equal(triu_custom, triu_sk)
-
 class TestExample(TestCase):
     def test_example(self):
         warnings.simplefilter("ignore", category=DeprecationWarning)
