@@ -16,6 +16,7 @@ from abc import ABC, abstractmethod
 import csv
 from pathlib import Path
 import pickle
+from scipy.spatial.distance import pdist
 
 from esce.util import cached
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
@@ -40,6 +41,27 @@ def probe_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     with h5py.File(GRAM_PATH, 'r') as f:
         return key in f
 
+def square_to_condensed(i, j, n):
+    if i < j:
+        i, j = j, i
+    return n*j - j*(j+1)//2 + i - 1 - j
+
+def fast_rbf(x, gamma):
+    z = (pdist(x, metric="sqeuclidean") * -gamma)
+    np.exp(z, z)
+    z = z.astype(np.float32)
+    
+    m = len(z)
+    n = len(x)
+    num_elem = n * (n+1) // 2
+    row, col = np.triu_indices(n,1)
+    v = np.ones((num_elem,), dtype=np.float32)
+    idx = np.zeros((m,), dtype=np.int64)
+    for k in range(m):
+        idx[k] = square_to_condensed(row[k], col[k], n+1)+1
+    v[idx] = z
+    return v
+
 def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Calculates the upper triangle of the gram matrix.
 
@@ -60,15 +82,17 @@ def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
         else:
             if kernel == KernelType.LINEAR:
                 K = linear_kernel(x, x)
+                res = K[np.triu_indices(K.shape[0])]
             elif kernel == KernelType.RBF:
-                K = rbf_kernel(x, x, gamma=gamma)
+                res = fast_rbf(x, gamma)
             elif kernel == KernelType.SIGMOID:
                 K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+                res = K[np.triu_indices(K.shape[0])]
             elif kernel == KernelType.POLYNOMIAL:
                 K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
+                res = K[np.triu_indices(K.shape[0])]
             else:
                 raise ValueError
-            res = K[np.triu_indices(K.shape[0])]
             f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.LZ4())
             return res
 
