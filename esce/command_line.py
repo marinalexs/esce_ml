@@ -52,7 +52,7 @@ def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_
     x,y = load_dataset(data_path, label)
     found_seeds, splits = load_split(split_path)
     if found_seeds < len(seeds):
-        raise ValueError(f"More speeds selected than available, found {found_seeds} seeds.")
+        raise ValueError(f"More seeds selected than available, found {found_seeds} seeds.")
 
     samples = [int(sample) for sample in samples]
     seeds = [int(seed) for seed in seeds]
