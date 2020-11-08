@@ -24,26 +24,47 @@ pip3 install .
 
 ## Usage:
 
-esce provides four different subcommands: *run,datagen,splitgen,visualize*.
+esce provides five different subcommands: *run,datagen,splitgen,retrieve,precomp*.
 
 The command *datagen* generates features and labels for a sample dataset and stores them into hdf5 files.
 Additionally dimensionality reduction and noise can be added.
 
 ```
-esce datagen mnist --method=pca --components=2
+esce datagen mnist --method pca --components 8
 ```
 
 The command *splitgen* generates train, val and test splits for a given seed and a list of samples.
 This is also stored as a file.
 
 ```
-esce splitgen data/mnist_pca2.h5 --seeds=4 --samples 50 100 200 1000
+esce splitgen data/mnist_pca8.h5 --seeds 4 --samples 50 100 200 1000
 ```
 
 Finally the sampling process can be started using the *run* command.
 
 ```
-esce run data/mnist_pca2.h5 --label=default --split=splits/mnist_pca2_default_s10_t50_100_200.split
+esce run data/mnist_pca8.h5 --split splits/mnist_pca8_default_s10_t50_100_200.split
+```
+
+## Results & Visualization
+
+To retrieve the accuracies on the test set or to visualize the results, use the *retrieve* command.
+
+Example: Plot the results (scores and hyperparameters) in the given file for the grid default and write the scores to "out.csv".
+
+```
+esce retrieve results/mnist_pca8_default_s10_t100_200_500.csv --grid default --show all --output out.csv
+```
+
+## Kernel precomputation
+
+The *precomp* subcommand allows to precompute the kernel gram matrices,
+given a dataset, a hyperparameter grid and a list of models.
+
+Example: Precompute the RBF kernel used by the SVM-RBF on the default grid for the MNIST dataset.
+
+```
+esce precomp data/mnist_pca8.h5 --grid default --include svm-rbf
 ```
 
 ## Data file format
