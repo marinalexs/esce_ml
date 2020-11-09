@@ -56,6 +56,8 @@ Example: Plot the results (scores and hyperparameters) in the given file for the
 esce retrieve results/mnist_pca8_default_s10_t100_200_500.csv --grid default --show all --output out.csv
 ```
 
+Plots are automatically written to the `plots` directory.
+
 ## Kernel precomputation
 
 The *precomp* subcommand allows to precompute the kernel gram matrices,
@@ -75,6 +77,8 @@ The default label for a dataset is stored in */labels/default*.
 
 For pickle files, data and labels are stored in a dictionary.
 The data is stored in "data" and the individual labels a stored in "label_{label}".
+
+Generated data files using *datagen* are stored in the `data` directory.
 
 ## Creating grid files
 
