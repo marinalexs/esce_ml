@@ -24,6 +24,16 @@ from sklearn.model_selection import ParameterGrid
 from joblib import hash
 
 def precomp(data_path, grid_name="default", include=None, exclude=None):
+    """
+    Precomputes the kernel gram matrices for the given models.
+
+    Arguments:
+        data_path: Path to the data file.
+        grid_name: Grid to use
+        include: Models to include
+        exclude: Models to exclude
+    """
+
     x = load_dataset(data_path)
     grid = load_grid(grid_name)
     models = MODELS
@@ -159,6 +169,15 @@ def splitgen(data_path, label, n_seeds, samples):
     print(f"Generated split file '{path}'.")
 
 def retrieve(path, grid_name, output, show=None):
+    """
+    Retrieves the results, generates plots and the final accuracy scores.
+
+    Arguments:
+        path: Path to the results file
+        grid_name: Grid to use
+        output: Where to write the accuracy scores to
+        show: Show results using matplotlib (all/sc/hp)
+    """
     grid = load_grid(grid_name)
 
     if path.is_dir():

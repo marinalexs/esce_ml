@@ -27,6 +27,14 @@ GRID = {
 }
 
 def load_grid(grid_name):
+    """
+    Loads a grid from a name or a file.
+    Valid names are fine, default and coarse.
+    Grid files are required to be in YAML format.
+
+    Arguments:
+        grid_name: Name of path of the grid
+    """
     if grid_name in ["fine", "default", "coarse"]:
         grid = GRID[grid_name]
     else:
