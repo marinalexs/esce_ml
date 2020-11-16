@@ -37,13 +37,13 @@ The command *splitgen* generates train, val and test splits for a given seed and
 This is also stored as a file.
 
 ```
-esce splitgen data/mnist_pca8.h5 --seeds 4 --samples 50 100 200 1000
+esce splitgen data/mnist_pca8.h5 --seeds 10 --samples 50 100 200 1000
 ```
 
 Finally the sampling process can be started using the *run* command.
 
 ```
-esce run data/mnist_pca8.h5 --split splits/mnist_pca8_default_s10_t50_100_200.split
+esce run data/mnist_pca8.h5 --split splits/mnist_pca8_default_s10_t50_100_200_1000.split
 ```
 
 ## Results & Visualization
@@ -53,7 +53,7 @@ To retrieve the accuracies on the test set or to visualize the results, use the 
 Example: Plot the results (scores and hyperparameters) in the given file for the grid default and write the scores to "out.csv".
 
 ```
-esce retrieve results/mnist_pca8_default_s10_t100_200_500.csv --grid default --show all --output out.csv
+esce retrieve results/mnist_pca8_default_s10_t100_200_500_1000.csv --grid default --show all --output out.csv
 ```
 
 Plots are automatically written to the `plots` directory.

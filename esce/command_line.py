@@ -86,8 +86,11 @@ def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_
     if exclude is not None:
         models = {k:v for k,v in models.items() if k not in exclude}
 
+    seed_str = '_'.join(map(str, seeds))
+    sample_str = '_'.join(map(str, splits.keys()))
+
     grid = load_grid(grid_name)
-    outfile = Path("results") / (split_path.stem + ".csv")
+    outfile = Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
     outfile.parent.mkdir(parents=True, exist_ok=True)
     score_splits(outfile, x, y, models, grid, splits, seeds, warm_start)
 
