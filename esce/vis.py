@@ -69,6 +69,7 @@ def sc_plot(df, show=False):
     PLOT_PATH.mkdir(exist_ok=True)
     fig, ax = pylab.subplots(1, 1, dpi=200)
     models = list(df["model"].unique())
+    ticks = df["n"].unique()
 
     names = [MODEL_NAMES[i] for i in models]
     palette = [MODEL_COLORS[i] for i in models]
@@ -78,7 +79,14 @@ def sc_plot(df, show=False):
     ax = sns.lineplot(x='n', y='acc_test', hue='model', data=df, ci='sd', palette=palette, ax=ax, legend=False)
     ax.set_ylabel('Accuracy')
     ax.set_xlabel('Sample Size')
-    ax.set_xticks(df.n.unique())
+    #ax.set_xticks(ticks=list(np.arange(len(ticks))), labels=list(df.n.unique()))
+    #ax.set_xlim(0, np.max(ticks))
+
+    ax.set_xscale("log")
+    ax.set_xticks(ticks)
+
+    #ax.get_xaxis().set_ticks(list(np.arange(len(ticks))))
+    #ax.get_xaxis().set_ticklabels(ticks)
     ax.get_xaxis().set_major_formatter(ScalarFormatter())
     ax.get_xaxis().set_tick_params(which='minor', size=0)
     ax.get_xaxis().set_tick_params(which='minor', width=0)
