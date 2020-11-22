@@ -45,7 +45,7 @@ def precomp(data_path, grid_name="default", include=None, exclude=None):
 
     precompute_kernels(x, models, grid)
 
-def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False, include=None, exclude=None):
+def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_start=False, include=None, exclude=None, output=None):
     """
     Performs sample complexity computation.
 
@@ -90,8 +90,12 @@ def run(data_path, label, split_path, seeds, samples, grid_name="default", warm_
     sample_str = '_'.join(map(str, splits.keys()))
 
     grid = load_grid(grid_name)
-    outfile = Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
-    outfile.parent.mkdir(parents=True, exist_ok=True)
+    if output is None:
+        outfile = Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
+        outfile.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        outfile = Path(output)
+
     score_splits(outfile, x, y, models, grid, splits, seeds, warm_start)
 
 def datagen(dataset, method, n_components, noise=None, fmt="hdf5"):
@@ -266,6 +270,7 @@ def main():
     run_parser.add_argument('--warm', action="store_true", help="warm start")
     run_parser.add_argument('--include', nargs="+", help="include only the specified models", default=None)
     run_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
+    run_parser.add_argument('--output', type=str, help="write to specified file")
     run_parser.set_defaults(run=True)
 
     precomp_parser.add_argument('data', type=str, help="dataset file to use")
@@ -297,7 +302,7 @@ def main():
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data), args.label, Path(args.split), args.seeds, args.samples, args.grid, args.warm, args.include, args.exclude)
+        run(Path(args.data), args.label, Path(args.split), args.seeds, args.samples, args.grid, args.warm, args.include, args.exclude, args.output)
     elif args.datagen:
         datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
