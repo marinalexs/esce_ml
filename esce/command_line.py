@@ -171,7 +171,7 @@ def splitgen(data_path, label, n_seeds, samples):
         pickle.dump((n_seeds, splits), f)
     print(f"Generated split file '{path}'.")
 
-def retrieve(path, grid_name, output, show=None):
+def retrieve(path, grid_name, output, show=None, include=None, exclude=None):
     """
     Retrieves the results, generates plots and the final accuracy scores.
 
@@ -192,9 +192,17 @@ def retrieve(path, grid_name, output, show=None):
     else:
         df = pd.read_csv(path, index_col=False)
 
+
+    model_names = grid.keys()
+    if include is not None:
+        model_names = {k for k in model_names if k in include}
+
+    if exclude is not None:
+        model_names = {k for k in model_names if k not in exclude}
+
     # Select entries for a specified grid
     outer_frames = []
-    for model_name in grid:
+    for model_name in model_names:
         rows_per_model = df[df["model"] == model_name]
         if rows_per_model.empty:
             continue
@@ -283,6 +291,8 @@ def main():
     retrieve_parser.add_argument('--grid', type=str, help="grid to analyse", default="default")
     retrieve_parser.add_argument('--show', type=str, help="show results (all/hp/sc)", default=None)
     retrieve_parser.add_argument('--output', type=str, help="output file location", default=None)
+    retrieve_parser.add_argument('--include', nargs="+", help="include only the specified models", default=None)
+    retrieve_parser.add_argument('--exclude', nargs="+", help="exclude models from comutation", default=None)
     retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
 
@@ -293,7 +303,7 @@ def main():
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
-        retrieve(Path(args.path), args.grid, args.output, args.show)
+        retrieve(Path(args.path), args.grid, args.output, args.show, args.include, args.exclude)
     elif args.precomp:
         precomp(Path(args.data), args.grid, args.include, args.exclude)
 
