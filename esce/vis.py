@@ -32,7 +32,7 @@ def hp_plot(df, grid, show=False):
         if plots_per_model[model_name] == 0:
             continue
 
-        names = df_.n
+        names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
         legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
 
