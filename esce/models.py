@@ -55,23 +55,24 @@ def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """
     GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
     key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
-    with h5py.File(GRAM_PATH, 'a') as f:
+    with h5py.File(GRAM_PATH, 'r') as f:
         if key in f:
             return f[key][...]
+
+    with h5py.File(GRAM_PATH, 'a') as f:
+        if kernel == KernelType.LINEAR:
+            K = linear_kernel(x, x)
+        elif kernel == KernelType.RBF:
+            K = rbf_kernel(x, x, gamma=gamma)
+        elif kernel == KernelType.SIGMOID:
+            K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+        elif kernel == KernelType.POLYNOMIAL:
+            K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
         else:
-            if kernel == KernelType.LINEAR:
-                K = linear_kernel(x, x)
-            elif kernel == KernelType.RBF:
-                K = rbf_kernel(x, x, gamma=gamma)
-            elif kernel == KernelType.SIGMOID:
-                K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
-            elif kernel == KernelType.POLYNOMIAL:
-                K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
-            else:
-                raise ValueError
-            res = K[np.triu_indices(K.shape[0])]
-            f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.LZ4())
-            return res
+            raise ValueError
+        res = K[np.triu_indices(K.shape[0])]
+        f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.LZ4())
+        return res
 
 def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     """Reconstructs the gram matrix based on upper triangle.
