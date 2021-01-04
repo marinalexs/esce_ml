@@ -17,6 +17,7 @@ import csv
 from pathlib import Path
 import pickle
 from scipy.spatial.distance import pdist
+from pkg_resources import get_distribution
 
 from esce.util import cached
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
@@ -53,7 +54,6 @@ def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
         One-dimensional array containing the upper triangle
         of the computed gram matrix.
     """
-    GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
     key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
     with h5py.File(GRAM_PATH, 'r') as f:
         if key in f:
@@ -71,7 +71,7 @@ def get_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
         else:
             raise ValueError
         res = K[np.triu_indices(K.shape[0])]
-        f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.LZ4())
+        f.create_dataset(key, res.shape, dtype='f', data=res, **hdf5plugin.Blosc(cname='lz4', clevel=5, shuffle=hdf5plugin.Blosc.BITSHUFFLE))
         return res
 
 def get_gram(data, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
@@ -204,6 +204,7 @@ class KernelSVMModel(BaseModel):
         return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 def precompute_kernels(x, models, grid):
+    setup_cache_file()
     required = ["gamma", "coef0", "degree"]
     for model_name, model in models.items():
         if isinstance(model, KernelSVMModel):
@@ -217,11 +218,19 @@ def precompute_kernels(x, models, grid):
                 if not probe_gram_triu(x, model.kernel, **params):
                     get_gram_triu(x, model.kernel, **params)
 
+def setup_cache_file():
+    GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if not GRAM_PATH.is_file():
+        with h5py.File(GRAM_PATH, "w") as f:
+            v = get_distribution("esce").version
+            f.attrs["version"] = v
+
 def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     columns = ["model","n","s","params","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
         "r2_val","r2_test","mae_val","mae_test","mse_val","mse_test"]
     col2idx = { c:i for i,c in enumerate(columns) }
+    setup_cache_file()
 
     # Read / Write results file
     if outfile.is_file() and warm_start:
