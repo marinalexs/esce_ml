@@ -243,7 +243,6 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
 
     sc_df = pd.concat(outer_frames, ignore_index=True)
     sc_df.reset_index(inplace=True, drop=True)
-    print(sc_df)
 
     root_path = Path("plots") / path.stem if output is None else output
     root_path.mkdir(exist_ok=True)
