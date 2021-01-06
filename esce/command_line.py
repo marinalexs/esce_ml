@@ -190,7 +190,7 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]):
     print(f"Generated split file '{path}'.")
 
 
-def retrieve(path, grid_name, output, show=None, include=None, exclude=None):
+def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=None, include=None, exclude=None):
     """
     Retrieves the results, generates plots and the final accuracy scores.
 
@@ -201,15 +201,7 @@ def retrieve(path, grid_name, output, show=None, include=None, exclude=None):
         show: Show results using matplotlib (all/sc/hp)
     """
     grid = load_grid(grid_name)
-
-    if path.is_dir():
-        # Concat files into one, if not one
-        frames = []
-        for f in path.glob("*.csv"):
-            frames.append(pd.read_csv(f, index_col=False))
-        df = pd.concat(frames, ignore_index=True)
-    else:
-        df = pd.read_csv(path, index_col=False)
+    df = pd.read_csv(path, index_col=False)
 
     model_names = grid.keys()
     if include is not None:
@@ -252,19 +244,22 @@ def retrieve(path, grid_name, output, show=None, include=None, exclude=None):
     sc_df = pd.concat(outer_frames, ignore_index=True)
     sc_df.reset_index(inplace=True, drop=True)
     print(sc_df)
-    if output is not None:
-        sc_df.to_csv(output)
+
+    root_path = Path("plots") / path.stem if output is None else output
+    root_path.mkdir(exist_ok=True)
+
+    sc_df.to_csv(root_path / "scores.csv", index=False)
 
     show_hp = show == "all" or show == "hp"
     show_sc = show == "all" or show == "sc"
-    hp_plot(df, grid, show_hp)
+    hp_plot(root_path, df, grid, show_hp)
 
     regr_missing = sc_df['acc_val'].isnull()
     sc_df.loc[regr_missing, 'acc_val'] = np.max(
         sc_df[regr_missing]['r2_val'], 0)
     sc_df.loc[regr_missing, 'acc_test'] = np.max(
         sc_df[regr_missing]['r2_test'], 0)
-    sc_plot(sc_df, show_sc)
+    sc_plot(root_path, sc_df, show_sc)
 
 
 def main():
@@ -453,11 +448,12 @@ def main():
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
+        out_path = Path(args.output) if args.output is not None else None
         retrieve(
             Path(
                 args.path),
             args.grid,
-            args.output,
+            out_path,
             args.show,
             args.include,
             args.exclude)
