@@ -217,25 +217,21 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
         if rows_per_model.empty:
             continue
 
-        model = MODELS[model_name]
-        is_regression = isinstance(model, RegressionModel)
-
         # Select relevant grid
         inner_frames = []
         for params in ParameterGrid(grid[model_name]):
             param_hash = hash(params)
-            print(params, param_hash)
             df_ = rows_per_model[rows_per_model["param_hash"] == param_hash]
             inner_frames.append(df_)
 
         # Select best args
         df_ = pd.concat(inner_frames, ignore_index=True)
-
-        if is_regression:
-            idx = df_.groupby(['model', 'n'])['r2_val'].idxmax()
+        model = MODELS[model_name]
+        if isinstance(model, RegressionModel):
+            idx = df_.groupby(['model', 'n', 's'])['r2_val'].idxmax()
             df_ = df_.loc[idx]
         else:
-            idx = df_.groupby(['model', 'n'])['acc_val'].idxmax()
+            idx = df_.groupby(['model', 'n', 's'])['acc_val'].idxmax()
             df_ = df_.loc[idx]
 
         df_.reset_index(drop=True, inplace=True)
@@ -245,7 +241,7 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
     sc_df.reset_index(inplace=True, drop=True)
 
     root_path = Path("plots") / path.stem if output is None else output
-    root_path.mkdir(exist_ok=True)
+    root_path.mkdir(exist_ok=True, parents=True)
 
     sc_df.to_csv(root_path / "scores.csv", index=False)
 

@@ -15,6 +15,7 @@ pylab.rc('font', family='serif', serif='Times')
 pylab.rc('xtick', labelsize=8)
 pylab.rc('ytick', labelsize=8)
 pylab.rc('axes', labelsize=8)
+sns.set_theme()
 
 def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = False):
     model_names = df["model"].unique()
@@ -72,7 +73,7 @@ def sc_plot(root: Path, df: pd.DataFrame, show: bool = False):
     palette = sns.xkcd_palette(palette)
     legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
 
-    ax = sns.lineplot(x='n', y='acc_test', hue='model', data=df, ci='sd', palette=palette, ax=ax, legend=False)
+    ax = sns.lineplot(x='n', y='acc_test', hue='model', data=df, ci='sd', err_style='bars', palette=palette, ax=ax, legend=False)
     ax.set_ylabel('Accuracy')
     ax.set_xlabel('Sample Size')
     #ax.set_xticks(ticks=list(np.arange(len(ticks))), labels=list(df.n.unique()))
