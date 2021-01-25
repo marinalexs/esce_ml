@@ -4,6 +4,7 @@ from esce.vis import hp_plot, sc_plot
 from esce.sampling import split_grid
 from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
 from esce.data import DATA
+from esce.util import hash_dict
 import argparse
 from pathlib import Path
 from typing import List, Optional
@@ -17,7 +18,6 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 import h5py
 from sklearn.model_selection import ParameterGrid
-from joblib import hash
 
 import warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -220,7 +220,7 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
         # Select relevant grid
         inner_frames = []
         for params in ParameterGrid(grid[model_name]):
-            param_hash = hash(params)
+            param_hash = hash_dict(params)
             df_ = rows_per_model[rows_per_model["param_hash"] == param_hash]
             inner_frames.append(df_)
 

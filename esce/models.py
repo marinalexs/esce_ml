@@ -5,7 +5,6 @@ from sklearn.svm import SVC, SVR
 from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
-from joblib import hash
 import numbers
 import pandas as pd
 import numpy as np
@@ -19,10 +18,11 @@ import pickle
 from scipy.spatial.distance import pdist
 from pkg_resources import get_distribution
 
-from esce.util import cached
+from esce.util import hash_dict
 from sklearn.metrics import f1_score, accuracy_score, r2_score, mean_absolute_error, mean_squared_error
 import h5py
 import hdf5plugin
+import joblib
 
 class KernelType(Enum):
     LINEAR = 1
@@ -33,7 +33,7 @@ class KernelType(Enum):
 GRAM_PATH = Path("cache/gram.h5")
 
 def get_gram_triu_key(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
-    return f"/{hash(x)}/{kernel}_{gamma}_{coef0}_{degree}"
+    return f"/{joblib.hash(x)}/{kernel}_{gamma}_{coef0}_{degree}"
 
 def probe_gram_triu(x, kernel=KernelType.LINEAR, gamma=0, coef0=0, degree=0):
     key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
@@ -225,6 +225,7 @@ def setup_cache_file():
             v = get_distribution("esce").version
             f.attrs["version"] = v
 
+
 def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     columns = ["model","n","s","params","param_hash",
         "acc_val","acc_test","f1_val","f1_test",
@@ -246,7 +247,7 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
 
         for model_name, model in models.items():
             for params in model.order(ParameterGrid(grid[model_name])):
-                param_hash = hash(params)
+                param_hash = hash_dict(params)
 
                 # For the n splis, only select n_seeds
                 for n in splits:
