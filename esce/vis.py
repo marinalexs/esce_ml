@@ -17,7 +17,7 @@ pylab.rc('ytick', labelsize=8)
 pylab.rc('axes', labelsize=8)
 sns.set_theme()
 
-def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, Dict[str, np.ndarray]], show: bool = False, target: str = "acc_val") -> None:
+def hp_plot(root: Path, title: str, df: pd.DataFrame, grid: Dict[str, Dict[str, np.ndarray]], show: bool = False, target: str = "acc_val") -> None:
     model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
@@ -57,6 +57,7 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, Dict[str, np.ndarray]]
             ax1.set_xlabel(param_name)
 
         fig.subplots_adjust(bottom=0.2)
+        pylab.plt.figtext(.5,.9,title, fontsize=10, ha='center')
 
         pylab.plt.suptitle(MODEL_NAMES[model_name])
         pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
@@ -66,7 +67,7 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, Dict[str, np.ndarray]]
     
     pylab.plt.close("all")
 
-def sc_plot(root: Path, df: pd.DataFrame, show: bool = False) -> None:
+def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> None:
     fig, ax = pylab.subplots(1, 1, dpi=200)
     models = list(df["model"].unique())
     ticks = df["n"].unique()
@@ -93,6 +94,7 @@ def sc_plot(root: Path, df: pd.DataFrame, show: bool = False) -> None:
 
     fig.subplots_adjust(bottom=0.3)
 
+    pylab.plt.title(title, y=1.05, fontsize=11)
     pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
     fig.savefig(root / 'sc_plot.png')
     if show:

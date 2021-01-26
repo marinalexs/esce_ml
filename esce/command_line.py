@@ -247,14 +247,14 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
 
     show_hp = show == "all" or show == "hp"
     show_sc = show == "all" or show == "sc"
-    hp_plot(root_path, df, grid, show_hp)
+    hp_plot(root_path, path.stem, df, grid, show_hp)
 
     regr_missing = sc_df['acc_val'].isnull()
     sc_df.loc[regr_missing, 'acc_val'] = np.max(
         sc_df[regr_missing]['r2_val'], 0)
     sc_df.loc[regr_missing, 'acc_test'] = np.max(
         sc_df[regr_missing]['r2_test'], 0)
-    sc_plot(root_path, sc_df, show_sc)
+    sc_plot(root_path, path.stem, sc_df, show_sc)
 
 
 def main():
