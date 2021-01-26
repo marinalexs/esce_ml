@@ -57,10 +57,10 @@ def hp_plot(root: Path, title: str, df: pd.DataFrame, grid: Dict[str, Dict[str, 
             ax1.set_xlabel(param_name)
 
         fig.subplots_adjust(bottom=0.2)
-        pylab.plt.figtext(.5,.9,title, fontsize=10, ha='center')
+        pylab.plt.figtext(.5,.9,title, fontsize=8, ha='center')
 
         pylab.plt.suptitle(MODEL_NAMES[model_name])
-        pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
+        pylab.figlegend(handles=legend, ncol=len(names), fontsize=8, loc='lower center', frameon=False)
         fig.savefig(root / f'hp_{model_name}.png')
         if show:
             pylab.plt.show()
@@ -94,7 +94,8 @@ def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> Non
 
     fig.subplots_adjust(bottom=0.3)
 
-    pylab.plt.title(title, y=1.05, fontsize=11)
+    pylab.plt.suptitle("Sample scores")
+    pylab.plt.title(title, y=1.0, fontsize=8)
     pylab.figlegend(handles=legend, ncol=2, fontsize=8, loc='lower center', frameon=False)
     fig.savefig(root / 'sc_plot.png')
     if show:
