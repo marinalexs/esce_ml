@@ -17,7 +17,7 @@ pylab.rc('ytick', labelsize=8)
 pylab.rc('axes', labelsize=8)
 sns.set_theme()
 
-def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = False):
+def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, Dict[str, np.ndarray]], show: bool = False, target: str = "acc_val") -> None:
     model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
@@ -30,6 +30,9 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = Fa
         if plots_per_model[model_name] == 0:
             continue
 
+        idx = df_.groupby(["model", "n", "s"])[target].idxmax()
+        df_ = df_.loc[idx]
+
         names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
         legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
@@ -39,7 +42,7 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = Fa
             ax_ = ax[0,i]
             
             # Create small table, infer type back
-            tmp = df_[["n", "acc_test"]].copy()
+            tmp = df_[["n", target]].copy()
             tmp[param_name] = df_["params"].apply(lambda x: ast.literal_eval(x)[param_name])
             tmp.infer_objects()
 
@@ -49,7 +52,7 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = Fa
                 param_name = "log " + param_name
                 tmp[param_name] = log_param
 
-            ax1 = sns.scatterplot(x=param_name, y='acc_test', hue='n', data=tmp, ax=ax_, ci='sd', palette=palette, legend=False)
+            ax1 = sns.scatterplot(x=param_name, y=target, hue='n', data=tmp, ax=ax_, ci='sd', palette=palette, legend=False)
             ax1.set_ylabel("Accuracy")
             ax1.set_xlabel(param_name)
 
@@ -63,7 +66,7 @@ def hp_plot(root: Path, df: pd.DataFrame, grid: Dict[str, dict], show: bool = Fa
     
     pylab.plt.close("all")
 
-def sc_plot(root: Path, df: pd.DataFrame, show: bool = False):
+def sc_plot(root: Path, df: pd.DataFrame, show: bool = False) -> None:
     fig, ax = pylab.subplots(1, 1, dpi=200)
     models = list(df["model"].unique())
     ticks = df["n"].unique()

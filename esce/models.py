@@ -239,7 +239,7 @@ def score_splits(outfile, x, y, models, grid, splits, seeds, warm_start=False):
     else:
         with outfile.open("w") as f:
             f.write(','.join(columns)+"\n")
-        df = pd.read_csv(outfile)
+        df = pd.read_csv(outfile, index_col=False)
 
     # Append results to csv file
     with outfile.open("a") as f:

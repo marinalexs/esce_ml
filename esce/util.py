@@ -6,11 +6,13 @@ import requests
 from tqdm import tqdm
 import json
 import yaml
+from typing import Dict, Any
+import numpy as np
 
-def hash_dict(x):
+def hash_dict(x: Dict[Any, Any]) -> str:
     return hashlib.md5(json.dumps(x, sort_keys=True).encode('utf-8')).hexdigest()
 
-def load_grid_file(grid_name):
+def load_grid_file(grid_name: str) -> Dict[str, Dict[str, np.ndarray]]:
     """
     Loads a grid from a YAML file.
     Grid YAML files may contain multiple grids.
