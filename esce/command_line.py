@@ -21,10 +21,16 @@ from sklearn.model_selection import ParameterGrid
 
 import warnings
 from sklearn.exceptions import ConvergenceWarning
-warnings.simplefilter(action='ignore', category=ConvergenceWarning)
+
+warnings.simplefilter(action="ignore", category=ConvergenceWarning)
 
 
-def precomp(data_path, grid_name="default", include=None, exclude=None):
+def precomp(
+    data_path: Path,
+    grid_name: str = "default",
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+) -> None:
     """
     Precomputes the kernel gram matrices for the given models.
 
@@ -47,8 +53,18 @@ def precomp(data_path, grid_name="default", include=None, exclude=None):
     precompute_kernels(x, models, grid)
 
 
-def run(data_path: Path, label: str, split_path: Path, seeds: List[int], samples: List[int], grid_name: str = "default",
-        warm_start: bool = False, include: List[str] = None, exclude: List[str] = None, output: Optional[str] = None):
+def run(
+    data_path: Path,
+    label: str,
+    split_path: Path,
+    seeds: List[int],
+    samples: List[int],
+    grid_name: str = "default",
+    warm_start: bool = False,
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+    output: Optional[str] = None,
+) -> None:
     """
     Performs sample complexity computation.
 
@@ -66,12 +82,14 @@ def run(data_path: Path, label: str, split_path: Path, seeds: List[int], samples
     found_seeds, splits = load_split(split_path)
     if found_seeds < len(seeds):
         raise ValueError(
-            f"More seeds selected than available, found {found_seeds} seeds.")
+            f"More seeds selected than available, found {found_seeds} seeds."
+        )
 
     for seed in seeds:
         if seed >= found_seeds or seed < 0:
             raise ValueError(
-                f"Invalid seed {seed}. Seed must be in [0,{found_seeds-1}].")
+                f"Invalid seed {seed}. Seed must be in [0,{found_seeds-1}]."
+            )
 
     if len(seeds) == 0:
         seeds = list(range(found_seeds))
@@ -89,13 +107,14 @@ def run(data_path: Path, label: str, split_path: Path, seeds: List[int], samples
     if exclude is not None:
         models = {k: v for k, v in models.items() if k not in exclude}
 
-    seed_str = '_'.join(map(str, seeds))
-    sample_str = '_'.join(map(str, splits.keys()))
+    seed_str = "_".join(map(str, seeds))
+    sample_str = "_".join(map(str, splits.keys()))
 
     grid = load_grid(grid_name)
     if output is None:
-        outfile = Path("results") / \
-            f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
+        outfile = (
+            Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
+        )
         outfile.parent.mkdir(parents=True, exist_ok=True)
     else:
         outfile = Path(output)
@@ -103,8 +122,13 @@ def run(data_path: Path, label: str, split_path: Path, seeds: List[int], samples
     score_splits(outfile, x, y, models, grid, splits, seeds, warm_start)
 
 
-def datagen(dataset: str, method: Optional[str], n_components: int,
-            noise: Optional[float] = None, fmt: str = "hdf5"):
+def datagen(
+    dataset: str,
+    method: Optional[str],
+    n_components: int,
+    noise: Optional[float] = None,
+    fmt: str = "hdf5",
+) -> None:
     """
     Generates a data file.
     The file will be placed in the 'data' directory.
@@ -118,22 +142,18 @@ def datagen(dataset: str, method: Optional[str], n_components: int,
     """
 
     method_str = f"_{method}{n_components}" if method is not None else ""
-    noise_str = "_n" + str(noise).replace(".",
-                                          "_") if noise is not None else ""
+    noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
     path = Path("data") / f"{dataset}{method_str}{noise_str}"
     if dataset not in DATA:
         raise ValueError("Unknown dataset")
 
     x, y = DATA[dataset]()
-    if method == 'pca':
-        x = PCA(
-            n_components=n_components,
-            whiten=True,
-            random_state=0).fit_transform(x)
-    elif method == 'rp':
+    if method == "pca":
+        x = PCA(n_components=n_components, whiten=True, random_state=0).fit_transform(x)
+    elif method == "rp":
         x = GaussianRandomProjection(
-            n_components=n_components,
-            random_state=0).fit_transform(x)
+            n_components=n_components, random_state=0
+        ).fit_transform(x)
     elif method == "tsne":
         x = TSNE(n_components=n_components, random_state=0).fit_transform(x)
     x = StandardScaler().fit_transform(x)
@@ -144,7 +164,7 @@ def datagen(dataset: str, method: Optional[str], n_components: int,
     path.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "hdf5":
         path = path.with_suffix(".h5")
-        with h5py.File(path, 'w') as f:
+        with h5py.File(path, "w") as f:
             f.create_dataset("/data", x.shape, data=x)
             if isinstance(y, dict):
                 for k, v in y.items():
@@ -166,7 +186,7 @@ def datagen(dataset: str, method: Optional[str], n_components: int,
     print(f"Generated {dataset} data file '{path}'.")
 
 
-def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]):
+def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> None:
     """
     Generates a split file.
     The file will be placed in the 'splits' directory.
@@ -177,9 +197,8 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]):
         n_seeds: Number of seeds to use in train_test_split
         samples: List of sample counts
     """
-    sample_str = '_'.join(map(str, samples))
-    path = Path("splits") / \
-        f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
+    sample_str = "_".join(map(str, samples))
+    path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
 
     _, y = load_dataset(data_path, label)
@@ -190,7 +209,14 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]):
     print(f"Generated split file '{path}'.")
 
 
-def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=None, include=None, exclude=None):
+def retrieve(
+    path: Path,
+    grid_name: str,
+    output: Optional[Path] = None,
+    show: Optional[str] = None,
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+) -> None:
     """
     Retrieves the results, generates plots and the final accuracy scores.
 
@@ -203,7 +229,7 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
     grid = load_grid(grid_name)
     df = pd.read_csv(path, index_col=False)
 
-    model_names = grid.keys()
+    model_names = set(grid.keys())
     if include is not None:
         model_names = {k for k in model_names if k in include}
 
@@ -228,10 +254,10 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
         df_ = pd.concat(inner_frames, ignore_index=True)
         model = MODELS[model_name]
         if isinstance(model, RegressionModel):
-            idx = df_.groupby(['model', 'n', 's'])['r2_val'].idxmax()
+            idx = df_.groupby(["model", "n", "s"])["r2_val"].idxmax()
             df_ = df_.loc[idx]
         else:
-            idx = df_.groupby(['model', 'n', 's'])['acc_val'].idxmax()
+            idx = df_.groupby(["model", "n", "s"])["acc_val"].idxmax()
             df_ = df_.loc[idx]
 
         df_.reset_index(drop=True, inplace=True)
@@ -249,181 +275,134 @@ def retrieve(path: Path, grid_name: str, output: Optional[Path] = None, show=Non
     show_sc = show == "all" or show == "sc"
     hp_plot(root_path, path.stem, df, grid, show_hp)
 
-    regr_missing = sc_df['acc_val'].isnull()
-    sc_df.loc[regr_missing, 'acc_val'] = np.max(
-        sc_df[regr_missing]['r2_val'], 0)
-    sc_df.loc[regr_missing, 'acc_test'] = np.max(
-        sc_df[regr_missing]['r2_test'], 0)
+    regr_missing = sc_df["acc_val"].isnull()
+    sc_df.loc[regr_missing, "acc_val"] = np.max(sc_df[regr_missing]["r2_val"], 0)
+    sc_df.loc[regr_missing, "acc_test"] = np.max(sc_df[regr_missing]["r2_test"], 0)
     sc_plot(root_path, path.stem, sc_df, show_sc)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(help='functions')
+    subparsers = parser.add_subparsers(help="functions")
     subparsers.required = True
-    subparsers.dest = 'command'
+    subparsers.dest = "command"
     run_parser = subparsers.add_parser(
-        "run", help="perform estimation on dataset and split")
-    datagen_parser = subparsers.add_parser(
-        "datagen", help="generate dataset file")
-    splitgen_parser = subparsers.add_parser(
-        "splitgen", help="generate split file")
-    retrieve_parser = subparsers.add_parser(
-        "retrieve", help="retrieve results")
-    precomp_parser = subparsers.add_parser(
-        "precomp", help="precompute kernel matrices")
+        "run", help="perform estimation on dataset and split"
+    )
+    datagen_parser = subparsers.add_parser("datagen", help="generate dataset file")
+    splitgen_parser = subparsers.add_parser("splitgen", help="generate split file")
+    retrieve_parser = subparsers.add_parser("retrieve", help="retrieve results")
+    precomp_parser = subparsers.add_parser("precomp", help="precompute kernel matrices")
     parser.set_defaults(
-        run=False,
-        retrieve=False,
-        datagen=False,
-        splitgen=False,
-        precomp=False)
+        run=False, retrieve=False, datagen=False, splitgen=False, precomp=False
+    )
 
-    run_parser.add_argument('data', type=str, help="dataset file to use")
+    run_parser.add_argument("data", type=str, help="dataset file to use")
     run_parser.add_argument(
-        '--label',
-        default="default",
-        type=str,
-        help="which label to use")
+        "--label", default="default", type=str, help="which label to use"
+    )
     run_parser.add_argument(
-        '--split',
-        type=str,
-        help="split file to use",
-        required=True)
+        "--split", type=str, help="split file to use", required=True
+    )
     run_parser.add_argument(
-        '--seeds',
-        nargs="+",
-        help="seeds to use",
-        default=[],
-        type=int)
+        "--seeds", nargs="+", help="seeds to use", default=[], type=int
+    )
     run_parser.add_argument(
-        '--samples',
-        nargs="+",
-        help="select a subset of samples",
-        default=[],
-        type=int)
+        "--samples", nargs="+", help="select a subset of samples", default=[], type=int
+    )
+    run_parser.add_argument("--grid", type=str, help="grid to use", default="default")
+    run_parser.add_argument("--warm", action="store_true", help="warm start")
     run_parser.add_argument(
-        '--grid',
-        type=str,
-        help="grid to use",
-        default="default")
-    run_parser.add_argument('--warm', action="store_true", help="warm start")
-    run_parser.add_argument(
-        '--include',
+        "--include",
         nargs="+",
         help="include only the specified models",
         default=None,
-        type=str)
+        type=str,
+    )
     run_parser.add_argument(
-        '--exclude',
+        "--exclude",
         nargs="+",
         help="exclude models from computation",
         default=None,
-        type=str)
-    run_parser.add_argument(
-        '--output',
         type=str,
-        help="write to specified file")
+    )
+    run_parser.add_argument("--output", type=str, help="write to specified file")
     run_parser.set_defaults(run=True)
 
-    precomp_parser.add_argument('data', type=str, help="dataset file to use")
+    precomp_parser.add_argument("data", type=str, help="dataset file to use")
     precomp_parser.add_argument(
-        '--grid',
-        type=str,
-        help="grid to use",
-        default="default")
+        "--grid", type=str, help="grid to use", default="default"
+    )
     precomp_parser.add_argument(
-        '--include',
-        nargs="+",
-        help="include only the specified models",
-        default=None)
+        "--include", nargs="+", help="include only the specified models", default=None
+    )
     precomp_parser.add_argument(
-        '--exclude',
-        nargs="+",
-        help="exclude models from computation",
-        default=None)
+        "--exclude", nargs="+", help="exclude models from computation", default=None
+    )
     precomp_parser.set_defaults(precomp=True)
 
     datagen_parser.add_argument(
-        'dataset',
-        default='mnist',
+        "dataset",
+        default="mnist",
         type=str,
-        help="dataset to use (mnist,fashion,superconductivity,higgs)")
+        help="dataset to use (mnist,fashion,superconductivity,higgs)",
+    )
     datagen_parser.add_argument(
-        '--method',
+        "--method",
         default=None,
         type=str,
-        help="dimensionality reduction method (pca,rp,tsne)")
+        help="dimensionality reduction method (pca,rp,tsne)",
+    )
     datagen_parser.add_argument(
-        '--components',
+        "--components",
         default=2,
         type=int,
-        help="number of components used in dimensionality reduction")
+        help="number of components used in dimensionality reduction",
+    )
     datagen_parser.add_argument(
-        '--noise',
-        default=None,
-        type=float,
-        help="whether or not to add noise")
+        "--noise", default=None, type=float, help="whether or not to add noise"
+    )
     datagen_parser.add_argument(
-        '--format',
-        default="hdf5",
-        type=str,
-        help="output file format (hdf5,pkl)")
+        "--format", default="hdf5", type=str, help="output file format (hdf5,pkl)"
+    )
     datagen_parser.set_defaults(datagen=True)
 
     splitgen_parser.add_argument("data", type=str, help="dataset file to use")
     splitgen_parser.add_argument(
-        "--label",
-        default="default",
-        type=str,
-        help="label to use")
+        "--label", default="default", type=str, help="label to use"
+    )
     splitgen_parser.add_argument(
-        "--seeds",
-        type=int,
-        help="number of seeds to use",
-        required=True)
+        "--seeds", type=int, help="number of seeds to use", required=True
+    )
     splitgen_parser.add_argument(
-        "--samples",
-        nargs="+",
-        help="list number of samples",
-        required=True,
-        type=int)
+        "--samples", nargs="+", help="list number of samples", required=True, type=int
+    )
     splitgen_parser.set_defaults(splitgen=True)
 
     retrieve_parser.add_argument(
-        'path',
-        type=str,
-        help="file/directory containing the results to retrieve")
+        "path", type=str, help="file/directory containing the results to retrieve"
+    )
     retrieve_parser.add_argument(
-        '--grid',
-        type=str,
-        help="grid to analyse",
-        default="default")
+        "--grid", type=str, help="grid to analyse", default="default"
+    )
     retrieve_parser.add_argument(
-        '--show',
-        type=str,
-        help="show results (all/hp/sc)",
-        default=None)
+        "--show", type=str, help="show results (all/hp/sc)", default=None
+    )
     retrieve_parser.add_argument(
-        '--output',
-        type=str,
-        help="output file location",
-        default=None)
+        "--output", type=str, help="output file location", default=None
+    )
     retrieve_parser.add_argument(
-        '--include',
-        nargs="+",
-        help="include only the specified models",
-        default=None)
+        "--include", nargs="+", help="include only the specified models", default=None
+    )
     retrieve_parser.add_argument(
-        '--exclude',
-        nargs="+",
-        help="exclude models from computation",
-        default=None)
+        "--exclude", nargs="+", help="exclude models from computation", default=None
+    )
     retrieve_parser.set_defaults(retrieve=True)
     args = parser.parse_args()
 
     if args.run:
-        run(Path(args.data),
+        run(
+            Path(args.data),
             args.label,
             Path(args.split),
             args.seeds,
@@ -432,29 +411,20 @@ def main():
             args.warm,
             args.include,
             args.exclude,
-            args.output)
+            args.output,
+        )
     elif args.datagen:
-        datagen(
-            args.dataset,
-            args.method,
-            args.components,
-            args.noise,
-            args.format)
+        datagen(args.dataset, args.method, args.components, args.noise, args.format)
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:
         out_path = Path(args.output) if args.output is not None else None
         retrieve(
-            Path(
-                args.path),
-            args.grid,
-            out_path,
-            args.show,
-            args.include,
-            args.exclude)
+            Path(args.path), args.grid, out_path, args.show, args.include, args.exclude
+        )
     elif args.precomp:
         precomp(Path(args.data), args.grid, args.include, args.exclude)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -6,13 +6,15 @@ import requests
 from tqdm import tqdm
 import json
 import yaml
-from typing import Dict, Any
+from typing import Dict, Any, Union, Tuple, Optional
 import numpy as np
 
-def hash_dict(x: Dict[Any, Any]) -> str:
-    return hashlib.md5(json.dumps(x, sort_keys=True).encode('utf-8')).hexdigest()
 
-def load_grid_file(grid_name: str) -> Dict[str, Dict[str, np.ndarray]]:
+def hash_dict(x: Dict[Any, Any]) -> str:
+    return hashlib.md5(json.dumps(x, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def load_grid_file(grid_name: str) -> Any:
     """
     Loads a grid from a YAML file.
     Grid YAML files may contain multiple grids.
@@ -25,10 +27,11 @@ def load_grid_file(grid_name: str) -> Dict[str, Dict[str, np.ndarray]]:
     Returns:
         Grid dictionary
     """
+    grid_key = None
     if "@" in grid_name:
         grid_path, grid_key = grid_name.split("@")
     else:
-        grid_path, grid_key = grid_name, None
+        grid_path = grid_name
 
     grid_file = Path(grid_path)
     if grid_file.is_file():
@@ -40,7 +43,10 @@ def load_grid_file(grid_name: str) -> Dict[str, Dict[str, np.ndarray]]:
     else:
         raise ValueError("Invalid grid file path")
 
-def load_dataset(data_path, label=None):
+
+def load_dataset(
+    data_path: Path, label: Optional[str] = None
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Loads data and label from data file
 
@@ -67,9 +73,10 @@ def load_dataset(data_path, label=None):
             y = d[f"label_{label}"]
     else:
         raise ValueError("Unknown file format")
-    return x,y
+    return x, y
 
-def load_split(split_path):
+
+def load_split(split_path: Path) -> Any:
     """
     Loads a split file from a path.
 
@@ -80,10 +87,11 @@ def load_split(split_path):
         Tuple consisting of a seed and the splits
     """
 
-    with open(split_path, "rb") as f:
+    with split_path.open("rb") as f:
         return pickle.load(f)
 
-def download_file(url, path):
+
+def download_file(url: str, path: Path) -> None:
     """
     Download the URL and save it in the given path.
 
@@ -92,8 +100,8 @@ def download_file(url, path):
         path: Path to store file to
     """
     resp = requests.get(url, stream=True)
-    total = int(resp.headers.get('content-length', 0))
-    bar = tqdm(total=total, unit='iB', unit_scale=True)
+    total = int(resp.headers.get("content-length", 0))
+    bar = tqdm(total=total, unit="iB", unit_scale=True)
     block_size = 1024
     with path.open("wb") as f:
         for data in resp.iter_content(block_size):
@@ -102,4 +110,3 @@ def download_file(url, path):
     bar.close()
     if total != 0 and bar.n != total:
         raise ValueError
-

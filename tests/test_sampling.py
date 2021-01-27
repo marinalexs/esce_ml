@@ -12,22 +12,30 @@ from sklearn.datasets import make_classification
 import warnings
 import pandas as pd
 
+
 class TestSampling(TestCase):
     def test_splits(self):
-        y = np.random.choice([0,1], size=(1000,), p=[2./3, 1./3])
+        y = np.random.choice([0, 1], size=(1000,), p=[2.0 / 3, 1.0 / 3])
         num_seeds = 10
-        samples = (50,100,200)
+        samples = (50, 100, 200)
 
         splits = split_grid(y, num_seeds, samples, n_val=10, n_test=10)
         self.assertTrue(len(splits) == len(samples))
         for s in samples:
             self.assertTrue(len(splits[s]) == num_seeds)
 
+
 class TestExample(TestCase):
     def test_example(self):
         warnings.simplefilter("ignore", category=DeprecationWarning)
-        X, y = make_classification(n_samples=1000, n_features=2, n_redundant=0,
-                n_informative=1, n_clusters_per_class=1, random_state=0)
+        X, y = make_classification(
+            n_samples=1000,
+            n_features=2,
+            n_redundant=0,
+            n_informative=1,
+            n_clusters_per_class=1,
+            random_state=0,
+        )
         n_seeds = 10
         splits = split_grid(y, n_seeds=n_seeds, n_val=100, n_test=100)
         model = MODELS["logit"]
@@ -42,4 +50,3 @@ class TestExample(TestCase):
                     scores.append(score)
         df = pd.DataFrame(scores)
         self.assertTrue(df["acc_test"].mean() > 0.95)
-        
