@@ -126,7 +126,7 @@ def datagen(
     dataset: str,
     method: Optional[str],
     n_components: int,
-    noise: Optional[float] = None,
+    noise: float = 0,
     lbl_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
@@ -143,7 +143,7 @@ def datagen(
     """
 
     method_str = f"_{method}{n_components}" if method is not None else ""
-    noise_str = "_n" + flt2str(noise) if noise is not None else ""
+    noise_str = "_n" + flt2str(noise)
     path = Path("data") / f"{dataset}{method_str}{noise_str}"
     if dataset not in DATA:
         raise ValueError("Unknown dataset")
@@ -159,7 +159,7 @@ def datagen(
         x = TSNE(n_components=n_components, random_state=0).fit_transform(x)
     x = StandardScaler().fit_transform(x)
 
-    if noise is not None:
+    if noise > 0:
         x = (x + noise * np.random.randn(*x.shape)) / np.sqrt(1 + noise ** 2)
 
     # Generate default label and label noise
@@ -362,7 +362,7 @@ def main() -> None:
         help="number of components used in dimensionality reduction",
     )
     datagen_parser.add_argument(
-        "--noise", default=None, type=float, help="whether or not to add noise"
+        "--noise", default=0, type=float, help="whether or not to add noise"
     )
     datagen_parser.add_argument(
         "--lbl_noise",
