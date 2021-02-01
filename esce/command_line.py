@@ -126,7 +126,7 @@ def datagen(
     dataset: str,
     method: Optional[str],
     n_components: int,
-    noise: float = 0,
+    noise: float = 0.0,
     lbl_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
@@ -362,7 +362,7 @@ def main() -> None:
         help="number of components used in dimensionality reduction",
     )
     datagen_parser.add_argument(
-        "--noise", default=0, type=float, help="whether or not to add noise"
+        "--noise", default=0.0, type=float, help="whether or not to add noise"
     )
     datagen_parser.add_argument(
         "--lbl_noise",
