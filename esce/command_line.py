@@ -1,4 +1,4 @@
-from esce.util import load_dataset, load_split
+from esce.util import load_dataset, load_split, flip, flt2str
 from esce.grid import GRID, load_grid
 from esce.vis import hp_plot, sc_plot
 from esce.sampling import split_grid
@@ -127,6 +127,7 @@ def datagen(
     method: Optional[str],
     n_components: int,
     noise: Optional[float] = None,
+    lbl_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
     """
@@ -142,7 +143,7 @@ def datagen(
     """
 
     method_str = f"_{method}{n_components}" if method is not None else ""
-    noise_str = "_n" + str(noise).replace(".", "_") if noise is not None else ""
+    noise_str = "_n" + flt2str(noise) if noise is not None else ""
     path = Path("data") / f"{dataset}{method_str}{noise_str}"
     if dataset not in DATA:
         raise ValueError("Unknown dataset")
@@ -161,25 +162,26 @@ def datagen(
     if noise is not None:
         x = (x + noise * np.random.randn(*x.shape)) / np.sqrt(1 + noise ** 2)
 
+    # Generate default label and label noise
+    labels = {"default": y}
+    if lbl_noise is not None:
+        for lbl in lbl_noise:
+            labels[f"noise_{flt2str(lbl)}"] = flip(y, lbl, 0)
+
+    # Write data and labels to hdf5 or pkl
     path.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "hdf5":
         path = path.with_suffix(".h5")
         with h5py.File(path, "w") as f:
             f.create_dataset("/data", x.shape, data=x)
-            if isinstance(y, dict):
-                for k, v in y.items():
-                    f.create_dataset(f"/labels/{k}", v.shape, data=v)
-            else:
-                f.create_dataset("/labels/default", y.shape, data=y)
+            for k, v in labels.items():
+                f.create_dataset(f"/labels/{k}", v.shape, data=v)
     elif fmt == "pkl":
         path = path.with_suffix(".pkl")
         with path.open("wb") as f:
             d = {"data": x}
-            if isinstance(y, dict):
-                for k, v in y.items():
-                    d[f"label_{k}"] = v
-            else:
-                d["label_default"] = y
+            for k, v in labels.items():
+                d[f"label_{k}"] = v
             pickle.dump(d, f)
     else:
         raise ValueError("Unknown file format")
@@ -206,7 +208,7 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> N
 
     with path.open("wb") as f:
         pickle.dump((n_seeds, splits), f)
-    print(f"Generated split file '{path}'.")
+    print(f"Generated split file '{path}'")
 
 
 def retrieve(
@@ -363,6 +365,13 @@ def main() -> None:
         "--noise", default=None, type=float, help="whether or not to add noise"
     )
     datagen_parser.add_argument(
+        "--lbl_noise",
+        default=None,
+        nargs="+",
+        type=float,
+        help="add labels with noise given the flip probability",
+    )
+    datagen_parser.add_argument(
         "--format", default="hdf5", type=str, help="output file format (hdf5,pkl)"
     )
     datagen_parser.set_defaults(datagen=True)
@@ -414,7 +423,14 @@ def main() -> None:
             args.output,
         )
     elif args.datagen:
-        datagen(args.dataset, args.method, args.components, args.noise, args.format)
+        datagen(
+            args.dataset,
+            args.method,
+            args.components,
+            args.noise,
+            args.lbl_noise,
+            args.format,
+        )
     elif args.splitgen:
         splitgen(Path(args.data), args.label, args.seeds, args.samples)
     elif args.retrieve:

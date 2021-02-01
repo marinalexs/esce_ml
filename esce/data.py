@@ -19,9 +19,7 @@ def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
     x = x.reshape(len(x), -1)
     x, _, y, _ = train_test_split(x, y, train_size=12000, random_state=0)
     x = StandardScaler().fit_transform(x)
-
-    y2 = y % 2 == 0
-    return x, {"default": y, "binary": y2}
+    return x, y
 
 
 def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:

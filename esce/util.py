@@ -10,6 +10,16 @@ from typing import Dict, Any, Union, Tuple, Optional
 import numpy as np
 
 
+def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
+    np.random.seed(seed)
+    indices = np.random.random(x.shape) < prob
+    return np.logical_xor(x, indices).astype(int)
+
+
+def flt2str(f: float, decimals: int = 4) -> str:
+    return str(round(f, decimals)).replace(".", "#")
+
+
 def hash_dict(x: Dict[Any, Any]) -> str:
     return hashlib.md5(json.dumps(x, sort_keys=True).encode("utf-8")).hexdigest()
 

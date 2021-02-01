@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="esce",
-    version="0.7.2",
+    version="0.8.0",
     author="Alexander Koch",
     author_email="kochalexander@gmx.net",
     description="Empirical Sample Complexity Estimator",
