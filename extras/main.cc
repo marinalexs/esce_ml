@@ -15,14 +15,23 @@ std::vector<float> logrange(const float start, const float stop, const float ste
     return values;
 }
 
-vec rbf_kernel_triu(const fmat& X, const fmat& Y, const float gamma) {
+vec linear_kernel_triu(const fmat& X) {
     fmat XX = sum(square(X), 0);
-    fmat YY = sum(square(Y), 0).t();
-    fmat XY = (2 * X.t())* Y;
+    fmat YY = XX.t();
+    fmat XY = (2 * X.t())* X;
     XX = ones<fmat>(X.n_cols, 1) * XX;
     YY = YY * ones<fmat>(1, X.n_cols);
-    //XX = repmat(XX, X.n_cols, 1);
-    //YY = repmat(YY, 1, X.n_cols);
+    fmat K = XX + YY - XY;
+    auto upper_indices = trimatl_ind(size(K));
+    return conv_to<vec>::from(K(upper_indices));
+}
+
+vec rbf_kernel_triu(const fmat& X, const float gamma) {
+    fmat XX = sum(square(X), 0);
+    fmat YY = XX.t();
+    fmat XY = (2 * X.t())* X;
+    XX = ones<fmat>(X.n_cols, 1) * XX;
+    YY = YY * ones<fmat>(1, X.n_cols);
     fmat D = XX + YY - XY;
     fmat K = exp(D * -gamma);
     auto upper_indices = trimatl_ind(size(K));
@@ -62,10 +71,20 @@ int main(int argc, char** argv) {
     FloatType datatype(PredType::NATIVE_FLOAT);
     file.createGroup("/" + data_hash);
 
+    {
+        auto key = "/" + data_hash + "/KernelType.LINEAR_0_0_0";
+        std::cout << "key: " << key << std::endl;
+        auto triu = linear_kernel_triu(X);
+        hsize_t dim = triu.n_rows;
+        DataSpace dataspace(1, &dim);
+        DataSet dataset = file.createDataSet(key, datatype, dataspace);
+        dataset.write(triu.memptr(), PredType::NATIVE_FLOAT);
+    }
+
     for(auto i = 0; i < gammas.size(); i++) {
         auto key = compute_key(data_hash, gammas[i]);
         std::cout << "key: " << key << std::endl;
-        auto triu = rbf_kernel_triu(X, X, gammas[i]);
+        auto triu = rbf_kernel_triu(X, gammas[i]);
 
         hsize_t dim = triu.n_rows;
         DataSpace dataspace(1, &dim);
