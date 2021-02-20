@@ -47,7 +47,8 @@ def hp_plot(
             df_new[param] = df_new["params"].apply(lambda x: x[param])
             ax = sns.lineplot(param, target, data=df_new, hue="n", legend="full")
             ax.set_xscale("log")
-            pylab.plt.show()
+            if show:
+                pylab.plt.show()
 
         idx = df_.groupby(["model", "n", "s"])[target].idxmax()
         df_ = df_.loc[idx]

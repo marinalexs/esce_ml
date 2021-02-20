@@ -249,7 +249,7 @@ class KernelSVMModel(BaseModel):
 
     def score(self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0, coef0=0, degree=0):  # type: ignore
         gram = self.get_gram(x, (gamma, coef0, degree))
-        model = SVC(C=C, kernel="precomputed", max_iter=1000)
+        model = SVC(C=C, kernel="precomputed", max_iter=10000)
 
         # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
