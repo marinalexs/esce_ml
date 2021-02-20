@@ -23,6 +23,7 @@ from pathlib import Path
 import pickle
 from scipy.spatial.distance import pdist
 from pkg_resources import get_distribution
+from hashlib import md5
 
 from esce.util import hash_dict
 from sklearn.metrics import (
@@ -54,22 +55,7 @@ def get_gram_triu_key(
     coef0: float = 0,
     degree: float = 0,
 ) -> str:
-    return f"/{joblib.hash(x)}/{kernel}_{gamma}_{coef0}_{degree}"
-
-
-def probe_gram_triu(
-    x: np.ndarray,
-    kernel: KernelType = KernelType.LINEAR,
-    gamma: float = 0,
-    coef0: float = 0,
-    degree: float = 0,
-) -> bool:
-    key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
-    if not GRAM_PATH.is_file():
-        return False
-    with h5py.File(GRAM_PATH, "r") as f:
-        return key in f
-
+    return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"
 
 def get_gram_triu(
     x: np.ndarray,
@@ -294,7 +280,12 @@ def precompute_kernels(
                 params = {k: v for k, v in params.items() if k in required}
                 x = x.astype(np.float32)
 
-                if not probe_gram_triu(x, model.kernel, **params):
+                key = get_gram_triu_key(x, model.kernel, **params)
+                print("key:", key)
+                found = False
+                with h5py.File(GRAM_PATH, "r") as f:
+                    found = key in f
+                if not found:
                     get_gram_triu(x, model.kernel, **params)
 
 
