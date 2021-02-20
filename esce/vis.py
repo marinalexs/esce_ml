@@ -38,6 +38,17 @@ def hp_plot(
         if plots_per_model[model_name] == 0:
             continue
 
+        df_new = df_.copy()
+        df_new["params"] = df_["params"].apply(
+                lambda x: ast.literal_eval(x)
+        )
+
+        for param in grid[model_name].keys():
+            df_new[param] = df_new["params"].apply(lambda x: x[param])
+            ax = sns.lineplot(param, target, data=df_new, hue="n", legend="full")
+            ax.set_xscale("log")
+            pylab.plt.show()
+
         idx = df_.groupby(["model", "n", "s"])[target].idxmax()
         df_ = df_.loc[idx]
 
