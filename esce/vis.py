@@ -24,7 +24,7 @@ def hp_plot(
     df: pd.DataFrame,
     grid: Dict[str, Dict[str, np.ndarray]],
     show: bool = False,
-    target: str = "acc_val",
+    target: str = "acc_test",
 ) -> None:
     model_names = df["model"].unique()
     plots_per_model = {}
@@ -43,20 +43,38 @@ def hp_plot(
                 lambda x: ast.literal_eval(x)
         )
 
-        for param in grid[model_name].keys():
-            df_new[param] = df_new["params"].apply(lambda x: x[param])
-            ax = sns.lineplot(param, target, data=df_new, hue="n", legend="full")
-            ax.set_xscale("log")
-            if show:
-                pylab.plt.show()
-
-        idx = df_.groupby(["model", "n", "s"])[target].idxmax()
-        df_ = df_.loc[idx]
-
         names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
         legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
 
+        fig, ax = pylab.subplots(
+            1, plots_per_model[model_name], dpi=200, sharey="row", squeeze=False
+        )
+        for i, param in enumerate(grid[model_name].keys()):
+            ax_ = ax[0, i]
+            df_new[param] = df_new["params"].apply(lambda x: x[param])
+            ax1 = sns.lineplot(x=param, y=target, data=df_new, hue="n", legend=False, ax = ax_, palette=palette)
+            ax1.set_xscale("log")
+            ax1.set_ylabel("Accuracy")
+
+
+        fig.subplots_adjust(bottom=0.2)
+        pylab.plt.figtext(0.5, 0.9, title, fontsize=8, ha="center")
+
+        pylab.plt.suptitle(MODEL_NAMES[model_name])
+        pylab.figlegend(
+            handles=legend,
+            ncol=len(names),
+            fontsize=8,
+            loc="lower center",
+            frameon=False,
+        )
+        fig.savefig(root / "hp_new{model_name}.png")
+        if show:
+            pylab.plt.show()
+
+        idx = df_.groupby(["model", "n", "s"])[target].idxmax()
+        df_ = df_.loc[idx]
         fig, ax = pylab.subplots(
             1, plots_per_model[model_name], dpi=200, sharey="row", squeeze=False
         )

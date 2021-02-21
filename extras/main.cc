@@ -55,6 +55,19 @@ std::string compute_key(const std::string& data_hash, const float gamma) {
     return "/" + data_hash + "/KernelType.RBF_" + buffer + "_0_0";
 }
 
+int write(const H5File& file, const std::string& key, const vec& data) {
+    hsize_t dim = data.n_rows;
+    DataSpace dataspace(1, &dim);
+    FloatType datatype(PredType::NATIVE_FLOAT);
+    //hsize_t cdim = 512;
+    //DSetCreatPropList proplist;
+    //proplist.setChunk(1, &cdim);
+    //proplist.setDeflate(6);
+    DataSet dataset = file.createDataSet(key, datatype, dataspace);
+    dataset.write(data.memptr(), PredType::NATIVE_FLOAT);
+    return 0;
+}
+
 int main(int argc, char** argv) {
     if(argc < 3) {
         std::cout << "usage:" << std::endl;
@@ -68,29 +81,20 @@ int main(int argc, char** argv) {
     auto data_hash = compute_hash(X);
     auto gammas = logrange(-25, 5, step, 2);
     H5File file("gram.h5", H5F_ACC_TRUNC);
-    FloatType datatype(PredType::NATIVE_FLOAT);
     file.createGroup("/" + data_hash);
 
     {
         auto key = "/" + data_hash + "/KernelType.LINEAR_0_0_0";
         std::cout << "key: " << key << std::endl;
         auto triu = linear_kernel_triu(X);
-        hsize_t dim = triu.n_rows;
-        DataSpace dataspace(1, &dim);
-        DataSet dataset = file.createDataSet(key, datatype, dataspace);
-        dataset.write(triu.memptr(), PredType::NATIVE_FLOAT);
+        write(file, key, triu);
     }
 
     for(auto i = 0; i < gammas.size(); i++) {
         auto key = compute_key(data_hash, gammas[i]);
         std::cout << "key: " << key << std::endl;
         auto triu = rbf_kernel_triu(X, gammas[i]);
-
-        hsize_t dim = triu.n_rows;
-        DataSpace dataspace(1, &dim);
-
-        DataSet dataset = file.createDataSet(key, datatype, dataspace);
-        dataset.write(triu.memptr(), PredType::NATIVE_FLOAT);
+        write(file, key, triu);
     }
 
     return 0;
