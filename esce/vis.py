@@ -54,7 +54,7 @@ def hp_plot(
             ax_ = ax[0, i]
             df_new[param] = df_new["params"].apply(lambda x: x[param])
             ax1 = sns.lineplot(x=param, y=target, data=df_new, hue="n", legend=False, ax = ax_, palette=palette)
-            ax1.set_xscale("log")
+            ax1.set_xscale("log", base=2)
             ax1.set_ylabel("Accuracy")
 
 
@@ -69,7 +69,7 @@ def hp_plot(
             loc="lower center",
             frameon=False,
         )
-        fig.savefig(root / "hp_new{model_name}.png")
+        fig.savefig(root / f"hp_new_{model_name}.png")
         if show:
             pylab.plt.show()
 
