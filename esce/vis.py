@@ -50,10 +50,14 @@ def hp_plot(
         fig, ax = pylab.subplots(
             1, plots_per_model[model_name], dpi=200, sharey="row", squeeze=False
         )
+
         for i, param in enumerate(grid[model_name].keys()):
             ax_ = ax[0, i]
             df_new[param] = df_new["params"].apply(lambda x: x[param])
-            ax1 = sns.lineplot(x=param, y=target, data=df_new, hue="n", legend=False, ax = ax_, palette=palette)
+            idx = df_new.groupby(["model", "n", "s", param])[target].idxmax()
+            df_tmp = df_new.loc[idx]
+
+            ax1 = sns.lineplot(x=param, y=target, data=df_tmp, hue="n", legend=False, ax = ax_, palette=palette)
             ax1.set_xscale("log", base=2)
             ax1.set_ylabel("Accuracy")
 
