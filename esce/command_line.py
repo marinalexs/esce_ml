@@ -163,7 +163,7 @@ def datagen(
 
     if noise > 0:
         np.random.seed(0)
-        x = (x + noise * np.random.randn(*x.shape))# / np.sqrt(1 + noise ** 2)
+        x = x + noise * np.random.randn(*x.shape)
         x = StandardScaler().fit_transform(x)
 
     # Generate default label and label noise

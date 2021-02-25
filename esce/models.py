@@ -14,7 +14,7 @@ import numbers
 import pandas as pd
 import numpy as np
 import math
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Iterable, Any, Callable
 from enum import Enum
 from sklearn.model_selection import ParameterGrid
 from abc import ABC, abstractmethod
@@ -57,6 +57,7 @@ def get_gram_triu_key(
 ) -> str:
     return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"
 
+
 def compute_gram_matrix(
     x: np.ndarray,
     kernel: KernelType = KernelType.LINEAR,
@@ -74,6 +75,7 @@ def compute_gram_matrix(
         return polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
     else:
         raise ValueError
+
 
 def get_gram_triu(
     x: np.ndarray,
@@ -125,7 +127,7 @@ def get_gram(
 
     Args:
         data: Data to compute gram matrix of.
-        kernel: Kernel type 
+        kernel: Kernel type
         gamma: Kernel gamma for RBF/sigmoid/polynomial
         coef0: Coefficient for sigmoid/polynomial
         degree: Degree of polynomial kernel
@@ -173,7 +175,7 @@ class BaseModel(ABC):
             "f1_test": f1_test,
         }
 
-    def order(self, param_grid):  # type: ignore
+    def order(self, param_grid: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
         return param_grid
 
     def compute_regr_metrics(
@@ -204,7 +206,7 @@ class BaseModel(ABC):
 
 
 class ClassifierModel(BaseModel):
-    def __init__(self, model_generator):  # type: ignore
+    def __init__(self, model_generator: Callable[..., Any]) -> None:
         self.model_generator = model_generator
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
@@ -217,7 +219,7 @@ class ClassifierModel(BaseModel):
 
 
 class RegressionModel(BaseModel):
-    def __init__(self, model_generator):  # type: ignore
+    def __init__(self, model_generator: Callable[..., Any]) -> None:
         self.model_generator = model_generator
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
@@ -244,12 +246,17 @@ class KernelSVMModel(BaseModel):
         else:
             gamma, coef0, degree = config
             self.cached_gram = get_gram(
-                x, kernel=self.kernel, gamma=gamma, coef0=coef0, degree=degree, cache=self.cache
+                x,
+                kernel=self.kernel,
+                gamma=gamma,
+                coef0=coef0,
+                degree=degree,
+                cache=self.cache,
             )
             self.curr_config = config
             return self.cached_gram
 
-    def order(self, param_grid):  # type: ignore
+    def order(self, param_grid: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
         if self.kernel == KernelType.RBF:
             return sorted(param_grid, key=lambda d: d["gamma"])  # type: ignore
         elif self.kernel == KernelType.SIGMOID:
@@ -320,7 +327,7 @@ def score_splits(
     splits: Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]],
     seeds: List[int],
     warm_start: bool = False,
-    cache: bool = False
+    cache: bool = False,
 ) -> None:
     columns = [
         "model",
@@ -354,7 +361,6 @@ def score_splits(
             f.write(",".join(columns) + "\n")
         df = pd.read_csv(outfile, index_col=False)
 
-
     # Append results to csv file
     with outfile.open("a") as f:
         csvwriter = csv.writer(f, delimiter=",")
@@ -378,7 +384,7 @@ def score_splits(
                         ).any():
                             scores = model.score(
                                 x, y, idx_train, idx_val, idx_test, **params
-                            )
+                            )  # type: ignore
 
                             row = [np.nan] * (len(columns) - 1)
                             row[:3] = [model_name, n, s, params, param_hash]

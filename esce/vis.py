@@ -39,9 +39,7 @@ def hp_plot(
             continue
 
         df_new = df_.copy()
-        df_new["params"] = df_["params"].apply(
-                lambda x: ast.literal_eval(x)
-        )
+        df_new["params"] = df_["params"].apply(lambda x: ast.literal_eval(x))
 
         names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
@@ -57,10 +55,17 @@ def hp_plot(
             idx = df_new.groupby(["model", "n", "s", param])[target].idxmax()
             df_tmp = df_new.loc[idx]
 
-            ax1 = sns.lineplot(x=param, y=target, data=df_tmp, hue="n", legend=False, ax = ax_, palette=palette)
+            ax1 = sns.lineplot(
+                x=param,
+                y=target,
+                data=df_tmp,
+                hue="n",
+                legend=False,
+                ax=ax_,
+                palette=palette,
+            )
             ax1.set_xscale("log", base=2)
             ax1.set_ylabel("Accuracy")
-
 
         fig.subplots_adjust(bottom=0.2)
         pylab.plt.figtext(0.5, 0.9, title, fontsize=8, ha="center")
