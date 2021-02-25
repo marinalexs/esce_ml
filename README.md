@@ -19,7 +19,7 @@ python3 setup.py develop --user
 or install the package via
 
 ```
-pip3 install .
+pip3 install -e .
 ```
 
 ## Usage:

@@ -1,12 +1,30 @@
 from pathlib import Path
 import pickle
 import h5py
-from joblib import hash
+import hashlib
 import requests
 from tqdm import tqdm
+import json
 import yaml
+from typing import Dict, Any, Union, Tuple, Optional
+import numpy as np
 
-def load_grid_file(grid_name):
+
+def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
+    np.random.seed(seed)
+    indices = np.random.random(x.shape) < prob
+    return np.logical_xor(x, indices).astype(int)
+
+
+def flt2str(f: float, decimals: int = 4) -> str:
+    return str(round(f, decimals)).replace(".", "#")
+
+
+def hash_dict(x: Dict[Any, Any]) -> str:
+    return hashlib.md5(json.dumps(x, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def load_grid_file(grid_name: str) -> Any:
     """
     Loads a grid from a YAML file.
     Grid YAML files may contain multiple grids.
@@ -19,10 +37,11 @@ def load_grid_file(grid_name):
     Returns:
         Grid dictionary
     """
+    grid_key = None
     if "@" in grid_name:
         grid_path, grid_key = grid_name.split("@")
     else:
-        grid_path, grid_key = grid_name, None
+        grid_path = grid_name
 
     grid_file = Path(grid_path)
     if grid_file.is_file():
@@ -34,7 +53,10 @@ def load_grid_file(grid_name):
     else:
         raise ValueError("Invalid grid file path")
 
-def load_dataset(data_path, label=None):
+
+def load_dataset(
+    data_path: Path, label: Optional[str] = None
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Loads data and label from data file
 
@@ -61,9 +83,10 @@ def load_dataset(data_path, label=None):
             y = d[f"label_{label}"]
     else:
         raise ValueError("Unknown file format")
-    return x,y
+    return x, y
 
-def load_split(split_path):
+
+def load_split(split_path: Path) -> Any:
     """
     Loads a split file from a path.
 
@@ -74,10 +97,11 @@ def load_split(split_path):
         Tuple consisting of a seed and the splits
     """
 
-    with open(split_path, "rb") as f:
+    with split_path.open("rb") as f:
         return pickle.load(f)
 
-def download_file(url, path):
+
+def download_file(url: str, path: Path) -> None:
     """
     Download the URL and save it in the given path.
 
@@ -86,8 +110,8 @@ def download_file(url, path):
         path: Path to store file to
     """
     resp = requests.get(url, stream=True)
-    total = int(resp.headers.get('content-length', 0))
-    bar = tqdm(total=total, unit='iB', unit_scale=True)
+    total = int(resp.headers.get("content-length", 0))
+    bar = tqdm(total=total, unit="iB", unit_scale=True)
     block_size = 1024
     with path.open("wb") as f:
         for data in resp.iter_content(block_size):
@@ -96,49 +120,3 @@ def download_file(url, path):
     bar.close()
     if total != 0 and bar.n != total:
         raise ValueError
-
-def pickled(root):
-    """
-    Decorator for caching using pickle.
-    Stores a file in the specified directory.
-    """
-    root_path = Path(root)
-    root_path.mkdir(parents=True, exist_ok=True)
-    def decorator(fn):
-        def wrapper(*args, **kwargs):
-            h = hash(args) + hash(kwargs)
-            path = root_path / f"{h}.pkl"
-            if path.is_file():
-                with path.open('rb') as f:
-                    return pickle.load(f)
-            else:
-                out = fn(*args, **kwargs)
-                with path.open('wb') as f:
-                    pickle.dump(out, f)
-                return out
-        return wrapper
-    return decorator
-
-# TODO: add option to specify datatype in decorator?
-def cached(root):
-    """
-    Decorator for HDF5 caching.
-    Hashes arguments to provide a unique key.
-    Stores the data in the specified path.
-    Expects the returned data to be a floating point numpy array.
-    The created dataset will be of type f32.
-    """
-    path = Path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    def decorator(fn):
-        def wrapper(*args, **kwargs):
-            key = hash(args) + hash(kwargs)
-            with h5py.File(path, 'a') as f:
-                if key in f:
-                    return f[key][...]
-                else:
-                    res = fn(*args, **kwargs)
-                    f.create_dataset(key, res.shape, dtype='f', data=res)
-                    return res
-        return wrapper
-    return decorator
