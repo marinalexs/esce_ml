@@ -57,6 +57,24 @@ def get_gram_triu_key(
 ) -> str:
     return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"
 
+def compute_gram_matrix(
+    x: np.ndarray,
+    kernel: KernelType = KernelType.LINEAR,
+    gamma: float = 0,
+    coef0: float = 0,
+    degree: float = 0,
+) -> np.ndarray:
+    if kernel == KernelType.LINEAR:
+        return linear_kernel(x, x)
+    elif kernel == KernelType.RBF:
+        return rbf_kernel(x, x, gamma=gamma)
+    elif kernel == KernelType.SIGMOID:
+        return sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+    elif kernel == KernelType.POLYNOMIAL:
+        return polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
+    else:
+        raise ValueError
+
 def get_gram_triu(
     x: np.ndarray,
     kernel: KernelType = KernelType.LINEAR,
@@ -81,16 +99,7 @@ def get_gram_triu(
             return f[key][...]
 
     with h5py.File(GRAM_PATH, "a") as f:
-        if kernel == KernelType.LINEAR:
-            K = linear_kernel(x, x)
-        elif kernel == KernelType.RBF:
-            K = rbf_kernel(x, x, gamma=gamma)
-        elif kernel == KernelType.SIGMOID:
-            K = sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
-        elif kernel == KernelType.POLYNOMIAL:
-            K = polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
-        else:
-            raise ValueError
+        K = compute_gram_matrix(x, kernel, gamma, coef0, degree)
         res = K[np.triu_indices(K.shape[0])]
         f.create_dataset(
             key,
@@ -110,26 +119,30 @@ def get_gram(
     gamma: float = 0,
     coef0: float = 0,
     degree: float = 0,
+    cache: bool = False,
 ) -> np.ndarray:
     """Reconstructs the gram matrix based on upper triangle.
 
     Args:
         data: Data to compute gram matrix of.
+        kernel: Kernel type 
         gamma: Kernel gamma for RBF/sigmoid/polynomial
         coef0: Coefficient for sigmoid/polynomial
         degree: Degree of polynomial kernel
+        cache: Whether to cache / use the cached kernel
 
     Returns:
         Two-dimensional gram matrix of the data.
     """
     x = data.astype(np.float32)
-    tri = get_gram_triu(x, kernel, gamma, coef0, degree)
-    n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
-    K = np.zeros((n, n), dtype=np.float32)
-    K[np.triu_indices(n)] = tri
-
-    # TODO: make this more efficient memory-wise?
-    K = K + K.T - np.diag(np.diag(K))
+    if cache:
+        tri = get_gram_triu(x, kernel, gamma, coef0, degree)
+        n = int(0.5 * (math.sqrt(8 * len(tri) + 1) - 1))
+        K = np.zeros((n, n), dtype=np.float32)
+        K[np.triu_indices(n)] = tri
+        K = K + K.T - np.diag(np.diag(K))
+    else:
+        K = compute_gram_matrix(x, kernel, gamma, coef0, degree)
     return K
 
 
@@ -219,6 +232,7 @@ class RegressionModel(BaseModel):
 class KernelSVMModel(BaseModel):
     curr_config: Optional[Tuple[float, float, float]] = None
     cached_gram: np.ndarray
+    cache: bool = False
 
     def __init__(self, kernel: KernelType = KernelType.LINEAR):
         self.kernel = kernel
@@ -230,7 +244,7 @@ class KernelSVMModel(BaseModel):
         else:
             gamma, coef0, degree = config
             self.cached_gram = get_gram(
-                x, kernel=self.kernel, gamma=gamma, coef0=coef0, degree=degree
+                x, kernel=self.kernel, gamma=gamma, coef0=coef0, degree=degree, cache=self.cache
             )
             self.curr_config = config
             return self.cached_gram
@@ -306,6 +320,7 @@ def score_splits(
     splits: Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]],
     seeds: List[int],
     warm_start: bool = False,
+    cache: bool = False
 ) -> None:
     columns = [
         "model",
@@ -325,7 +340,11 @@ def score_splits(
         "mse_test",
     ]
     col2idx = {c: i for i, c in enumerate(columns)}
-    setup_cache_file()
+    if cache:
+        setup_cache_file()
+        for model in models.values():
+            if isinstance(model, KernelSVMModel):
+                model.cache = True
 
     # Read / Write results file
     if outfile.is_file() and warm_start:
@@ -334,6 +353,7 @@ def score_splits(
         with outfile.open("w") as f:
             f.write(",".join(columns) + "\n")
         df = pd.read_csv(outfile, index_col=False)
+
 
     # Append results to csv file
     with outfile.open("a") as f:

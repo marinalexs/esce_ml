@@ -61,6 +61,7 @@ def run(
     samples: List[int],
     grid_name: str = "default",
     warm_start: bool = False,
+    cache: bool = False,
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
     output: Optional[str] = None,
@@ -76,6 +77,7 @@ def run(
         samples: Which samples to use
         grid: Grid to use / grid file to use
         warm_start: Whether or not to continue previous computation
+        cache: Turn caching on or off
     """
 
     x, y = load_dataset(data_path, label)
@@ -119,7 +121,7 @@ def run(
     else:
         outfile = Path(output)
 
-    score_splits(outfile, x, y, models, grid, splits, seeds, warm_start)
+    score_splits(outfile, x, y, models, grid, splits, seeds, warm_start, cache)
 
 
 def datagen(
@@ -316,6 +318,7 @@ def main() -> None:
     )
     run_parser.add_argument("--grid", type=str, help="grid to use", default="default")
     run_parser.add_argument("--warm", action="store_true", help="warm start")
+    run_parser.add_argument("--cache", action="store_true", help="cache")
     run_parser.add_argument(
         "--include",
         nargs="+",
@@ -420,6 +423,7 @@ def main() -> None:
             args.samples,
             args.grid,
             args.warm,
+            args.cache,
             args.include,
             args.exclude,
             args.output,
