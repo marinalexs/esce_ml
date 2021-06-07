@@ -128,8 +128,8 @@ def datagen(
     dataset: str,
     method: Optional[str],
     n_components: int,
-    noise: float = 0.0,
-    lbl_noise: Optional[List[float]] = None,
+    feature_noise: float = 0.0,
+    label_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
     """
@@ -140,13 +140,14 @@ def datagen(
         dataset: Pre-defined dataset to load
         method: Dimensionality reduction method to use
         n_components: Number of components used for dimensionality reduction
-        noise: Noise factor
+        feature_noise: Feature noise factor
+        label_noise: Label noise factor
         fmt: Data file format (hdf5 or pkl)
     """
 
     method_str = f"_{method}{n_components}" if method is not None else ""
-    noise_str = "_n" + flt2str(noise)
-    path = Path("data") / f"{dataset}{method_str}{noise_str}"
+    feature_noise_str = "_n" + flt2str(feature_noise)
+    path = Path("data") / f"{dataset}{method_str}{feature_noise_str}"
     if dataset not in DATA:
         raise ValueError("Unknown dataset")
 
@@ -161,15 +162,15 @@ def datagen(
         x = TSNE(n_components=n_components, random_state=0).fit_transform(x)
     x = StandardScaler().fit_transform(x)
 
-    if noise > 0:
+    if feature_noise > 0:
         np.random.seed(0)
-        x = x + noise * np.random.randn(*x.shape)
+        x = x + feature_noise * np.random.randn(*x.shape)
         x = StandardScaler().fit_transform(x)
 
     # Generate default label and label noise
     labels = {"default": y}
-    if lbl_noise is not None:
-        for lbl in lbl_noise:
+    if label_noise is not None:
+        for lbl in label_noise:
             labels[f"noise_{flt2str(lbl)}"] = flip(y, lbl, 0)
 
     # Write data and labels to hdf5 or pkl
