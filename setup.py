@@ -22,7 +22,6 @@ setup(
         "numpy>=1.19",
         "pandas>=0.23",
         "scikit-learn>=0.23",
-        "torchvision>=0.4",
         "h5py>=2.8",
         "hdf5plugin>=2.3",
         "joblib>=0.12",

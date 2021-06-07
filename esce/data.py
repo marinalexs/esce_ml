@@ -1,19 +1,18 @@
-from torchvision.datasets import MNIST, FashionMNIST
+from pathlib import Path
+from typing import Tuple, Dict
+from zipfile import ZipFile
+
+import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from typing import Tuple, Dict
-from zipfile import ZipFile
-from pathlib import Path
-import pandas as pd
-import numpy as np
-from joblib import hash
-from gzip import GzipFile
-
 from esce.util import download_file
 
-
+# todo: remove torchvision dependency
 def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    from torchvision.datasets import MNIST
+
     ds = MNIST("data/", train=True, download=True)
     x, y = ds.data.numpy(), ds.targets.numpy()
     x = x.reshape(len(x), -1)
@@ -23,6 +22,8 @@ def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
 
 
 def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
+    from torchvision.datasets import FashionMNIST
+
     ds = FashionMNIST("data/", train=True, download=True)
     x, y = ds.data.numpy(), ds.targets.numpy()
     x = x.reshape(len(x), -1)
