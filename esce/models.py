@@ -1,31 +1,19 @@
-import shelve
-import numpy
-from sklearn.metrics.pairwise import (
-    rbf_kernel,
-    linear_kernel,
-    sigmoid_kernel,
-    polynomial_kernel,
-)
-from sklearn.svm import SVC, SVR
-from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
+import csv
+import math
+from abc import ABC, abstractmethod
+from enum import Enum
+from hashlib import md5
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional, Iterable, Any, Callable
+
+import h5py
+import hdf5plugin
+import numpy as np
+import pandas as pd
+from pkg_resources import get_distribution
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
-import numbers
-import pandas as pd
-import numpy as np
-import math
-from typing import Dict, List, Tuple, Optional, Iterable, Any, Callable
-from enum import Enum
-from sklearn.model_selection import ParameterGrid
-from abc import ABC, abstractmethod
-import csv
-from pathlib import Path
-import pickle
-from scipy.spatial.distance import pdist
-from pkg_resources import get_distribution
-from hashlib import md5
-
-from esce.util import hash_dict
+from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
 from sklearn.metrics import (
     f1_score,
     accuracy_score,
@@ -33,9 +21,16 @@ from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
 )
-import h5py
-import hdf5plugin
-import joblib
+from sklearn.metrics.pairwise import (
+    rbf_kernel,
+    linear_kernel,
+    sigmoid_kernel,
+    polynomial_kernel,
+)
+from sklearn.model_selection import ParameterGrid
+from sklearn.svm import SVC
+
+from esce.util import hash_dict
 
 
 class KernelType(Enum):

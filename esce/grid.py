@@ -1,5 +1,7 @@
-import numpy as np
 from typing import Dict
+
+import numpy as np
+
 from esce.util import load_grid_file
 
 

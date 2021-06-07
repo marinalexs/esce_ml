@@ -1,16 +1,14 @@
-from unittest import TestCase
-from esce.data import get_mnist
-from esce.sampling import split_grid
-from esce.models import score_splits, MODELS
-from esce.grid import GRID
-import numpy as np
-from sklearn.datasets import make_blobs
-from sklearn.metrics.pairwise import rbf_kernel
-from sklearn.model_selection import ParameterGrid
-from numpy.testing import assert_array_equal
-from sklearn.datasets import make_classification
 import warnings
+from unittest import TestCase
+
+import numpy as np
 import pandas as pd
+from sklearn.datasets import make_classification
+from sklearn.model_selection import ParameterGrid
+
+from esce.grid import GRID
+from esce.models import MODELS
+from esce.sampling import split_grid
 
 
 class TestSampling(TestCase):
