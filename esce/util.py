@@ -12,9 +12,9 @@ from tqdm import tqdm
 
 
 def dropna(x, y):
-    mask_x = np.isnan(x).any(1)
-    mask_y = np.logical_or(y < 0, np.isnan(y))
-    mask = ~np.logical_or(mask_x, mask_y)
+    mask_x = np.isfinite(x).all(1)
+    mask_y = np.isfinite(y)
+    mask = np.logical_and(mask_x, mask_y)
     return x[mask], y[mask]
 
 
