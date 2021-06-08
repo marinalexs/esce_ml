@@ -90,7 +90,7 @@ def run(
     for seed in seeds:
         if seed >= found_seeds or seed < 0:
             raise ValueError(
-                f"Invalid seed {seed}. Seed must be in [0,{found_seeds-1}]."
+                f"Invalid seed {seed}. Seed must be in [0,{found_seeds - 1}]."
             )
 
     if len(seeds) == 0:
@@ -193,7 +193,9 @@ def datagen(
     print(f"Generated {dataset} data file '{path}'.")
 
 
-def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> None:
+def splitgen(
+    data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
+) -> None:
     """
     Generates a split file.
     The file will be placed in the 'splits' directory.
@@ -209,7 +211,7 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> N
     path.parent.mkdir(parents=True, exist_ok=True)
 
     _, y = load_dataset(data_path, label)
-    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds)
+    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify)
 
     with path.open("wb") as f:
         pickle.dump((n_seeds, splits), f)
@@ -392,6 +394,7 @@ def main() -> None:
     splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
+    run_parser.add_argument("--stratify", action="store_true", help="stratify splits")
     splitgen_parser.set_defaults(splitgen=True)
 
     retrieve_parser.add_argument(
@@ -439,7 +442,7 @@ def main() -> None:
             args.format,
         )
     elif args.splitgen:
-        splitgen(Path(args.data), args.label, args.seeds, args.samples)
+        splitgen(Path(args.data), args.label, args.seeds, args.samples, args.stratify)
     elif args.retrieve:
         out_path = Path(args.output) if args.output is not None else None
         retrieve(

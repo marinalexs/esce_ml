@@ -9,7 +9,7 @@ def split(
     n_train: int,
     n_val: int = 1000,
     n_test: int = 1000,
-    do_stratify: bool = True,
+    do_stratify: bool = False,
     seed: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -50,7 +50,7 @@ def split_grid(
     n_samples: Iterable[int] = (100, 200, 500),
     n_val: int = 1000,
     n_test: int = 1000,
-    do_stratify: bool = True,
+    do_stratify: bool = False,
 ) -> Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
     """
     Generated train, validation and test indices for a specified number of seeds and samples.
