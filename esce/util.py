@@ -11,6 +11,13 @@ import yaml
 from tqdm import tqdm
 
 
+def dropna(x, y):
+    mask_x = np.isnan(x).any(1)
+    mask_y = np.logical_or(y < 0, np.isnan(y))
+    mask = ~np.logical_or(mask_x, mask_y)
+    return x[mask], y[mask]
+
+
 def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
     np.random.seed(seed)
     indices = np.random.random(x.shape) < prob
@@ -84,7 +91,8 @@ def load_dataset(
             y = d[f"label_{label}"]
     else:
         raise ValueError("Unknown file format")
-    return x, y
+
+    return dropna(x, y)
 
 
 def load_split(split_path: Path) -> Any:
