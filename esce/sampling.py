@@ -26,7 +26,8 @@ def split(
     Returns:
         Tuple of index lists (idx_train, idx_val, idx_test)
     """
-    idx = np.arange(len(y))
+    missing_values_mask = np.isfinite(y)
+    idx = np.arange(len(y))[missing_values_mask]
 
     stratify = y if do_stratify else None
     idx_train, idx_test = train_test_split(
