@@ -1,7 +1,7 @@
-from pathlib import Path
-from typing import Tuple, Dict
-from zipfile import ZipFile
 import codecs
+from pathlib import Path
+from typing import Dict, Tuple
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd

@@ -1,6 +1,8 @@
+import gzip
 import hashlib
 import json
 import pickle
+import shutil
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -9,8 +11,6 @@ import numpy as np
 import requests
 import yaml
 from tqdm import tqdm
-import gzip
-import shutil
 
 
 def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
