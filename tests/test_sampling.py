@@ -35,7 +35,7 @@ class TestExample(TestCase):
             random_state=0,
         )
         n_seeds = 10
-        splits = split_grid(y, n_seeds=n_seeds, n_val=100, n_test=100)
+        splits = split_grid(y, n_seeds=n_seeds, n_val=100, n_test=100, do_stratify=True)
         model = MODELS["logit"]
         grid = GRID["default"]
         scores = []
