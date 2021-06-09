@@ -1,15 +1,15 @@
-import seaborn as sns
+import ast
+from pathlib import Path
 from typing import Dict
-from matplotlib import pylab
-from matplotlib.ticker import ScalarFormatter
+
 import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
-from esce.models import MODEL_NAMES, MODELS
-from esce.grid import GRID
-import ast
-from itertools import chain
-from pathlib import Path
+import seaborn as sns
+from matplotlib import pylab
+from matplotlib.ticker import ScalarFormatter
+
+from esce.models import MODEL_NAMES
 
 pylab.rc("font", family="serif", serif="Times")
 pylab.rc("xtick", labelsize=8)

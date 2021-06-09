@@ -1,4 +1,8 @@
 from unittest import TestCase
+
+import h5py
+import numpy as np
+
 from esce.models import (
     get_gram_triu,
     get_gram,
@@ -6,8 +10,6 @@ from esce.models import (
     get_gram_triu_key,
     GRAM_PATH,
 )
-import h5py
-import numpy as np
 
 
 class TestGram(TestCase):

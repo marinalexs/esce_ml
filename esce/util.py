@@ -1,13 +1,23 @@
-from pathlib import Path
-import pickle
-import h5py
 import hashlib
-import requests
-from tqdm import tqdm
 import json
-import yaml
+import pickle
+from pathlib import Path
 from typing import Dict, Any, Union, Tuple, Optional
+
+import h5py
 import numpy as np
+import requests
+import yaml
+from tqdm import tqdm
+import gzip
+import shutil
+
+
+def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    mask_x = np.isfinite(x).all(1)
+    mask_y = np.isfinite(y)
+    mask = np.logical_and(mask_x, mask_y)
+    return x[mask], y[mask]
 
 
 def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
@@ -83,7 +93,8 @@ def load_dataset(
             y = d[f"label_{label}"]
     else:
         raise ValueError("Unknown file format")
-    return x, y
+
+    return dropna(x, y)
 
 
 def load_split(split_path: Path) -> Any:
@@ -120,3 +131,9 @@ def download_file(url: str, path: Path) -> None:
     bar.close()
     if total != 0 and bar.n != total:
         raise ValueError
+
+
+def extract_gzip(in_path: Path, out_path: Path) -> None:
+    with open(out_path, "wb") as f_out:
+        with gzip.open(in_path, "rb") as f_in:
+            shutil.copyfileobj(f_in, f_out)

@@ -1,26 +1,26 @@
-from esce.util import load_dataset, load_split, flip, flt2str
-from esce.grid import GRID, load_grid
-from esce.vis import hp_plot, sc_plot
-from esce.sampling import split_grid
-from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
-from esce.data import DATA
-from esce.util import hash_dict
 import argparse
+import pickle
+import warnings
 from pathlib import Path
 from typing import List, Optional
-import pandas as pd
-import numpy as np
-import pickle
 
-from sklearn.decomposition import PCA
-from sklearn.random_projection import GaussianRandomProjection
-from sklearn.manifold import TSNE
-from sklearn.preprocessing import StandardScaler
 import h5py
-from sklearn.model_selection import ParameterGrid
-
-import warnings
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
+from sklearn.manifold import TSNE
+from sklearn.model_selection import ParameterGrid
+from sklearn.preprocessing import StandardScaler
+from sklearn.random_projection import GaussianRandomProjection
+
+from esce.data import DATA
+from esce.grid import load_grid
+from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
+from esce.sampling import split_grid
+from esce.util import hash_dict
+from esce.util import load_dataset, load_split, flip, flt2str
+from esce.vis import hp_plot, sc_plot
 
 warnings.simplefilter(action="ignore", category=ConvergenceWarning)
 
@@ -90,7 +90,7 @@ def run(
     for seed in seeds:
         if seed >= found_seeds or seed < 0:
             raise ValueError(
-                f"Invalid seed {seed}. Seed must be in [0,{found_seeds-1}]."
+                f"Invalid seed {seed}. Seed must be in [0,{found_seeds - 1}]."
             )
 
     if len(seeds) == 0:
@@ -128,8 +128,8 @@ def datagen(
     dataset: str,
     method: Optional[str],
     n_components: int,
-    noise: float = 0.0,
-    lbl_noise: Optional[List[float]] = None,
+    feature_noise: float = 0.0,
+    label_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
     """
@@ -140,13 +140,14 @@ def datagen(
         dataset: Pre-defined dataset to load
         method: Dimensionality reduction method to use
         n_components: Number of components used for dimensionality reduction
-        noise: Noise factor
+        feature_noise: Feature noise factor
+        label_noise: Label noise factor
         fmt: Data file format (hdf5 or pkl)
     """
 
     method_str = f"_{method}{n_components}" if method is not None else ""
-    noise_str = "_n" + flt2str(noise)
-    path = Path("data") / f"{dataset}{method_str}{noise_str}"
+    feature_noise_str = "_n" + flt2str(feature_noise)
+    path = Path("data") / f"{dataset}{method_str}{feature_noise_str}"
     if dataset not in DATA:
         raise ValueError("Unknown dataset")
 
@@ -161,15 +162,15 @@ def datagen(
         x = TSNE(n_components=n_components, random_state=0).fit_transform(x)
     x = StandardScaler().fit_transform(x)
 
-    if noise > 0:
+    if feature_noise > 0:
         np.random.seed(0)
-        x = x + noise * np.random.randn(*x.shape)
+        x = x + feature_noise * np.random.randn(*x.shape)
         x = StandardScaler().fit_transform(x)
 
     # Generate default label and label noise
     labels = {"default": y}
-    if lbl_noise is not None:
-        for lbl in lbl_noise:
+    if label_noise is not None:
+        for lbl in label_noise:
             labels[f"noise_{flt2str(lbl)}"] = flip(y, lbl, 0)
 
     # Write data and labels to hdf5 or pkl
@@ -192,7 +193,9 @@ def datagen(
     print(f"Generated {dataset} data file '{path}'.")
 
 
-def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> None:
+def splitgen(
+    data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
+) -> None:
     """
     Generates a split file.
     The file will be placed in the 'splits' directory.
@@ -208,7 +211,7 @@ def splitgen(data_path: Path, label: str, n_seeds: int, samples: List[int]) -> N
     path.parent.mkdir(parents=True, exist_ok=True)
 
     _, y = load_dataset(data_path, label)
-    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds)
+    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify)
 
     with path.open("wb") as f:
         pickle.dump((n_seeds, splits), f)
@@ -391,6 +394,7 @@ def main() -> None:
     splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
+    run_parser.add_argument("--stratify", action="store_true", help="stratify splits")
     splitgen_parser.set_defaults(splitgen=True)
 
     retrieve_parser.add_argument(
@@ -438,7 +442,7 @@ def main() -> None:
             args.format,
         )
     elif args.splitgen:
-        splitgen(Path(args.data), args.label, args.seeds, args.samples)
+        splitgen(Path(args.data), args.label, args.seeds, args.samples, args.stratify)
     elif args.retrieve:
         out_path = Path(args.output) if args.output is not None else None
         retrieve(
