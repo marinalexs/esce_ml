@@ -2,7 +2,7 @@ import hashlib
 import json
 import pickle
 from pathlib import Path
-from typing import Dict, Any, Union, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
 import h5py
 import numpy as np

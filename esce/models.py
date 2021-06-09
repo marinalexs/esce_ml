@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from hashlib import md5
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Iterable, Any, Callable
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import h5py
 import hdf5plugin
@@ -13,19 +13,19 @@ import pandas as pd
 from pkg_resources import get_distribution
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression, LogisticRegression, Lasso, Ridge
+from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
 from sklearn.metrics import (
-    f1_score,
     accuracy_score,
-    r2_score,
+    f1_score,
     mean_absolute_error,
     mean_squared_error,
+    r2_score,
 )
 from sklearn.metrics.pairwise import (
-    rbf_kernel,
     linear_kernel,
-    sigmoid_kernel,
     polynomial_kernel,
+    rbf_kernel,
+    sigmoid_kernel,
 )
 from sklearn.model_selection import ParameterGrid
 from sklearn.svm import SVC

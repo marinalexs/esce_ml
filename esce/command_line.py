@@ -16,10 +16,9 @@ from sklearn.random_projection import GaussianRandomProjection
 
 from esce.data import DATA
 from esce.grid import load_grid
-from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
+from esce.models import MODELS, RegressionModel, precompute_kernels, score_splits
 from esce.sampling import split_grid
-from esce.util import hash_dict
-from esce.util import load_dataset, load_split, flip, flt2str
+from esce.util import flip, flt2str, hash_dict, load_dataset, load_split
 from esce.vis import hp_plot, sc_plot
 
 warnings.simplefilter(action="ignore", category=ConvergenceWarning)
@@ -40,7 +39,6 @@ def precomp(
         include: Models to include
         exclude: Models to exclude
     """
-
     x = load_dataset(data_path)
     grid = load_grid(grid_name)
     models = MODELS
@@ -79,7 +77,6 @@ def run(
         warm_start: Whether or not to continue previous computation
         cache: Turn caching on or off
     """
-
     x, y = load_dataset(data_path, label)
     found_seeds, splits = load_split(split_path)
     if found_seeds < len(seeds):

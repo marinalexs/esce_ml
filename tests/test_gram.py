@@ -4,11 +4,11 @@ import h5py
 import numpy as np
 
 from esce.models import (
-    get_gram_triu,
-    get_gram,
-    KernelType,
-    get_gram_triu_key,
     GRAM_PATH,
+    KernelType,
+    get_gram,
+    get_gram_triu,
+    get_gram_triu_key,
 )
 
 

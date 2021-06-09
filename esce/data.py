@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 from zipfile import ZipFile
 
 import numpy as np
@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from esce.util import download_file
+
 
 # todo: remove torchvision dependency
 def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
@@ -60,7 +61,7 @@ def get_higgs() -> Tuple[np.ndarray, np.ndarray]:
 
     if not gz_path.is_file():
         print("Downloading HIGGS.csv.gz...")
-        url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz"
+        url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz"  # noqa
         download_file(url, gz_path)
 
     df = pd.read_csv(gz_path, nrows=12000)
