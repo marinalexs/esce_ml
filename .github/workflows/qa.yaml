@@ -49,7 +49,7 @@ jobs:
           pip install mypy
       - name: mypy
         run: |
-          mypy --strict .
+          mypy --strict esce
 
 
   tests:
