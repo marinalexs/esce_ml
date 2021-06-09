@@ -12,4 +12,4 @@ test:
 qa: style lint test
 
 clean:
-	rm -r data cache splits plots results
+	rm -r data cache splits plots results .mypy_cache .pytest_cache
