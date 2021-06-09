@@ -1,0 +1,70 @@
+name: QA
+
+on: [ push ]
+
+jobs:
+  formatting:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install isort black
+      - name: black
+        run: |
+          black --check .
+      - name: isort
+        run: |
+          isort --check .
+
+  linter:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 flake8-docstrings
+      - name: flake8
+        run: |
+          flake8 . --count  --statistics
+
+  type-checker:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy
+      - name: mypy
+        run: |
+          mypy  --install-types --strict .
+
+
+  tests:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: pytest
+        run: |
+          pytest .
+
