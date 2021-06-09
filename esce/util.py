@@ -9,9 +9,11 @@ import numpy as np
 import requests
 import yaml
 from tqdm import tqdm
+import gzip
+import shutil
 
 
-def dropna(x, y):
+def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     mask_x = np.isfinite(x).all(1)
     mask_y = np.isfinite(y)
     mask = np.logical_and(mask_x, mask_y)
@@ -129,3 +131,9 @@ def download_file(url: str, path: Path) -> None:
     bar.close()
     if total != 0 and bar.n != total:
         raise ValueError
+
+
+def extract_gzip(in_path: Path, out_path: Path) -> None:
+    with open(out_path, "wb") as f_out:
+        with gzip.open(in_path, "rb") as f_in:
+            shutil.copyfileobj(f_in, f_out)
