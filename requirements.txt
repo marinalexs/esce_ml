@@ -12,6 +12,3 @@ mypy
 black
 flake8
 isort
-types-requests
-types-PyYAML
-types-pkg_resources
