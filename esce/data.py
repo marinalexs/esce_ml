@@ -70,13 +70,19 @@ def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
     train_images_path.parent.mkdir(parents=True, exist_ok=True)
 
     if not train_images_path.is_file():
-        train_images_url = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz"
+        train_images_url = (
+            "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+            "train-images-idx3-ubyte.gz"
+        )
         gzip_path = train_images_path.with_suffix(".gz")
         download_file(train_images_url, gzip_path)
         extract_gzip(gzip_path, train_images_path)
 
     if not train_labels_path.is_file():
-        train_labels_url = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz"
+        train_labels_url = (
+            "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+            "train-labels-idx1-ubyte.gz"
+        )
         gzip_path = train_labels_path.with_suffix(".gz")
         download_file(train_labels_url, gzip_path)
         extract_gzip(gzip_path, train_labels_path)
@@ -97,7 +103,10 @@ def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
     if not csv_path.is_file():
         if not zip_path.is_file():
             print("Downloading superconduct.zip...")
-            url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00464/superconduct.zip"
+            url = (
+                "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+                "00464/superconduct.zip"
+            )
             download_file(url, zip_path)
         with ZipFile(zip_path, "r") as zipfile:
             with zipfile.open("train.csv") as src:
@@ -118,7 +127,10 @@ def get_higgs() -> Tuple[np.ndarray, np.ndarray]:
 
     if not gz_path.is_file():
         print("Downloading HIGGS.csv.gz...")
-        url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz"
+        url = (
+            "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+            "00280/HIGGS.csv.gz"
+        )
         download_file(url, gz_path)
 
     df = pd.read_csv(gz_path, nrows=12000)

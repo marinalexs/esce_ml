@@ -53,7 +53,8 @@ def split_grid(
     do_stratify: bool = False,
 ) -> Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
     """
-    Generated train, validation and test indices for a specified number of seeds and samples.
+    Generated train, validation and test indices
+    for a specified number of seeds and samples.
 
     Arguments:
         y: Data lables
