@@ -116,7 +116,6 @@ def load_dataset(
     Returns:
         (x,y) Tuple of data and labels
     """
-
     if data_path.suffix == ".h5":
         with h5py.File(data_path, "r") as f:
             x = f["/data"][...]
@@ -145,7 +144,6 @@ def load_split(split_path: Path) -> Any:
     Returns:
         Tuple consisting of a seed and the splits
     """
-
     with split_path.open("rb") as f:
         return pickle.load(f)
 

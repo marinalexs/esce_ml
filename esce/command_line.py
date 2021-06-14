@@ -141,7 +141,6 @@ def datagen(
         label_noise: Label noise factor
         fmt: Data file format (hdf5 or pkl)
     """
-
     method_str = f"_{method}{n_components}" if method is not None else ""
     feature_noise_str = "_n" + flt2str(feature_noise)
     path = Path("data") / f"{dataset}{method_str}{feature_noise_str}"

@@ -1,3 +1,5 @@
+"""This module provides models and the sample complexity estimation code."""
+
 import csv
 import math
 from abc import ABC, abstractmethod
@@ -29,11 +31,13 @@ from sklearn.metrics.pairwise import (
 from sklearn.model_selection import ParameterGrid
 from sklearn.svm import SVC
 
-from esce.util import hash_dict
 import esce
+from esce.util import hash_dict
 
 
 class KernelType(Enum):
+    """Kernel type of a gram matrix."""
+
     LINEAR = 1
     RBF = 2
     SIGMOID = 3
@@ -50,6 +54,18 @@ def get_gram_triu_key(
     coef0: float = 0,
     degree: float = 0,
 ) -> str:
+    """Return the key of the triangular gram matrix for the given data.
+
+    Arguments:
+        x: Data for which to retrieve the gram matrix
+        kernel: Kernel type used
+        gamma: Kernel parameter used in RBF, sigmoid and polynomial
+        coef0: Kernel parameter used in sigmoid and polynomial
+        degree: Degree of the polynomial
+
+    Returns:
+        md5 hexdigest key
+    """
     return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"
 
 
@@ -60,6 +76,18 @@ def compute_gram_matrix(
     coef0: float = 0,
     degree: float = 0,
 ) -> np.ndarray:
+    """Compute the gram matrix for the given data.
+
+    Arguments:
+        x: Data for which to compute the gram matrix
+        kernel: Kernel type to use
+        gamma: Kernel parameter used in RBF, sigmoid and polynomial
+        coef0: Kernel parameter used in sigmoid and polynomial
+        degree: Degree of the polynomial
+
+    Returns:
+        Gram matrix
+    """
     if kernel == KernelType.LINEAR:
         return linear_kernel(x, x)
     elif kernel == KernelType.RBF:
@@ -79,7 +107,7 @@ def get_gram_triu(
     coef0: float = 0,
     degree: float = 0,
 ) -> np.ndarray:
-    """Calculates the upper triangle of the gram matrix.
+    """Calculate the upper triangle of the gram matrix.
 
     Args:
         data: Data to compute gram matrix of.
@@ -118,7 +146,7 @@ def get_gram(
     degree: float = 0,
     cache: bool = False,
 ) -> np.ndarray:
-    """Reconstructs the gram matrix based on upper triangle.
+    """Reconstruct the gram matrix based on upper triangle.
 
     Args:
         data: Data to compute gram matrix of.
@@ -144,8 +172,11 @@ def get_gram(
 
 
 class BaseModel(ABC):
+    """Base model class for each model."""
+
     @abstractmethod
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        """Provide a score for the model performance on the data."""
         pass
 
     def compute_clf_metrics(
@@ -155,6 +186,17 @@ class BaseModel(ABC):
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
+        """Compute the classifier metrics.
+
+        Arguments:
+            y_hat_val: Generated labels by the classifier for the validation set
+            y_hat_test: enerated labels by the classifier for the test set
+            y_val: Ground truth labels of the validation set
+            y_test: Ground truth labels of the test set
+
+        Returns:
+            Dictionary of scores containing accuracy and f1
+        """
         # Val score
         acc_val = accuracy_score(y_val, y_hat_val)
         f1_val = f1_score(y_val, y_hat_val, average="weighted")
@@ -171,6 +213,14 @@ class BaseModel(ABC):
         }
 
     def order(self, param_grid: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+        """Orders a parameter grid.
+
+        Arguments:
+            param_grid: Parameter grid to sort
+
+        Returns:
+            Sorted parameter grid
+        """
         return param_grid
 
     def compute_regr_metrics(
@@ -180,6 +230,17 @@ class BaseModel(ABC):
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
+        """Compute regression metrics.
+
+        Arguments:
+            y_hat_val: Generated labels by the classifier for the validation set
+            y_hat_test: enerated labels by the classifier for the test set
+            y_val: Ground truth labels of the validation set
+            y_test: Ground truth labels of the test set
+
+        Returns:
+            Dictionary of scores containing r2, mae and mse
+        """
         # Val score
         r2_val = r2_score(y_val, y_hat_val)
         mae_val = mean_absolute_error(y_val, y_hat_val)
@@ -201,10 +262,14 @@ class BaseModel(ABC):
 
 
 class ClassifierModel(BaseModel):
+    """Base class for classifier models."""
+
     def __init__(self, model_generator: Callable[..., Any]) -> None:
+        """Initialize class using a model that is initialized later."""
         self.model_generator = model_generator
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        """Provide a score for the model performance on the data."""
         model = self.model_generator(**kwargs)
         model.fit(x[idx_train], y[idx_train])
 
@@ -214,10 +279,14 @@ class ClassifierModel(BaseModel):
 
 
 class RegressionModel(BaseModel):
+    """Base class for regression models."""
+
     def __init__(self, model_generator: Callable[..., Any]) -> None:
+        """Initialize class using a model that is initialized later."""
         self.model_generator = model_generator
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        """Provide a score for the model performance on the data."""
         model = self.model_generator(**kwargs)
         model.fit(x[idx_train], y[idx_train])
 
@@ -227,15 +296,34 @@ class RegressionModel(BaseModel):
 
 
 class KernelSVMModel(BaseModel):
+    """Class for kernelized SVM models."""
+
     curr_config: Optional[Tuple[float, float, float]] = None
     cached_gram: np.ndarray
     cache: bool = False
 
     def __init__(self, kernel: KernelType = KernelType.LINEAR):
+        """Initialize SVM for a certain kernel type.
+
+        Arguments:
+            kernel: Kernel type to use
+        """
         self.kernel = kernel
         self.cached_gram = None
 
     def get_gram(self, x: np.ndarray, config: Tuple[float, float, float]) -> np.ndarray:
+        """Retrieve gram matrix of the data for a given config.
+
+        If the config of the previous call of this function did not change,
+        the cached gram matrix is returned.
+
+        Arguments:
+            x: Data to get gram matrix of
+            config: Kernel configuration (tuple of gamma, coef0 and degree)
+
+        Returns:
+            Gram matrix
+        """
         if self.curr_config == config:
             return self.cached_gram
         else:
@@ -252,6 +340,14 @@ class KernelSVMModel(BaseModel):
             return self.cached_gram
 
     def order(self, param_grid: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+        """Orders a parameter grid.
+
+        Arguments:
+            param_grid: Parameter grid to sort
+
+        Returns:
+            Sorted parameter grid
+        """
         if self.kernel == KernelType.RBF:
             return sorted(param_grid, key=lambda d: d["gamma"])  # type: ignore
         elif self.kernel == KernelType.SIGMOID:
@@ -266,6 +362,7 @@ class KernelSVMModel(BaseModel):
     def score(  # type: ignore
         self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0, coef0=0, degree=0
     ):
+        """Provide a score for the model performance on the data."""
         gram = self.get_gram(x, (gamma, coef0, degree))
         model = SVC(C=C, kernel="precomputed", max_iter=10000)
 
@@ -287,6 +384,13 @@ class KernelSVMModel(BaseModel):
 def precompute_kernels(
     x: np.ndarray, models: Dict[str, BaseModel], grid: Dict[str, Dict[str, np.ndarray]]
 ) -> None:
+    """Precompute kernel for the given data, model and grid.
+
+    Arguments:
+        x: Data to precompute kernel for
+        models: For which models to compute the kernel for
+        grid: Hyperparameter grid to use
+    """
     setup_cache_file()
     required = ["gamma", "coef0", "degree"]
     for model_name, model in models.items():
@@ -308,6 +412,7 @@ def precompute_kernels(
 
 
 def setup_cache_file() -> None:
+    """Generate a gram matrix cache file."""
     GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not GRAM_PATH.is_file():
         with h5py.File(GRAM_PATH, "w") as f:
@@ -325,6 +430,18 @@ def score_splits(
     warm_start: bool = False,
     cache: bool = False,
 ) -> None:
+    """Compute sample complexity scores for the data splits.
+
+    Arguments:
+        x: Feature data
+        y: Target labels
+        models: Dictionary of models
+        grid: Hyperparameter grid to use
+        splits: Data splits
+        seeds: List of seeds to use
+        warm_start: Whether or not to continue or create a new output file
+        cache: Whether or not to write and read cached gram matrices
+    """
     columns = [
         "model",
         "n",

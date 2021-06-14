@@ -1,13 +1,25 @@
+"""This module provides hyperparameter grids for each model."""
+
 from typing import Dict
-
 import numpy as np
-
 from esce.util import load_grid_file
 
 
 def logrange(
     start: float, stop: float, step: float = 1.0, base: float = 2.0
 ) -> np.ndarray:
+    """Provide range function in logspace.
+
+    Arguments:
+        start: Start of range
+        stop: End of range
+        step: Step size within range
+        base: Power function base
+
+    Returns:
+        Range raised to the power of base starting in 'start', ending in 'stop'
+        with step size 'step'
+    """
     base = float(base)
     return np.power(base, np.arange(start, stop + step, step))
 
