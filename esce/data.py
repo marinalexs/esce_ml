@@ -5,7 +5,7 @@ The following datasets are available: MNIST, FashionMNIST, superconduct, HIGGS.
 
 import codecs
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, cast
 from zipfile import ZipFile
 
 import numpy as np
@@ -54,7 +54,7 @@ def read_sn3_tensor(path: Path) -> np.ndarray:
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m, offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s)
-    return parsed.reshape(*s)
+    return cast(np.ndarray, parsed.reshape(*s))
 
 
 def get_mnist() -> Tuple[np.ndarray, np.ndarray]:

@@ -6,7 +6,7 @@ import json
 import pickle
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
 import h5py
 import numpy as np
@@ -44,7 +44,7 @@ def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
     """
     np.random.seed(seed)
     indices = np.random.random(x.shape) < prob
-    return np.logical_xor(x, indices).astype(int)
+    return cast(np.ndarray, np.logical_xor(x, indices).astype(int))
 
 
 def flt2str(f: float, decimals: int = 4) -> str:
@@ -118,7 +118,7 @@ def load_dataset(
     """
     if data_path.suffix == ".h5":
         with h5py.File(data_path, "r") as f:
-            x = f["/data"][...]
+            x = cast(np.ndarray, f["/data"][...])
             if label is None:
                 return x
             y = f[f"/labels/{label}"][...]

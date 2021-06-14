@@ -40,7 +40,12 @@ def precomp(
         include: Models to include
         exclude: Models to exclude
     """
-    x = load_dataset(data_path)
+    dset = load_dataset(data_path)
+    if isinstance(dset, tuple):
+        x = dset[0]
+    else:
+        x = dset
+
     grid = load_grid(grid_name)
     models = MODELS
     if include is not None:

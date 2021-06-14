@@ -1,6 +1,6 @@
 """This module provides hyperparameter grids for each model."""
 
-from typing import Dict
+from typing import Any, Dict, cast
 
 import numpy as np
 
@@ -23,10 +23,10 @@ def logrange(
         with step size 'step'
     """
     base = float(base)
-    return np.power(base, np.arange(start, stop + step, step))
+    return cast(np.ndarray, np.power(base, np.arange(start, stop + step, step)))
 
 
-def grid(n: int) -> Dict[str, Dict[str, np.ndarray]]:
+def grid(n: int) -> Dict[str, Dict[str, Any]]:
     """Create grid for a certain stepsize / coarseness.
 
     Arguments:

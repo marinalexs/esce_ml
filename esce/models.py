@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
 
 import h5py
 import numpy as np
@@ -65,7 +65,7 @@ def get_gram_triu_key(
     Returns:
         md5 hexdigest key
     """
-    return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"
+    return f"/{md5(x).hexdigest()}/{kernel}_{gamma}_{coef0}_{degree}"  # type: ignore
 
 
 def compute_gram_matrix(
@@ -88,13 +88,15 @@ def compute_gram_matrix(
         Gram matrix
     """
     if kernel == KernelType.LINEAR:
-        return linear_kernel(x, x)
+        return cast(np.ndarray, linear_kernel(x, x))
     elif kernel == KernelType.RBF:
-        return rbf_kernel(x, x, gamma=gamma)
+        return cast(np.ndarray, rbf_kernel(x, x, gamma=gamma))
     elif kernel == KernelType.SIGMOID:
-        return sigmoid_kernel(x, x, gamma=gamma, coef0=coef0)
+        return cast(np.ndarray, sigmoid_kernel(x, x, gamma=gamma, coef0=coef0))
     elif kernel == KernelType.POLYNOMIAL:
-        return polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
+        return cast(
+            np.ndarray, polynomial_kernel(x, x, degree=degree, gamma=gamma, coef0=coef0)
+        )
     else:
         raise ValueError
 
@@ -120,17 +122,12 @@ def get_gram_triu(
     key = get_gram_triu_key(x, kernel, gamma, coef0, degree)
     with h5py.File(GRAM_PATH, "r") as f:
         if key in f:
-            return f[key][...]
+            return cast(np.ndarray, f[key][...])
 
     with h5py.File(GRAM_PATH, "a") as f:
         K = compute_gram_matrix(x, kernel, gamma, coef0, degree)
-        res = K[np.triu_indices(K.shape[0])]
-        f.create_dataset(
-            key,
-            res.shape,
-            dtype="f",
-            data=res,
-            compression="gzip")
+        res = cast(np.ndarray, K[np.triu_indices(K.shape[0])])
+        f.create_dataset(key, res.shape, dtype="f", data=res, compression="gzip")
         return res
 
 
@@ -295,7 +292,7 @@ class KernelSVMModel(BaseModel):
     """Class for kernelized SVM models."""
 
     curr_config: Optional[Tuple[float, float, float]] = None
-    cached_gram: np.ndarray
+    cached_gram: Optional[np.ndarray] = None
     cache: bool = False
 
     def __init__(self, kernel: KernelType = KernelType.LINEAR):
@@ -305,7 +302,6 @@ class KernelSVMModel(BaseModel):
             kernel: Kernel type to use
         """
         self.kernel = kernel
-        self.cached_gram = None
 
     def get_gram(self, x: np.ndarray, config: Tuple[float, float, float]) -> np.ndarray:
         """Retrieve gram matrix of the data for a given config.
@@ -320,7 +316,7 @@ class KernelSVMModel(BaseModel):
         Returns:
             Gram matrix
         """
-        if self.curr_config == config:
+        if self.curr_config == config and self.cached_gram is not None:
             return self.cached_gram
         else:
             gamma, coef0, degree = config
@@ -495,8 +491,14 @@ def score_splits(
                                 x, y, idx_train, idx_val, idx_test, **params
                             )  # type: ignore
 
-                            row = [np.nan] * (len(columns) - 1)
-                            row[:3] = [model_name, n, s, params, param_hash]
+                            row: List[Any] = [np.nan] * (len(columns) - 1)
+                            row[:3] = [
+                                model_name,
+                                n,
+                                s,
+                                params,
+                                param_hash,
+                            ]
                             for k, v in scores.items():
                                 row[col2idx[k]] = v
 
