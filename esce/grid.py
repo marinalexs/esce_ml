@@ -1,7 +1,9 @@
 """This module provides hyperparameter grids for each model."""
 
 from typing import Dict
+
 import numpy as np
+
 from esce.util import load_grid_file
 
 
