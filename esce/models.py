@@ -10,7 +10,6 @@ import h5py
 import hdf5plugin
 import numpy as np
 import pandas as pd
-from pkg_resources import get_distribution
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
@@ -31,6 +30,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.svm import SVC
 
 from esce.util import hash_dict
+import esce
 
 
 class KernelType(Enum):
@@ -311,8 +311,7 @@ def setup_cache_file() -> None:
     GRAM_PATH.parent.mkdir(parents=True, exist_ok=True)
     if not GRAM_PATH.is_file():
         with h5py.File(GRAM_PATH, "w") as f:
-            v = get_distribution("esce").version
-            f.attrs["version"] = v
+            f.attrs["version"] = esce.__version__
 
 
 def score_splits(
