@@ -1,3 +1,5 @@
+"""This module provides the command line interface for ESCE."""
+
 import argparse
 import pickle
 import warnings
@@ -30,8 +32,7 @@ def precomp(
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
 ) -> None:
-    """
-    Precomputes the kernel gram matrices for the given models.
+    """Precompute the kernel gram matrices for the given models.
 
     Arguments:
         data_path: Path to the data file.
@@ -64,8 +65,7 @@ def run(
     exclude: Optional[List[str]] = None,
     output: Optional[str] = None,
 ) -> None:
-    """
-    Performs sample complexity computation.
+    """Perform sample complexity computation.
 
     Arguments:
         data_path: Path to data file
@@ -129,8 +129,8 @@ def datagen(
     label_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
-    """
-    Generates a data file.
+    """Generate a data file.
+
     The file will be placed in the 'data' directory.
 
     Arguments:
@@ -193,8 +193,8 @@ def datagen(
 def splitgen(
     data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
 ) -> None:
-    """
-    Generates a split file.
+    """Generate a split file.
+
     The file will be placed in the 'splits' directory.
 
     Arguments:
@@ -223,8 +223,7 @@ def retrieve(
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
 ) -> None:
-    """
-    Retrieves the results, generates plots and the final accuracy scores.
+    """Retrieve the results, generate plots and the final accuracy scores.
 
     Arguments:
         path: Path to the results file
@@ -288,6 +287,7 @@ def retrieve(
 
 
 def main() -> None:
+    """Provide command line interface for ESCE."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help="functions")
     subparsers.required = True

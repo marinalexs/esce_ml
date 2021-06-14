@@ -1,6 +1,11 @@
+"""This module provides datasets for ESCE.
+
+The following datasets are available: MNIST, FashionMNIST, superconduct, HIGGS.
+"""
+
 import codecs
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Tuple
 from zipfile import ZipFile
 
 import numpy as np
@@ -21,10 +26,23 @@ SN3_TYPEMAP = {
 
 
 def get_int(b: bytes) -> int:
+    """Convert bytes to integer.
+
+    Argument:
+        b: bytes to convert
+    """
     return int(codecs.encode(b, "hex"), 16)
 
 
 def read_sn3_tensor(path: Path) -> np.ndarray:
+    """Read SN3/ubyte file format.
+
+    Argument:
+        path: Path to dataset
+
+    Returns:
+        numpy array containing the data
+    """
     with path.open("rb") as f:
         data = f.read()
     magic = get_int(data[0:4])
@@ -39,7 +57,12 @@ def read_sn3_tensor(path: Path) -> np.ndarray:
     return parsed.reshape(*s)
 
 
-def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+def get_mnist() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the MNIST dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     train_images_path = Path("data/MNIST/raw/train-images-idx3-ubyte")
     train_labels_path = Path("data/MNIST/raw/train-labels-idx1-ubyte")
     train_images_path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +88,11 @@ def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
 
 
 def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the FashionMNIST dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     train_images_path = Path("data/FashionMNIST/raw/train-images-idx3-ubyte")
     train_labels_path = Path("data/FashionMNIST/raw/train-labels-idx1-ubyte")
     train_images_path.parent.mkdir(parents=True, exist_ok=True)
@@ -96,6 +124,11 @@ def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
 
 
 def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the superconductivity/superconduct dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     csv_path = Path("data/superconductivity.csv")
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     zip_path = Path("data/superconduct.zip")
@@ -122,6 +155,11 @@ def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
 
 
 def get_higgs() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the HIGGS dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     gz_path = Path("data/HIGGS.csv.gz")
     gz_path.parent.mkdir(parents=True, exist_ok=True)
 

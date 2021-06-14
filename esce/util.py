@@ -1,3 +1,5 @@
+"""This module provides utility functions required by other modules."""
+
 import gzip
 import hashlib
 import json
@@ -14,6 +16,15 @@ from tqdm import tqdm
 
 
 def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Drop infinity and NaNs from both arrays aligned.
+
+    Arguments:
+        x: First array to check
+        y: Second array to check
+
+    Returns:
+        Tuple (x,y) where both do not contain infinity/NaN values
+    """
     mask_x = np.isfinite(x).all(1)
     mask_y = np.isfinite(y)
     mask = np.logical_and(mask_x, mask_y)
@@ -21,22 +32,51 @@ def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
+    """Randomly flip an array of binary labels.
+
+    Arguments:
+        x: Array of binary data
+        prob: Probability to flip a label
+        seed: Seed to label random engine by
+
+    Returns:
+        Array of new labels
+    """
     np.random.seed(seed)
     indices = np.random.random(x.shape) < prob
     return np.logical_xor(x, indices).astype(int)
 
 
 def flt2str(f: float, decimals: int = 4) -> str:
+    """Serialize a float to a string.
+
+    Arguments:
+        f: Floating point value to convert
+        decimals: How many decimal places to store
+
+    Returns:
+        Rounded float with full stops replaced by "#"
+    """
     return str(round(f, decimals)).replace(".", "#")
 
 
 def hash_dict(x: Dict[Any, Any]) -> str:
+    """Compute the hash of a dictionary.
+
+    Sorts the keys, converts it to JSON and computes an MD5 hash.
+
+    Arguments:
+        x: Dictionary to compute hash of
+
+    Returns:
+        Hexdigest string representation of the hashed dictionary
+    """
     return hashlib.md5(json.dumps(x, sort_keys=True).encode("utf-8")).hexdigest()
 
 
 def load_grid_file(grid_name: str) -> Any:
-    """
-    Loads a grid from a YAML file.
+    """Load a grid from a YAML file.
+
     Grid YAML files may contain multiple grids.
     These grid can be selected by adding @<entry> to
     the file path, e.g. grid.yaml@grid1
@@ -67,8 +107,7 @@ def load_grid_file(grid_name: str) -> Any:
 def load_dataset(
     data_path: Path, label: Optional[str] = None
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
-    """
-    Loads data and label from data file
+    """Load data and label from data file.
 
     Arguments:
         data_path: Path to h5 or pkl file
@@ -98,8 +137,7 @@ def load_dataset(
 
 
 def load_split(split_path: Path) -> Any:
-    """
-    Loads a split file from a path.
+    """Load a split file from a path.
 
     Arguments:
         split_path: Path to split file
@@ -113,8 +151,7 @@ def load_split(split_path: Path) -> Any:
 
 
 def download_file(url: str, path: Path) -> None:
-    """
-    Download the URL and save it in the given path.
+    """Download the URL and save it in the given path.
 
     Arguments:
         url: URL to download
@@ -134,6 +171,12 @@ def download_file(url: str, path: Path) -> None:
 
 
 def extract_gzip(in_path: Path, out_path: Path) -> None:
+    """Extract a GZip file to a given path.
+
+    Arguments:
+        in_path: Path to the GZip file
+        out_path: Where to write the unzipped contents to
+    """
     with open(out_path, "wb") as f_out:
         with gzip.open(in_path, "rb") as f_in:
             shutil.copyfileobj(f_in, f_out)

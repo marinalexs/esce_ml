@@ -13,6 +13,14 @@ def logrange(
 
 
 def grid(n: int) -> Dict[str, Dict[str, np.ndarray]]:
+    """Create grid for a certain stepsize / coarseness.
+
+    Arguments:
+        n: Stepsize in the hyperparameter ranges
+
+    Returns:
+        Dictionary of classifiers / regressors and their hyperparameter grids
+    """
     return {
         "lda": {},
         "logit": {"C": logrange(-20, 10, n)},
@@ -46,8 +54,8 @@ GRID = {"fine": grid(1), "default": grid(2), "coarse": grid(4)}
 
 
 def load_grid(grid_name: str) -> Dict[str, Dict[str, np.ndarray]]:
-    """
-    Loads a grid from a name or a file.
+    """Load a grid from a name or a file.
+
     Valid names are fine, default and coarse.
     Grid files are required to be in YAML format.
 

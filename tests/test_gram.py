@@ -1,3 +1,5 @@
+"""This module provides unit tests for the gram matrix computation."""
+
 from unittest import TestCase
 
 import h5py
@@ -14,7 +16,10 @@ from esce.models import (
 
 
 class TestGram(TestCase):
+    """Provide test cases for gram matrix computation."""
+
     def test_gram_triu(self):
+        """Test if triangular upper gram matrix computation works correctly."""
         setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100))
@@ -23,6 +28,7 @@ class TestGram(TestCase):
         self.assertEqual(len(triu), num_elements)
 
     def test_gram(self):
+        """Test if full gram matrix computation works."""
         setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100))
@@ -30,6 +36,7 @@ class TestGram(TestCase):
         self.assertEqual(gram.shape, (num_samples, num_samples))
 
     def test_gram_cache(self):
+        """Test if a gram matrix can be retrieved from a cache file."""
         setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100)).astype("f")

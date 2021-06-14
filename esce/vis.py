@@ -1,3 +1,8 @@
+"""This modules provides methods for visualization.
+
+Either a hyperparameter plot or a scoring plot can be created.
+"""
+
 import ast
 from pathlib import Path
 from typing import Dict
@@ -26,6 +31,15 @@ def hp_plot(
     show: bool = False,
     target: str = "acc_test",
 ) -> None:
+    """Generate a hyperparameter plot.
+
+    Arguments:
+        root: Root path of the plot directory
+        title: Title of the figure
+        df: Data frame to read from
+        grid: Hyperparameter grid to visualize
+        show: Whether or not to show the data or just write it to file
+    """
     model_names = df["model"].unique()
     plots_per_model = {}
     for model_name in model_names:
@@ -135,6 +149,16 @@ def hp_plot(
 
 
 def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> None:
+    """Generate a scoring plot.
+
+    Shows the accuracy plotted over the sample size ticks.
+
+    Arguments:
+        root: Root path of the plot directory
+        title: Title of the figure
+        df: Data frame to read from
+        show: Whether or not to show the data or just write it to file
+    """
     fig, ax = pylab.subplots(1, 1, dpi=200)
     models = list(df["model"].unique())
     ticks = df["n"].unique()
@@ -157,14 +181,10 @@ def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> Non
     )
     ax.set_ylabel("Accuracy")
     ax.set_xlabel("Sample Size")
-    # ax.set_xticks(ticks=list(np.arange(len(ticks))), labels=list(df.n.unique()))
-    # ax.set_xlim(0, np.max(ticks))
 
     ax.set_xscale("log")
     ax.set_xticks(ticks)
 
-    # ax.get_xaxis().set_ticks(list(np.arange(len(ticks))))
-    # ax.get_xaxis().set_ticklabels(ticks)
     ax.get_xaxis().set_major_formatter(ScalarFormatter())
     ax.get_xaxis().set_tick_params(which="minor", size=0)
     ax.get_xaxis().set_tick_params(which="minor", width=0)
