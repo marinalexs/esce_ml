@@ -9,11 +9,13 @@ from esce.models import (
     get_gram,
     get_gram_triu,
     get_gram_triu_key,
+    setup_cache_file,
 )
 
 
 class TestGram(TestCase):
     def test_gram_triu(self):
+        setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100))
         triu = get_gram_triu(X, KernelType.RBF, gamma=0.5)
@@ -21,12 +23,14 @@ class TestGram(TestCase):
         self.assertEqual(len(triu), num_elements)
 
     def test_gram(self):
+        setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100))
         gram = get_gram(X, KernelType.RBF, gamma=0.5)
         self.assertEqual(gram.shape, (num_samples, num_samples))
 
     def test_gram_cache(self):
+        setup_cache_file()
         num_samples = 100
         X = np.random.random((num_samples, 100)).astype("f")
         get_gram(X, KernelType.SIGMOID, gamma=0.8, cache=True)
