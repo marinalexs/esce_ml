@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import h5py
-import hdf5plugin
 import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -131,10 +130,7 @@ def get_gram_triu(
             res.shape,
             dtype="f",
             data=res,
-            **hdf5plugin.Blosc(
-                cname="lz4", clevel=5, shuffle=hdf5plugin.Blosc.BITSHUFFLE
-            ),
-        )
+            compression="gzip")
         return res
 
 
