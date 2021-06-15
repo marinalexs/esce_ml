@@ -1,13 +1,13 @@
 style:
-	black .
-	isort .
+	black esce tests
+	isort esce tests
 
 lint:
-	flake8 .
-	mypy --strict .
+	flake8 esce tests
+	mypy --strict esce tests
 
 test:
-	pytest .
+	pytest tests
 
 qa: style lint test
 
