@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
 from sklearn.metrics import (
     accuracy_score,
@@ -373,6 +374,31 @@ class KernelSVMModel(BaseModel):
         return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 
+class KernelRidgeModel(KernelSVMModel):
+    """Class for kernelized Ridge models."""
+
+    def score(  # type: ignore
+        self, x, y, idx_train, idx_val, idx_test, alpha=1, gamma=0, coef0=0, degree=0
+    ):
+        """Provide a score for the model performance on the data."""
+        gram = self.get_gram(x, (gamma, coef0, degree))
+        model = KernelRidge(alpha=alpha, kernel="precomputed", max_iter=10000)
+
+        # Fit on train
+        gram_ = gram[np.ix_(idx_train, idx_train)]
+        model.fit(gram_, y[idx_train])
+
+        # Val score
+        gram_ = gram[np.ix_(idx_val, idx_train)]
+        y_hat_val = model.predict(gram_)
+
+        # Test score
+        gram_ = gram[np.ix_(idx_test, idx_train)]
+        y_hat_test = model.predict(gram_)
+
+        return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+
 def precompute_kernels(
     x: np.ndarray, models: Dict[str, BaseModel], grid: Dict[str, Dict[str, np.ndarray]]
 ) -> None:
@@ -526,6 +552,10 @@ MODELS = {
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
     "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
     "svm-polynomial": KernelSVMModel(kernel=KernelType.POLYNOMIAL),
+    "krr-linear": KernelRidgeModel(kernel=KernelType.LINEAR),
+    "krr-rbf": KernelRidgeModel(kernel=KernelType.RBF),
+    "krr-sigmoid": KernelRidgeModel(kernel=KernelType.SIGMOID),
+    "krr-polynomial": KernelRidgeModel(kernel=KernelType.POLYNOMIAL),
 }
 
 MODEL_NAMES = {
@@ -539,4 +569,8 @@ MODEL_NAMES = {
     "svm-rbf": "Support Vector Machine (RBF)",
     "svm-sigmoid": "Support Vector Machine (Sigmoid)",
     "svm-polynomial": "Support Vector Machine (Polynomial)",
+    "krr-linear": "Kernel Ridge Regression (Linear)",
+    "krr-rbf": "Kernel Ridge Regression (RBF)",
+    "krr-sigmoid": "Kernel Ridge Regression (Sigmoid)",
+    "krr-polynomial": "Kernel Ridge Regression (Polynomial)",
 }
