@@ -211,8 +211,15 @@ def splitgen(
     path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    _, y = load_dataset(data_path, label)
-    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify)
+    x, y = load_dataset(data_path, label)
+
+    # filter target for nans. features have already been checked
+    # when loading the dataset.
+    mask = np.isfinite(y)
+
+    splits = split_grid(
+        y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify, mask=mask
+    )
 
     with path.open("wb") as f:
         pickle.dump((n_seeds, splits), f)

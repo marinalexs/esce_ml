@@ -15,22 +15,6 @@ import yaml
 from tqdm import tqdm
 
 
-def dropna(x: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Drop infinity and NaNs from both arrays aligned.
-
-    Arguments:
-        x: First array to check
-        y: Second array to check
-
-    Returns:
-        Tuple (x,y) where both do not contain infinity/NaN values
-    """
-    mask_x = np.isfinite(x).all(1)
-    mask_y = np.isfinite(y)
-    mask = np.logical_and(mask_x, mask_y)
-    return x[mask], y[mask]
-
-
 def flip(x: np.ndarray, prob: float, seed: int) -> np.ndarray:
     """Randomly flip an array of binary labels.
 
@@ -132,7 +116,11 @@ def load_dataset(
     else:
         raise ValueError("Unknown file format")
 
-    return dropna(x, y)
+    # filter only nan features. different targets may have different nans.
+    # these are filtered at split time.
+    mask = np.isfinite(x).all(1)
+
+    return x[mask], y[mask]
 
 
 def load_split(split_path: Path) -> Any:
