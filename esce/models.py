@@ -382,7 +382,7 @@ class KernelRidgeModel(KernelSVMModel):
     ):
         """Provide a score for the model performance on the data."""
         gram = self.get_gram(x, (gamma, coef0, degree))
-        model = KernelRidge(alpha=alpha, kernel="precomputed", max_iter=10000)
+        model = KernelRidge(alpha=alpha, kernel="precomputed")
 
         # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
