@@ -289,7 +289,7 @@ class RegressionModel(BaseModel):
         return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 
-class KernelSVMModel(BaseModel):
+class KernelSVMModel(ClassifierModel):
     """Class for kernelized SVM models."""
 
     curr_config: Optional[Tuple[float, float, float]] = None
@@ -374,7 +374,7 @@ class KernelSVMModel(BaseModel):
         return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 
-class KernelRidgeModel(KernelSVMModel):
+class KernelRidgeModel(KernelSVMModel, RegressionModel):
     """Class for kernelized Ridge models."""
 
     def score(  # type: ignore

@@ -15,6 +15,7 @@ from matplotlib import pylab
 from matplotlib.ticker import ScalarFormatter
 
 from esce.models import MODEL_NAMES
+from esce.models import MODELS, RegressionModel
 
 pylab.rc("font", family="serif", serif="Times")
 pylab.rc("xtick", labelsize=8)
@@ -29,7 +30,6 @@ def hp_plot(
     df: pd.DataFrame,
     grid: Dict[str, Dict[str, np.ndarray]],
     show: bool = False,
-    target: str = "acc_test",
 ) -> None:
     """Generate a hyperparameter plot.
 
@@ -55,6 +55,9 @@ def hp_plot(
         df_new = df_.copy()
         df_new["params"] = df_["params"].apply(lambda x: ast.literal_eval(x))
 
+        is_regression_model = isinstance(MODELS[model_name], RegressionModel)
+        target = "r2_test" if is_regression_model else "acc_test"
+
         names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
         legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
@@ -79,7 +82,7 @@ def hp_plot(
                 palette=palette,
             )
             ax1.set_xscale("log", base=2)
-            ax1.set_ylabel("Accuracy")
+            ax1.set_ylabel("$R^2$" if is_regression_model else "Accuracy")
 
         fig.subplots_adjust(bottom=0.2)
         pylab.plt.figtext(0.5, 0.9, title, fontsize=8, ha="center")
@@ -127,7 +130,7 @@ def hp_plot(
                 palette=palette,
                 legend=False,
             )
-            ax1.set_ylabel("Accuracy")
+            ax1.set_ylabel("$R^2$" if is_regression_model else "Accuracy")
             ax1.set_xlabel(param_name)
 
         fig.subplots_adjust(bottom=0.2)
