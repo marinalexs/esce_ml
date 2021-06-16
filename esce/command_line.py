@@ -292,8 +292,8 @@ def retrieve(
     hp_plot(root_path, path.stem, df, grid, show_hp)
 
     regr_missing = sc_df["acc_val"].isnull()
-    sc_df.loc[regr_missing, "acc_val"] = np.max(sc_df[regr_missing]["r2_val"], 0)
-    sc_df.loc[regr_missing, "acc_test"] = np.max(sc_df[regr_missing]["r2_test"], 0)
+    sc_df.loc[regr_missing, "acc_val"] = sc_df.loc[regr_missing, "r2_val"]
+    sc_df.loc[regr_missing, "acc_test"] = sc_df.loc[regr_missing, "r2_test"]
     sc_plot(root_path, path.stem, sc_df, show_sc)
 
 
