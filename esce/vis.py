@@ -14,8 +14,7 @@ import seaborn as sns
 from matplotlib import pylab
 from matplotlib.ticker import ScalarFormatter
 
-from esce.models import MODEL_NAMES
-from esce.models import MODELS, RegressionModel
+from esce.models import MODEL_NAMES, MODELS, RegressionModel
 
 pylab.rc("font", family="serif", serif="Times")
 pylab.rc("xtick", labelsize=8)
@@ -171,9 +170,16 @@ def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> Non
     palette = sns.xkcd_palette(palette)
     legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
 
+    if df["acc_test"].isna().all():
+        target = "r2_test"
+    elif df["r2_test"].isna().all():
+        target = "acc_test"
+    else:
+        raise ValueError("you should not mix classification and regression")
+
     ax = sns.lineplot(
         x="n",
-        y="acc_test",
+        y=target,
         hue="model",
         data=df,
         ci="sd",
