@@ -211,7 +211,7 @@ def splitgen(
     path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    x, y = load_dataset(data_path, label)
+    _, y = load_dataset(data_path, label)
 
     # filter target for nans. features have already been checked
     # when loading the dataset.
