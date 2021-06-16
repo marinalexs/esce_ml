@@ -81,7 +81,7 @@ def hp_plot(
                 palette=palette,
             )
             ax1.set_xscale("log", base=2)
-            ax1.set_ylabel("$R^2$" if is_regression_model else "Accuracy")
+            ax1.set_ylabel("Accuracy")
 
         fig.subplots_adjust(bottom=0.2)
         pylab.plt.figtext(0.5, 0.9, title, fontsize=8, ha="center")
@@ -129,7 +129,7 @@ def hp_plot(
                 palette=palette,
                 legend=False,
             )
-            ax1.set_ylabel("$R^2$" if is_regression_model else "Accuracy")
+            ax1.set_ylabel("Accuracy")
             ax1.set_xlabel(param_name)
 
         fig.subplots_adjust(bottom=0.2)
@@ -170,16 +170,9 @@ def sc_plot(root: Path, title: str, df: pd.DataFrame, show: bool = False) -> Non
     palette = sns.xkcd_palette(palette)
     legend = [mpatches.Patch(color=i, label=j) for i, j in zip(palette, names)]
 
-    if df["acc_test"].isna().all():
-        target = "r2_test"
-    elif df["r2_test"].isna().all():
-        target = "acc_test"
-    else:
-        raise ValueError("you should not mix classification and regression")
-
     ax = sns.lineplot(
         x="n",
-        y=target,
+        y="acc_test",
         hue="model",
         data=df,
         ci="sd",
