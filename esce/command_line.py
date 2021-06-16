@@ -395,7 +395,9 @@ def main() -> None:
     splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
-    run_parser.add_argument("--stratify", action="store_true", help="stratify splits")
+    splitgen_parser.add_argument(
+        "--stratify", action="store_true", help="stratify splits"
+    )
     splitgen_parser.set_defaults(splitgen=True)
 
     retrieve_parser.add_argument(
