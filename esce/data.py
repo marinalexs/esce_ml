@@ -1,7 +1,12 @@
-from pathlib import Path
-from typing import Tuple, Dict
-from zipfile import ZipFile
+"""This module provides datasets for ESCE.
+
+The following datasets are available: MNIST, FashionMNIST, superconduct, HIGGS.
+"""
+
 import codecs
+from pathlib import Path
+from typing import Tuple, cast
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -21,10 +26,23 @@ SN3_TYPEMAP = {
 
 
 def get_int(b: bytes) -> int:
+    """Convert bytes to integer.
+
+    Argument:
+        b: bytes to convert
+    """
     return int(codecs.encode(b, "hex"), 16)
 
 
 def read_sn3_tensor(path: Path) -> np.ndarray:
+    """Read SN3/ubyte file format.
+
+    Argument:
+        path: Path to dataset
+
+    Returns:
+        numpy array containing the data
+    """
     with path.open("rb") as f:
         data = f.read()
     magic = get_int(data[0:4])
@@ -36,10 +54,15 @@ def read_sn3_tensor(path: Path) -> np.ndarray:
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m, offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s)
-    return parsed.reshape(*s)
+    return cast(np.ndarray, parsed.reshape(*s))
 
 
-def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+def get_mnist() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the MNIST dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     train_images_path = Path("data/MNIST/raw/train-images-idx3-ubyte")
     train_labels_path = Path("data/MNIST/raw/train-labels-idx1-ubyte")
     train_images_path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,18 +88,29 @@ def get_mnist() -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
 
 
 def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the FashionMNIST dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     train_images_path = Path("data/FashionMNIST/raw/train-images-idx3-ubyte")
     train_labels_path = Path("data/FashionMNIST/raw/train-labels-idx1-ubyte")
     train_images_path.parent.mkdir(parents=True, exist_ok=True)
 
     if not train_images_path.is_file():
-        train_images_url = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz"
+        train_images_url = (
+            "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+            "train-images-idx3-ubyte.gz"
+        )
         gzip_path = train_images_path.with_suffix(".gz")
         download_file(train_images_url, gzip_path)
         extract_gzip(gzip_path, train_images_path)
 
     if not train_labels_path.is_file():
-        train_labels_url = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz"
+        train_labels_url = (
+            "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+            "train-labels-idx1-ubyte.gz"
+        )
         gzip_path = train_labels_path.with_suffix(".gz")
         download_file(train_labels_url, gzip_path)
         extract_gzip(gzip_path, train_labels_path)
@@ -90,6 +124,11 @@ def get_fashion_mnist() -> Tuple[np.ndarray, np.ndarray]:
 
 
 def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the superconductivity/superconduct dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     csv_path = Path("data/superconductivity.csv")
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     zip_path = Path("data/superconduct.zip")
@@ -97,7 +136,10 @@ def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
     if not csv_path.is_file():
         if not zip_path.is_file():
             print("Downloading superconduct.zip...")
-            url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00464/superconduct.zip"
+            url = (
+                "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+                "00464/superconduct.zip"
+            )
             download_file(url, zip_path)
         with ZipFile(zip_path, "r") as zipfile:
             with zipfile.open("train.csv") as src:
@@ -113,12 +155,20 @@ def get_superconductivity() -> Tuple[np.ndarray, np.ndarray]:
 
 
 def get_higgs() -> Tuple[np.ndarray, np.ndarray]:
+    """Retrieve the HIGGS dataset.
+
+    Returns:
+        Tuple (x,y) containing the training data and the labels.
+    """
     gz_path = Path("data/HIGGS.csv.gz")
     gz_path.parent.mkdir(parents=True, exist_ok=True)
 
     if not gz_path.is_file():
         print("Downloading HIGGS.csv.gz...")
-        url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz"
+        url = (
+            "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+            "00280/HIGGS.csv.gz"
+        )
         download_file(url, gz_path)
 
     df = pd.read_csv(gz_path, nrows=12000)

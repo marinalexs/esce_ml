@@ -1,3 +1,5 @@
+"""This module provides the command line interface for ESCE."""
+
 import argparse
 import pickle
 import warnings
@@ -16,10 +18,9 @@ from sklearn.random_projection import GaussianRandomProjection
 
 from esce.data import DATA
 from esce.grid import load_grid
-from esce.models import score_splits, MODELS, RegressionModel, precompute_kernels
+from esce.models import MODELS, RegressionModel, precompute_kernels, score_splits
 from esce.sampling import split_grid
-from esce.util import hash_dict
-from esce.util import load_dataset, load_split, flip, flt2str
+from esce.util import flip, flt2str, hash_dict, load_dataset, load_split
 from esce.vis import hp_plot, sc_plot
 
 warnings.simplefilter(action="ignore", category=ConvergenceWarning)
@@ -31,8 +32,7 @@ def precomp(
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
 ) -> None:
-    """
-    Precomputes the kernel gram matrices for the given models.
+    """Precompute the kernel gram matrices for the given models.
 
     Arguments:
         data_path: Path to the data file.
@@ -40,8 +40,12 @@ def precomp(
         include: Models to include
         exclude: Models to exclude
     """
+    dset = load_dataset(data_path)
+    if isinstance(dset, tuple):
+        x = dset[0]
+    else:
+        x = dset
 
-    x = load_dataset(data_path)
     grid = load_grid(grid_name)
     models = MODELS
     if include is not None:
@@ -66,8 +70,7 @@ def run(
     exclude: Optional[List[str]] = None,
     output: Optional[str] = None,
 ) -> None:
-    """
-    Performs sample complexity computation.
+    """Perform sample complexity computation.
 
     Arguments:
         data_path: Path to data file
@@ -79,7 +82,6 @@ def run(
         warm_start: Whether or not to continue previous computation
         cache: Turn caching on or off
     """
-
     x, y = load_dataset(data_path, label)
     found_seeds, splits = load_split(split_path)
     if found_seeds < len(seeds):
@@ -132,8 +134,8 @@ def datagen(
     label_noise: Optional[List[float]] = None,
     fmt: str = "hdf5",
 ) -> None:
-    """
-    Generates a data file.
+    """Generate a data file.
+
     The file will be placed in the 'data' directory.
 
     Arguments:
@@ -144,7 +146,6 @@ def datagen(
         label_noise: Label noise factor
         fmt: Data file format (hdf5 or pkl)
     """
-
     method_str = f"_{method}{n_components}" if method is not None else ""
     feature_noise_str = "_n" + flt2str(feature_noise)
     path = Path("data") / f"{dataset}{method_str}{feature_noise_str}"
@@ -196,8 +197,8 @@ def datagen(
 def splitgen(
     data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
 ) -> None:
-    """
-    Generates a split file.
+    """Generate a split file.
+
     The file will be placed in the 'splits' directory.
 
     Arguments:
@@ -226,8 +227,7 @@ def retrieve(
     include: Optional[List[str]] = None,
     exclude: Optional[List[str]] = None,
 ) -> None:
-    """
-    Retrieves the results, generates plots and the final accuracy scores.
+    """Retrieve the results, generate plots and the final accuracy scores.
 
     Arguments:
         path: Path to the results file
@@ -291,6 +291,7 @@ def retrieve(
 
 
 def main() -> None:
+    """Provide command line interface for ESCE."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help="functions")
     subparsers.required = True
@@ -394,7 +395,9 @@ def main() -> None:
     splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
-    run_parser.add_argument("--stratify", action="store_true", help="stratify splits")
+    splitgen_parser.add_argument(
+        "--stratify", action="store_true", help="stratify splits"
+    )
     splitgen_parser.set_defaults(splitgen=True)
 
     retrieve_parser.add_argument(

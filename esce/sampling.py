@@ -1,4 +1,6 @@
-from typing import Tuple, Dict, Iterable, List
+"""This module prodives method to split and resample the data."""
+
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -12,8 +14,7 @@ def split(
     do_stratify: bool = False,
     seed: int = 0,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Generates train, validation and test indices for the data.
+    """Generate train, validation and test indices for the data.
 
     Arguments:
         y: Data labels
@@ -52,8 +53,7 @@ def split_grid(
     n_test: int = 1000,
     do_stratify: bool = False,
 ) -> Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
-    """
-    Generated train, validation and test indices for a specified number of seeds and samples.
+    """Generate train, validation and test indices for the given seeds and samples.
 
     Arguments:
         y: Data lables

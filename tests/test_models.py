@@ -1,3 +1,5 @@
+"""This module provides unit tests for the models."""
+
 from unittest import TestCase
 
 import numpy as np
@@ -8,7 +10,10 @@ from esce.models import MODELS
 
 
 class TestModels(TestCase):
+    """Provide test cases for models."""
+
     def test_regression(self):
+        """Test regression model on an example problem."""
         model = MODELS["ridge"]
         X, y = make_classification(
             n_samples=1000,
@@ -29,6 +34,7 @@ class TestModels(TestCase):
         self.assertAlmostEqual(score["r2_test"], 0.76, places=2)
 
     def test_classification(self):
+        """Test classifier model on an example problem."""
         model = MODELS["lda"]
         X, y = make_classification(
             n_samples=1000,

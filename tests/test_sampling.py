@@ -1,3 +1,5 @@
+"""This module provides unit tests for splitting / sampling."""
+
 import warnings
 from unittest import TestCase
 
@@ -12,7 +14,10 @@ from esce.sampling import split_grid
 
 
 class TestSampling(TestCase):
+    """Provide test cases for generating splits."""
+
     def test_splits(self):
+        """Test split generation and verify number of seeds."""
         y = np.random.choice([0, 1], size=(1000,), p=[2.0 / 3, 1.0 / 3])
         num_seeds = 10
         samples = (50, 100, 200)
@@ -24,7 +29,10 @@ class TestSampling(TestCase):
 
 
 class TestExample(TestCase):
+    """Provide test cases for examples."""
+
     def test_example(self):
+        """Test split generation and verify using a simple dataset."""
         warnings.simplefilter("ignore", category=DeprecationWarning)
         X, y = make_classification(
             n_samples=1000,
