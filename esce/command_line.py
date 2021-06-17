@@ -195,7 +195,13 @@ def datagen(
 
 
 def splitgen(
-    data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
+    data_path: Path,
+    label: str,
+    n_seeds: int,
+    samples: List[int],
+    n_val: int,
+    n_test: int,
+    do_stratify: bool,
 ) -> None:
     """Generate a split file.
 
@@ -219,7 +225,13 @@ def splitgen(
     mask = np.isfinite(y)
 
     splits = split_grid(
-        y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify, mask=mask
+        y,
+        n_samples=samples,
+        n_seeds=n_seeds,
+        do_stratify=do_stratify,
+        mask=mask,
+        n_val=n_val,
+        n_test=n_test,
     )
 
     with path.open("wb") as f:
@@ -401,6 +413,12 @@ def main() -> None:
         "--seeds", type=int, help="number of seeds to use", required=True
     )
     splitgen_parser.add_argument(
+        "--n_val", type=int, default=1000, help="number of validation samplese"
+    )
+    splitgen_parser.add_argument(
+        "--n_test", type=int, default=1000, help="number of test samplese"
+    )
+    splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
     splitgen_parser.add_argument(
@@ -453,7 +471,15 @@ def main() -> None:
             args.format,
         )
     elif args.splitgen:
-        splitgen(Path(args.data), args.label, args.seeds, args.samples, args.stratify)
+        splitgen(
+            Path(args.data),
+            args.label,
+            args.seeds,
+            args.samples,
+            args.n_val,
+            args.n_test,
+            args.stratify,
+        )
     elif args.retrieve:
         out_path = Path(args.output) if args.output is not None else None
         retrieve(
