@@ -207,7 +207,8 @@ def splitgen(
         n_seeds: Number of seeds to use in train_test_split
         samples: List of sample counts
     """
-    sample_str = "_".join(map(str, samples))
+    # sample_str = "_".join(map(str, samples)) # all train set sizes in filename
+    sample_str = str(len(samples))  # number of train set sizes in filename
     path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
 
