@@ -80,7 +80,7 @@ def split_grid(
     for n in n_samples:
         # skip if not enough samples
         if n + n_val + n_test > n_valid_samples:
-            print(f"skipping n={n}, not enough samples")
+            print(f"skipping n={n}, only {n_valid_samples} samples available")
             continue
 
         splits[n] = []

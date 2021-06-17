@@ -1,6 +1,7 @@
 """This module provides the command line interface for ESCE."""
 
 import argparse
+import glob
 import pickle
 import warnings
 from pathlib import Path
@@ -111,13 +112,17 @@ def run(
     if exclude is not None:
         models = {k: v for k, v in models.items() if k not in exclude}
 
-    seed_str = "_".join(map(str, seeds))
-    sample_str = "_".join(map(str, splits.keys()))
+    # seed_str = "_".join(map(str, seeds))
+    # sample_str = "_".join(map(str, splits.keys()))
+    seed_str = found_seeds
+    sample_str = len(splits.keys())
 
     grid = load_grid(grid_name)
     if output is None:
         outfile = (
-            Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
+            Path("results")
+            / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}"
+            / "default.csv"
         )
         outfile.parent.mkdir(parents=True, exist_ok=True)
     else:
@@ -250,13 +255,19 @@ def retrieve(
     """Retrieve the results, generate plots and the final accuracy scores.
 
     Arguments:
-        path: Path to the results file
+        path: Path to the results file(s) - may contain wildcards
         grid_name: Grid to use
-        output: Where to write the accuracy scores to
+        output: Directory for output files (scores, plots)
         show: Show results using matplotlib (all/sc/hp)
     """
     grid = load_grid(grid_name)
-    df = pd.read_csv(path, index_col=False)
+
+    all_results_files = glob.glob(str(path / "*.csv"))
+    df = pd.concat(
+        [pd.read_csv(filename, index_col=False) for filename in all_results_files],
+        axis=0,
+        ignore_index=True,
+    )
 
     model_names = set(grid.keys())
     if include is not None:
@@ -295,7 +306,7 @@ def retrieve(
     sc_df = pd.concat(outer_frames, ignore_index=True)
     sc_df.reset_index(inplace=True, drop=True)
 
-    root_path = Path("plots") / path.stem if output is None else output
+    root_path = Path("plots") / path.name if output is None else output
     root_path.mkdir(exist_ok=True, parents=True)
 
     sc_df.to_csv(root_path / "scores.csv", index=False)
