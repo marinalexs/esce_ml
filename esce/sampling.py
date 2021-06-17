@@ -75,10 +75,11 @@ def split_grid(
         Dictionary of splits. Samples are the first key, seeds are the subkey.
     """
     splits: Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]] = {}
+    n_valid_samples = len(y) if mask is False else len(y[mask])
 
     for n in n_samples:
         # skip if not enough samples
-        if n + n_val + n_test > len(y[mask]):
+        if n + n_val + n_test > n_valid_samples:
             print(f"skipping n={n}, not enough samples")
             continue
 
