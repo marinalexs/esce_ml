@@ -61,6 +61,19 @@ def grid(n: int) -> Dict[str, Dict[str, Any]]:
             "coef0": [-1, 0, 1],
             "degree": [2, 3],
         },
+        "svr-linear": {"C": logrange(-20, 10, n)},
+        "svr-rbf": {"C": logrange(-10, 20, n), "gamma": logrange(-25, 5, n)},
+        "svr-sigmoid": {
+            "C": logrange(-10, 20, n),
+            "gamma": logrange(-25, 5, n),
+            "coef0": [-1, 0, 1],
+        },
+        "svr-polynomial": {
+            "C": logrange(-10, 20, n),
+            "gamma": logrange(-25, 5, n),
+            "coef0": [-1, 0, 1],
+            "degree": [2, 3],
+        },
         "krr-linear": {"alpha": logrange(-15, 15, n)},
         "krr-rbf": {"alpha": logrange(-15, 15, n), "gamma": logrange(-25, 5, n)},
         "krr-sigmoid": {

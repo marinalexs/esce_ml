@@ -29,7 +29,7 @@ from sklearn.metrics.pairwise import (
     sigmoid_kernel,
 )
 from sklearn.model_selection import ParameterGrid
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 
 import esce
 from esce.util import hash_dict
@@ -357,7 +357,7 @@ class KernelSVMModel(ClassifierModel):
     ):
         """Provide a score for the model performance on the data."""
         gram = self.get_gram(x, (gamma, coef0, degree))
-        model = SVC(C=C, kernel="precomputed", max_iter=10000)
+        model = SVC(C=C, kernel="precomputed", max_iter=100000)
 
         # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
@@ -372,6 +372,31 @@ class KernelSVMModel(ClassifierModel):
         y_hat_test = model.predict(gram_)
 
         return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+
+class KernelSVRModel(KernelSVMModel, RegressionModel):
+    """Class for kernelized Ridge models."""
+
+    def score(  # type: ignore
+        self, x, y, idx_train, idx_val, idx_test, C=1, gamma=0, coef0=0, degree=0
+    ):
+        """Provide a score for the model performance on the data."""
+        gram = self.get_gram(x, (gamma, coef0, degree))
+        model = SVR(C=C, kernel="precomputed", max_iter=100000)
+
+        # Fit on train
+        gram_ = gram[np.ix_(idx_train, idx_train)]
+        model.fit(gram_, y[idx_train])
+
+        # Val score
+        gram_ = gram[np.ix_(idx_val, idx_train)]
+        y_hat_val = model.predict(gram_)
+
+        # Test score
+        gram_ = gram[np.ix_(idx_test, idx_train)]
+        y_hat_test = model.predict(gram_)
+
+        return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 
 class KernelRidgeModel(KernelSVMModel, RegressionModel):
@@ -552,6 +577,10 @@ MODELS = {
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
     "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
     "svm-polynomial": KernelSVMModel(kernel=KernelType.POLYNOMIAL),
+    "svr-linear": KernelSVRModel(kernel=KernelType.LINEAR),
+    "svr-rbf": KernelSVRModel(kernel=KernelType.RBF),
+    "svr-sigmoid": KernelSVRModel(kernel=KernelType.SIGMOID),
+    "svr-polynomial": KernelSVRModel(kernel=KernelType.POLYNOMIAL),
     "krr-linear": KernelRidgeModel(kernel=KernelType.LINEAR),
     "krr-rbf": KernelRidgeModel(kernel=KernelType.RBF),
     "krr-sigmoid": KernelRidgeModel(kernel=KernelType.SIGMOID),
@@ -569,6 +598,10 @@ MODEL_NAMES = {
     "svm-rbf": "Support Vector Machine (RBF)",
     "svm-sigmoid": "Support Vector Machine (Sigmoid)",
     "svm-polynomial": "Support Vector Machine (Polynomial)",
+    "svr-linear": "Support Vector Regression (Linear)",
+    "svr-rbf": "Support Vector Regression (RBF)",
+    "svr-sigmoid": "Support Vector Regression (Sigmoid)",
+    "svr-polynomial": "Support Vector Regression (Polynomial)",
     "krr-linear": "Kernel Ridge Regression (Linear)",
     "krr-rbf": "Kernel Ridge Regression (RBF)",
     "krr-sigmoid": "Kernel Ridge Regression (Sigmoid)",

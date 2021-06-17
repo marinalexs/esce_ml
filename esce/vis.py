@@ -214,4 +214,12 @@ MODEL_COLORS = {
     "svm-rbf": "teal",
     "svm-sigmoid": "orange",
     "svm-polynomial": "light green",
+    "svr-linear": "light blue",
+    "svr-rbf": "teal",
+    "svr-sigmoid": "orange",
+    "svr-polynomial": "light green",
+    "krr-linear": "light blue",
+    "krr-rbf": "teal",
+    "krr-sigmoid": "orange",
+    "krr-polynomial": "light green",
 }
