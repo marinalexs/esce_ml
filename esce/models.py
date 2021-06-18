@@ -7,15 +7,21 @@ from enum import Enum
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
-from sklearn.dummy import DummyRegressor, DummyClassifier
 
 import h5py
 import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.kernel_ridge import KernelRidge
-from sklearn.linear_model import Lasso, LinearRegression, LogisticRegression, Ridge
+from sklearn.linear_model import (
+    Lasso,
+    LinearRegression,
+    LogisticRegression,
+    Ridge,
+    RidgeClassifier,
+)
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -583,6 +589,7 @@ MODELS = {
     "ols": RegressionModel(LinearRegression),
     "lasso": RegressionModel(Lasso),
     "ridge": RegressionModel(Ridge),
+    "ridge_classifier": ClassifierModel(RidgeClassifier),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
     "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
@@ -599,6 +606,7 @@ MODELS = {
 
 MODEL_NAMES = {
     "majority_classifier": "Majority Classifier",
+    "ridge_classifier": "Ridge Classifier",
     "median_regressor": "Median Regressaor",
     "mean_regressor": "Mean Regressaor",
     "lda": "Linear Discriminant Analysis",
