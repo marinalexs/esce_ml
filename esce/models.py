@@ -7,6 +7,7 @@ from enum import Enum
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
+from sklearn.dummy import DummyRegressor, DummyClassifier
 
 import h5py
 import numpy as np
@@ -561,13 +562,22 @@ def score_splits(
 
 
 MODELS = {
+    "majority_classifier": ClassifierModel(
+        lambda **args: DummyClassifier(strategy="most_frequent", **args)
+    ),
+    "mean_regressor": RegressionModel(
+        lambda **args: DummyRegressor(strategy="mean", **args)
+    ),
+    "median_regressor": RegressionModel(
+        lambda **args: DummyRegressor(strategy="mean", **args)
+    ),
     "lda": ClassifierModel(
         lambda **args: LinearDiscriminantAnalysis(
             solver="lsqr", shrinkage="auto", **args
         )
     ),
     "logit": ClassifierModel(
-        lambda **args: LogisticRegression(solver="lbfgs", max_iter=100, **args)
+        lambda **args: LogisticRegression(solver="lbfgs", max_iter=10000, **args)
     ),
     "forest": ClassifierModel(RandomForestClassifier),
     "ols": RegressionModel(LinearRegression),
@@ -588,6 +598,9 @@ MODELS = {
 }
 
 MODEL_NAMES = {
+    "majority_classifier": "Majority Classifier",
+    "median_regressor": "Median Regressaor",
+    "mean_regressor": "Mean Regressaor",
     "lda": "Linear Discriminant Analysis",
     "logit": "Logistic Regression",
     "forest": "Random Forest Classifier",
