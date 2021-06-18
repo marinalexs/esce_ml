@@ -568,13 +568,13 @@ def score_splits(
 
 
 MODELS = {
-    "majority_classifier": ClassifierModel(
+    "majority-classifier": ClassifierModel(
         lambda **args: DummyClassifier(strategy="most_frequent", **args)
     ),
-    "mean_regressor": RegressionModel(
+    "mean-regressor": RegressionModel(
         lambda **args: DummyRegressor(strategy="mean", **args)
     ),
-    "median_regressor": RegressionModel(
+    "median-regressor": RegressionModel(
         lambda **args: DummyRegressor(strategy="mean", **args)
     ),
     "lda": ClassifierModel(
@@ -589,7 +589,7 @@ MODELS = {
     "ols": RegressionModel(LinearRegression),
     "lasso": RegressionModel(Lasso),
     "ridge": RegressionModel(Ridge),
-    "ridge_classifier": ClassifierModel(RidgeClassifier),
+    "ridge-classifier": ClassifierModel(RidgeClassifier),
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
     "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
@@ -605,10 +605,10 @@ MODELS = {
 }
 
 MODEL_NAMES = {
-    "majority_classifier": "Majority Classifier",
-    "ridge_classifier": "Ridge Classifier",
-    "median_regressor": "Median Regressaor",
-    "mean_regressor": "Mean Regressaor",
+    "majority-classifier": "Majority Classifier",
+    "ridge-classifier": "Ridge Classifier",
+    "median-regressor": "Median Regressaor",
+    "mean-regressor": "Mean Regressaor",
     "lda": "Linear Discriminant Analysis",
     "logit": "Logistic Regression",
     "forest": "Random Forest Classifier",
