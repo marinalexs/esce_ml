@@ -37,6 +37,9 @@ def grid(n: int) -> Dict[str, Dict[str, Any]]:
     """
     return {
         "lda": {},
+        "majority-classifier": {},
+        "mean-regressor": {},
+        "median-regressor": {},
         "logit": {"C": logrange(-20, 10, n)},
         "forest": {
             "n_estimators": [
@@ -48,6 +51,7 @@ def grid(n: int) -> Dict[str, Dict[str, Any]]:
         "ols": {},
         "lasso": {"alpha": logrange(-15, 15, n)},
         "ridge": {"alpha": logrange(-15, 15, n)},
+        "ridge-classifier": {"alpha": logrange(-15, 15, n)},
         "svm-linear": {"C": logrange(-20, 10, n)},
         "svm-rbf": {"C": logrange(-10, 20, n), "gamma": logrange(-25, 5, n)},
         "svm-sigmoid": {
