@@ -222,4 +222,8 @@ MODEL_COLORS = {
     "krr-rbf": "teal",
     "krr-sigmoid": "orange",
     "krr-polynomial": "light green",
+    "ridge-classifier": "red",
+    "majority-classifier": "black",
+    "median-regressor": "black",
+    "mean-regressor": "black",
 }
