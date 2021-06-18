@@ -124,9 +124,9 @@ def run(
             / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}"
             / "default.csv"
         )
-        outfile.parent.mkdir(parents=True, exist_ok=True)
     else:
         outfile = Path(output)
+    outfile.parent.mkdir(parents=True, exist_ok=True)
 
     score_splits(outfile, x, y, models, grid, splits, seeds, warm_start, cache)
 
