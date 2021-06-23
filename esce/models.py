@@ -549,8 +549,8 @@ def score_splits(
                                 x, y, idx_train, idx_val, idx_test, **params
                             )  # type: ignore
 
-                            row: List[Any] = [np.nan] * (len(columns) - 1)
-                            row[:3] = [
+                            row: List[Any] = [np.nan] * len(columns)
+                            row[:5] = [
                                 model_name,
                                 n,
                                 s,
