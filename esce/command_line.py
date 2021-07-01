@@ -1,6 +1,7 @@
 """This module provides the command line interface for ESCE."""
 
 import argparse
+import glob
 import pickle
 import warnings
 from pathlib import Path
@@ -111,17 +112,21 @@ def run(
     if exclude is not None:
         models = {k: v for k, v in models.items() if k not in exclude}
 
-    seed_str = "_".join(map(str, seeds))
-    sample_str = "_".join(map(str, splits.keys()))
+    # seed_str = "_".join(map(str, seeds))
+    # sample_str = "_".join(map(str, splits.keys()))
+    seed_str = found_seeds
+    sample_str = len(splits.keys())
 
     grid = load_grid(grid_name)
     if output is None:
         outfile = (
-            Path("results") / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}.csv"
+            Path("results")
+            / f"{data_path.stem}_{label}_s{seed_str}_t{sample_str}"
+            / "default.csv"
         )
-        outfile.parent.mkdir(parents=True, exist_ok=True)
     else:
         outfile = Path(output)
+    outfile.parent.mkdir(parents=True, exist_ok=True)
 
     score_splits(outfile, x, y, models, grid, splits, seeds, warm_start, cache)
 
@@ -195,7 +200,13 @@ def datagen(
 
 
 def splitgen(
-    data_path: Path, label: str, n_seeds: int, samples: List[int], do_stratify: bool
+    data_path: Path,
+    label: str,
+    n_seeds: int,
+    samples: List[int],
+    n_val: int,
+    n_test: int,
+    do_stratify: bool,
 ) -> None:
     """Generate a split file.
 
@@ -207,12 +218,26 @@ def splitgen(
         n_seeds: Number of seeds to use in train_test_split
         samples: List of sample counts
     """
-    sample_str = "_".join(map(str, samples))
+    # sample_str = "_".join(map(str, samples)) # all train set sizes in filename
+    sample_str = str(len(samples))  # number of train set sizes in filename
     path = Path("splits") / f"{data_path.stem}_{label}_s{n_seeds}_t{sample_str}.split"
     path.parent.mkdir(parents=True, exist_ok=True)
 
     _, y = load_dataset(data_path, label)
-    splits = split_grid(y, n_samples=samples, n_seeds=n_seeds, do_stratify=do_stratify)
+
+    # filter target for nans. features have already been checked
+    # when loading the dataset.
+    mask = np.isfinite(y)
+
+    splits = split_grid(
+        y,
+        n_samples=samples,
+        n_seeds=n_seeds,
+        do_stratify=do_stratify,
+        mask=mask,
+        n_val=n_val,
+        n_test=n_test,
+    )
 
     with path.open("wb") as f:
         pickle.dump((n_seeds, splits), f)
@@ -230,13 +255,19 @@ def retrieve(
     """Retrieve the results, generate plots and the final accuracy scores.
 
     Arguments:
-        path: Path to the results file
+        path: Path to the results file(s) - may contain wildcards
         grid_name: Grid to use
-        output: Where to write the accuracy scores to
+        output: Directory for output files (scores, plots)
         show: Show results using matplotlib (all/sc/hp)
     """
     grid = load_grid(grid_name)
-    df = pd.read_csv(path, index_col=False)
+
+    all_results_files = glob.glob(str(path / "*.csv"))
+    df = pd.concat(
+        [pd.read_csv(filename, index_col=False) for filename in all_results_files],
+        axis=0,
+        ignore_index=True,
+    )
 
     model_names = set(grid.keys())
     if include is not None:
@@ -275,7 +306,7 @@ def retrieve(
     sc_df = pd.concat(outer_frames, ignore_index=True)
     sc_df.reset_index(inplace=True, drop=True)
 
-    root_path = Path("plots") / path.stem if output is None else output
+    root_path = Path("plots") / path.name if output is None else output
     root_path.mkdir(exist_ok=True, parents=True)
 
     sc_df.to_csv(root_path / "scores.csv", index=False)
@@ -285,8 +316,8 @@ def retrieve(
     hp_plot(root_path, path.stem, df, grid, show_hp)
 
     regr_missing = sc_df["acc_val"].isnull()
-    sc_df.loc[regr_missing, "acc_val"] = np.max(sc_df[regr_missing]["r2_val"], 0)
-    sc_df.loc[regr_missing, "acc_test"] = np.max(sc_df[regr_missing]["r2_test"], 0)
+    sc_df.loc[regr_missing, "acc_val"] = sc_df.loc[regr_missing, "r2_val"]
+    sc_df.loc[regr_missing, "acc_test"] = sc_df.loc[regr_missing, "r2_test"]
     sc_plot(root_path, path.stem, sc_df, show_sc)
 
 
@@ -393,6 +424,12 @@ def main() -> None:
         "--seeds", type=int, help="number of seeds to use", required=True
     )
     splitgen_parser.add_argument(
+        "--n_val", type=int, default=1000, help="number of validation samplese"
+    )
+    splitgen_parser.add_argument(
+        "--n_test", type=int, default=1000, help="number of test samplese"
+    )
+    splitgen_parser.add_argument(
         "--samples", nargs="+", help="list number of samples", required=True, type=int
     )
     splitgen_parser.add_argument(
@@ -445,7 +482,15 @@ def main() -> None:
             args.format,
         )
     elif args.splitgen:
-        splitgen(Path(args.data), args.label, args.seeds, args.samples, args.stratify)
+        splitgen(
+            Path(args.data),
+            args.label,
+            args.seeds,
+            args.samples,
+            args.n_val,
+            args.n_test,
+            args.stratify,
+        )
     elif args.retrieve:
         out_path = Path(args.output) if args.output is not None else None
         retrieve(

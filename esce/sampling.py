@@ -1,6 +1,6 @@
 """This module prodives method to split and resample the data."""
 
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -13,6 +13,7 @@ def split(
     n_test: int = 1000,
     do_stratify: bool = False,
     seed: int = 0,
+    mask: Union[bool, np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Generate train, validation and test indices for the data.
 
@@ -27,7 +28,13 @@ def split(
     Returns:
         Tuple of index lists (idx_train, idx_val, idx_test)
     """
-    idx = np.arange(len(y))
+    if mask is False:
+        idx_originial = np.arange(len(y))
+        idx = np.arange(len(y))
+    else:
+        idx_originial = np.arange(len(y))[mask]
+        idx = np.arange(len(y[mask]))
+        y = y[mask]
 
     stratify = y if do_stratify else None
     idx_train, idx_test = train_test_split(
@@ -42,7 +49,7 @@ def split(
         stratify=stratify,
         random_state=seed,
     )
-    return idx_train, idx_val, idx_test
+    return idx_originial[idx_train], idx_originial[idx_val], idx_originial[idx_test]
 
 
 def split_grid(
@@ -52,6 +59,7 @@ def split_grid(
     n_val: int = 1000,
     n_test: int = 1000,
     do_stratify: bool = False,
+    mask: Union[bool, np.ndarray] = False,
 ) -> Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
     """Generate train, validation and test indices for the given seeds and samples.
 
@@ -67,7 +75,14 @@ def split_grid(
         Dictionary of splits. Samples are the first key, seeds are the subkey.
     """
     splits: Dict[int, List[Tuple[np.ndarray, np.ndarray, np.ndarray]]] = {}
+    n_valid_samples = len(y) if mask is False else len(y[mask])
+
     for n in n_samples:
+        # skip if not enough samples
+        if n + n_val + n_test > n_valid_samples:
+            print(f"skipping n={n}, only {n_valid_samples} samples available")
+            continue
+
         splits[n] = []
         for s in range(n_seeds):
             splits[n].append(
@@ -78,6 +93,8 @@ def split_grid(
                     n_val=n_val,
                     n_test=n_test,
                     do_stratify=do_stratify,
+                    mask=mask,
                 )
             )
+
     return splits

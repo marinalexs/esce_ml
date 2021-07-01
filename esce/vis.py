@@ -14,7 +14,7 @@ import seaborn as sns
 from matplotlib import pylab
 from matplotlib.ticker import ScalarFormatter
 
-from esce.models import MODEL_NAMES
+from esce.models import MODEL_NAMES, MODELS, RegressionModel
 
 pylab.rc("font", family="serif", serif="Times")
 pylab.rc("xtick", labelsize=8)
@@ -29,7 +29,6 @@ def hp_plot(
     df: pd.DataFrame,
     grid: Dict[str, Dict[str, np.ndarray]],
     show: bool = False,
-    target: str = "acc_test",
 ) -> None:
     """Generate a hyperparameter plot.
 
@@ -54,6 +53,9 @@ def hp_plot(
 
         df_new = df_.copy()
         df_new["params"] = df_["params"].apply(lambda x: ast.literal_eval(x))
+
+        is_regression_model = isinstance(MODELS[model_name], RegressionModel)
+        target = "r2_test" if is_regression_model else "acc_test"
 
         names = df_.n.unique()
         palette = sns.color_palette("mako_r", n_colors=len(np.unique(names)))
@@ -212,4 +214,16 @@ MODEL_COLORS = {
     "svm-rbf": "teal",
     "svm-sigmoid": "orange",
     "svm-polynomial": "light green",
+    "svr-linear": "light blue",
+    "svr-rbf": "teal",
+    "svr-sigmoid": "orange",
+    "svr-polynomial": "light green",
+    "krr-linear": "light blue",
+    "krr-rbf": "teal",
+    "krr-sigmoid": "orange",
+    "krr-polynomial": "light green",
+    "ridge-classifier": "red",
+    "majority-classifier": "black",
+    "median-regressor": "black",
+    "mean-regressor": "black",
 }
