@@ -30,5 +30,6 @@ setup(
         "tqdm>=4.26",
         "requests>=2.22",
         "PyYAML>=5.3",
+        "xgboost",
     ],
 )

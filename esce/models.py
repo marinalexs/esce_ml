@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import (
     Lasso,
@@ -37,10 +37,12 @@ from sklearn.metrics.pairwise import (
 )
 from sklearn.model_selection import ParameterGrid
 from sklearn.svm import SVC, SVR
+import xgboost
 
 import esce
 from esce.util import hash_dict
 
+NJOBS=1
 
 class KernelType(Enum):
     """Kernel type of a gram matrix."""
@@ -364,7 +366,7 @@ class KernelSVMModel(ClassifierModel):
     ):
         """Provide a score for the model performance on the data."""
         gram = self.get_gram(x, (gamma, coef0, degree))
-        model = SVC(C=C, kernel="precomputed", max_iter=100000)
+        model = SVC(C=C, kernel="precomputed", max_iter=1000)
 
         # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
@@ -389,7 +391,7 @@ class KernelSVRModel(KernelSVMModel, RegressionModel):
     ):
         """Provide a score for the model performance on the data."""
         gram = self.get_gram(x, (gamma, coef0, degree))
-        model = SVR(C=C, kernel="precomputed", max_iter=100000)
+        model = SVR(C=C, kernel="precomputed", max_iter=1000)
 
         # Fit on train
         gram_ = gram[np.ix_(idx_train, idx_train)]
@@ -428,6 +430,44 @@ class KernelRidgeModel(KernelSVMModel, RegressionModel):
         gram_ = gram[np.ix_(idx_test, idx_train)]
         y_hat_test = model.predict(gram_)
 
+        return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+
+class GradientBoostingClassifierModel(ClassifierModel):
+    """Class for gradient boosting models."""
+
+    def __init__(self) -> None:
+        pass
+
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        model =  xgboost.XGBClassifier(n_jobs=NJOBS, **kwargs, )
+        
+        if len(np.unique(y)) == 2:
+            metric = 'logloss'
+        else:
+            metric = 'mlogloss'
+        model.fit(x[idx_train], y[idx_train], eval_set=[(x[idx_val], y[idx_val])], eval_metric=metric,
+                  early_stopping_rounds=10, verbose=True)
+
+        y_hat_val = model.predict(x[idx_val])
+        y_hat_test = model.predict(x[idx_test])
+        return self.compute_clf_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+
+
+class GradientBoostingRegressorModel(RegressionModel):
+    """Class for gradient boosting models."""
+
+    def __init__(self) -> None:
+        pass
+
+    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        model =  xgboost.XGBRegressor(n_jobs=NJOBS, **kwargs, )
+        
+        model.fit(x[idx_train], y[idx_train], eval_set=[(x[idx_val], y[idx_val])], eval_metric='rmse',
+                  early_stopping_rounds=10, verbose=True)
+
+        y_hat_val = model.predict(x[idx_val])
+        y_hat_test = model.predict(x[idx_test])
         return self.compute_regr_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
 
 
@@ -577,19 +617,27 @@ MODELS = {
     "median-regressor": RegressionModel(
         lambda **args: DummyRegressor(strategy="mean", **args)
     ),
+    
+    "ols": RegressionModel(LinearRegression),
+    "lasso": RegressionModel(Lasso),
+    "ridge": RegressionModel(Ridge),
+    
+    "ridge-classifier": ClassifierModel(RidgeClassifier),
+    "logit": ClassifierModel(
+        lambda **args: LogisticRegression(solver="lbfgs", **args)
+    ),
     "lda": ClassifierModel(
         lambda **args: LinearDiscriminantAnalysis(
             solver="lsqr", shrinkage="auto", **args
         )
     ),
-    "logit": ClassifierModel(
-        lambda **args: LogisticRegression(solver="lbfgs", max_iter=10000, **args)
-    ),
-    "forest": ClassifierModel(RandomForestClassifier),
-    "ols": RegressionModel(LinearRegression),
-    "lasso": RegressionModel(Lasso),
-    "ridge": RegressionModel(Ridge),
-    "ridge-classifier": ClassifierModel(RidgeClassifier),
+    
+    "forest-classifier": ClassifierModel(RandomForestClassifier),
+    "forest-regressor": RegressionModel(RandomForestRegressor),
+    
+    "gb-classifier": GradientBoostingClassifierModel(),
+    "gb-regressor": GradientBoostingRegressorModel(),
+    
     "svm-linear": KernelSVMModel(kernel=KernelType.LINEAR),
     "svm-rbf": KernelSVMModel(kernel=KernelType.RBF),
     "svm-sigmoid": KernelSVMModel(kernel=KernelType.SIGMOID),
@@ -609,12 +657,21 @@ MODEL_NAMES = {
     "ridge-classifier": "Ridge Classifier",
     "median-regressor": "Median Regressaor",
     "mean-regressor": "Mean Regressaor",
-    "lda": "Linear Discriminant Analysis",
-    "logit": "Logistic Regression",
-    "forest": "Random Forest Classifier",
+    
     "ols": "Ordinary Least Squared",
     "lasso": "Lasso Regression",
     "ridge": "Ridge Regression",
+    
+    "ridge-classifier": "Ridge Classifier",
+    "logit": "Logistic Regression",
+    "lda": "Linear Discriminant Analysis",
+    
+    "forest-classifier": "Random Forest Classifier",
+    "forest-regressor": "Random Forest Regressor",
+    
+    "gb-classifier": "GradientBoosting Classifier",
+    "gb-regressor": "GradientBoosting Regressor",
+    
     "svm-linear": "Support Vector Machine (Linear)",
     "svm-rbf": "Support Vector Machine (RBF)",
     "svm-sigmoid": "Support Vector Machine (Sigmoid)",

@@ -41,13 +41,32 @@ def grid(n: int) -> Dict[str, Dict[str, Any]]:
         "mean-regressor": {},
         "median-regressor": {},
         "logit": {"C": logrange(-20, 10, n)},
-        "forest": {
+        "forest-classifier": {
             "n_estimators": [
                 1000,
             ],
             "max_features": [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.75, 1.0],
             "max_depth": [4, 6, 8, 10, 10000],
         },
+        "forest-regressor": {
+            "n_estimators": [
+                1000,
+            ],
+            "max_features": [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.75, 1.0],
+            "max_depth": [4, 6, 8, 10, 10000],
+        },
+        'gb-classifier': {'n_estimators': [2000, ],
+                'subsample': [0.5, 1.0, ],
+                'learning_rate': [0.1, ],
+                'colsample_bytree': [1.0, 0.5],
+                'max_depth': [2, 3, 4, 6, 8, 10, ],
+                },   
+        'gb-regressor': {'n_estimators': [2000, ],
+                'subsample': [0.5, 1.0, ],
+                'learning_rate': [0.1, ],
+                'colsample_bytree': [1.0, 0.5],
+                'max_depth': [2, 3, 4, 6, 8, 10, ],
+                },   
         "ols": {},
         "lasso": {"alpha": logrange(-15, 15, n)},
         "ridge": {"alpha": logrange(-15, 15, n)},
