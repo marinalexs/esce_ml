@@ -72,11 +72,14 @@ def write_splitfile(features_path, targets_path, split_path, n_train, n_val, n_t
     else:
         split_dict = {'error': 'insufficient samples'}
 
-    split_dict.update({'samplesize': n_train, 'seed': seed})  # metadata
+    split_dict.update({'samplesize': n_train,
+                       'seed': seed,
+                       'stratify': stratify})  # metadata
 
     with open(split_path, 'w') as f:
         json.dump(split_dict, f)
 
 
+# FIXME: implement output.matching
 write_splitfile(features_path=snakemake.input.features, targets_path=snakemake.input.targets, split_path=snakemake.output.split, n_train=int(snakemake.wildcards.samplesize),
                 n_val=snakemake.config['n_val'], n_test=snakemake.config['n_test'], seed=int(snakemake.wildcards.seed), stratify=int(snakemake.wildcards.stratify))
