@@ -1,0 +1,45 @@
+configfile: "config/config.yaml"
+
+
+rule test:
+    input:
+        "results/stats/ridge/test/x_y_10_0_default.csv",
+        "results/stats/majority-classifier/test/x_y_10_0_default.csv",
+
+
+rule split:
+    input:
+        features="resources/{dataset}/features/{features}.csv",
+        targets="resources/{dataset}/targets/{targets}.csv",
+    output:
+        split="results/splits/{dataset}/{features}_{targets}_{samplesize}_{stratify}_{seed}.json",
+    script:
+        "scripts/generate_splits.py"
+
+
+rule fit:
+    input:
+        features="resources/{dataset}/features/{features}.csv",
+        targets="resources/{dataset}/targets/{targets}.csv",
+        split="results/splits/{dataset}/{features}_{targets}_{samplesize}_{stratify}_{seed}.json",
+    output:
+        scores="results/fits/{model}/{dataset}/{features}_{targets}_{samplesize}_{stratify}_{seed}_{grid}.csv",
+    params:
+        grid="config/grids/{grid}.yaml",
+    script:
+        "scripts/fit.py"
+
+
+rule aggregate:
+    input:
+        scores=expand(
+            "results/fits/{{model}}/{{dataset}}/{{features}}_{{targets}}_{samplesize}_{{stratify}}_{seed}_{{grid}}.csv",
+            seed=config["seeds"],
+            samplesize=config["sample_sizes"],
+        ),
+    output:
+        scores="results/stats/{model}/{dataset}/{features}_{targets}_{samplesize}_{stratify}_{grid}.csv",
+    params:
+        grid="config/grids/{grid}.yaml",
+    script:
+        "scripts/aggregate.py"
