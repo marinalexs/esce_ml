@@ -1,4 +1,4 @@
 seeds: [0,1,2]
 sample_sizes: [128, 256, 512, 1024]
-n_val: 1000
-n_test: 1000
+val_test_frac: 0.2
+val_test_max: 1000
