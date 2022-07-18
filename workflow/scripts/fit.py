@@ -35,15 +35,18 @@ class BaseModel(ABC):
         model = self.model_generator(**kwargs)
         model.fit(x[idx_train], y[idx_train])
 
+        y_hat_train = model.predict(x[idx_train])
         y_hat_val = model.predict(x[idx_val])
         y_hat_test = model.predict(x[idx_test])
-        return self.compute_metrics(y_hat_val, y_hat_test, y[idx_val], y[idx_test])
+        return self.compute_metrics(y_hat_train, y_hat_val, y_hat_test, y[idx_train], y[idx_val], y[idx_test])
 
     @abstractmethod
     def compute_metrics(
         self,
+        y_hat_train: np.ndarray,
         y_hat_val: np.ndarray,
         y_hat_test: np.ndarray,
+        y_train: np.ndarray,
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
@@ -55,22 +58,17 @@ class ClassifierModel(BaseModel):
 
     def compute_metrics(
         self,
+        y_hat_train: np.ndarray,
         y_hat_val: np.ndarray,
         y_hat_test: np.ndarray,
+        y_train: np.ndarray,
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
-        """Compute the classifier metrics.
+        # Train score
+        acc_train = accuracy_score(y_train, y_hat_train)
+        f1_train = f1_score(y_train, y_hat_train, average="weighted")
 
-        Arguments:
-            y_hat_val: Generated labels by the classifier for the validation set
-            y_hat_test: enerated labels by the classifier for the test set
-            y_val: Ground truth labels of the validation set
-            y_test: Ground truth labels of the test set
-
-        Returns:
-            Dictionary of scores containing accuracy and f1
-        """
         # Val score
         acc_val = accuracy_score(y_val, y_hat_val)
         f1_val = f1_score(y_val, y_hat_val, average="weighted")
@@ -80,8 +78,10 @@ class ClassifierModel(BaseModel):
         f1_test = f1_score(y_test, y_hat_test, average="weighted")
 
         return {
+            "acc_train": acc_train,
             "acc_val": acc_val,
             "acc_test": acc_test,
+            "f1_train": f1_train,
             "f1_val": f1_val,
             "f1_test": f1_test,
         }
@@ -92,22 +92,18 @@ class RegressionModel(BaseModel):
 
     def compute_metrics(
         self,
+        y_hat_train: np.ndarray,
         y_hat_val: np.ndarray,
         y_hat_test: np.ndarray,
+        y_train: np.ndarray,
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
-        """Compute regression metrics.
+        # Train score
+        r2_train = r2_score(y_train, y_hat_train)
+        mae_train = mean_absolute_error(y_train, y_hat_train)
+        mse_train = mean_squared_error(y_train, y_hat_train)
 
-        Arguments:
-            y_hat_val: Generated labels by the classifier for the validation set
-            y_hat_test: enerated labels by the classifier for the test set
-            y_val: Ground truth labels of the validation set
-            y_test: Ground truth labels of the test set
-
-        Returns:
-            Dictionary of scores containing r2, mae and mse
-        """
         # Val score
         r2_val = r2_score(y_val, y_hat_val)
         mae_val = mean_absolute_error(y_val, y_hat_val)
@@ -119,13 +115,28 @@ class RegressionModel(BaseModel):
         mse_test = mean_squared_error(y_test, y_hat_test)
 
         return {
+            "r2_train": r2_train,
             "r2_val": r2_val,
             "r2_test": r2_test,
+            "mae_train": mae_train,
             "mae_val": mae_val,
             "mae_test": mae_test,
+            "mse_train": mse_train,
             "mse_val": mse_val,
             "mse_test": mse_test,
         }
+
+
+MODELS = {
+    "majority-classifier": ClassifierModel(
+        lambda **args: DummyClassifier(strategy="most_frequent",
+                                       **args), 'majority classifier'
+    ),
+    "ridge": ClassifierModel(
+        lambda **args: RidgeClassifier(**args), 'ridge classifier'
+    ),
+
+}
 
 
 def fit(features_path, targets_path, split_path, scores_path, model_name, grid_path):
@@ -151,18 +162,6 @@ def fit(features_path, targets_path, split_path, scores_path, model_name, grid_p
     pd.DataFrame(scores).to_csv(scores_path, index=None)
 
 
-MODELS = {
-    "majority-classifier": ClassifierModel(
-        lambda **args: DummyClassifier(strategy="most_frequent",
-                                       **args), 'majority classifier'
-    ),
-    "ridge": ClassifierModel(
-        lambda **args: RidgeClassifier(**args), 'ridge classifier'
-    ),
-
-}
-
-
 assert snakemake.wildcards.model in MODELS, 'model not found'
 fit(snakemake.input.features, snakemake.input.targets, snakemake.input.split,
-    snakemake.output.scores, snakemake.wildcards.model, snakemake.params.grid)
+    snakemake.output.scores, snakemake.wildcards.model, snakemake.input.grid)
