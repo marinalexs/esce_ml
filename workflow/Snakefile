@@ -1,16 +1,17 @@
 configfile: "config/config.yaml"
+configfile: "config/samples.yaml" 
 
 
 rule test:
     input:
         expand(
-            "results/stats/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
+            "results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.stats.json",
             model=["ridge", "majority-classifier"],
             dataset=["test"],
             features=["x"],
             targets=["y"],
-            matching=["none"],
-            stratify=["1"],
+            matching=["y"],
+            stratify=["0"],
             grid=["default"],
         ),
 
@@ -31,10 +32,9 @@ rule fit:
         features="resources/{dataset}/features/{features}.csv",
         targets="resources/{dataset}/targets/{targets}.csv",
         split="results/splits/{dataset}/{features}_{targets}_{matching}_{stratify}_{samplesize}_{seed}.json",
+        grid="config/grids/{grid}.yaml",
     output:
         scores="results/fits/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{samplesize}_{seed}_{grid}.csv",
-    params:
-        grid="config/grids/{grid}.yaml",
     script:
         "scripts/fit.py"
 
@@ -47,11 +47,17 @@ rule aggregate:
             samplesize=config["sample_sizes"],
         ),
     output:
-        scores="results/stats/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
-    params:
-        grid="config/grids/{grid}.yaml",
+        scores="results/scores/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
     script:
         "scripts/aggregate.py"
 
 
-# deconfound inputs + matching
+
+rule extrapolate:
+    input:
+        scores="results/scores/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
+    output:
+        stats="results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.stats.json",
+        bootstraps="results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.boostrap.json",
+    script:
+        "scripts/extrapolate.py"
