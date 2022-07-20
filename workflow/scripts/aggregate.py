@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def aggregate(
-        score_path_list,
+        score_path_list: str,
         stats_path: str,) -> None:
 
     df_list = []

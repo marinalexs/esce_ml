@@ -1,5 +1,4 @@
-seeds: [0,1,2,3]
-sample_sizes: [32, 64, 128, 256, 512, 1024]
 val_test_frac: 0.2
 val_test_max: 1000
 bootstrap_repetitions: 50
+stratify: True

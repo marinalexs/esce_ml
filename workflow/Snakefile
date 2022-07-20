@@ -1,40 +1,67 @@
 configfile: "config/config.yaml"
-configfile: "config/samples.yaml" 
+configfile: "config/experiments.yaml" 
 
+import itertools
+todo = [expand("results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.stats.json", dataset=config['dataset'], grid=config['grid'], **config['experiments'][experiment]) for experiment in config['experiments']]
+todo = list(itertools.chain(*todo))
 
-rule test:
+rule all:
     input:
-        expand(
-            "results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.stats.json",
-            model=["ridge", "majority-classifier"],
-            dataset=["test"],
-            features=["x"],
-            targets=["y"],
-            matching=["y"],
-            stratify=["0"],
-            grid=["default"],
-        ),
+        todo
 
+
+rule dummy_sampling_files:
+    output:
+        raw="resources/{dataset}/sampling/raw.csv",
+        balanced="resources/{dataset}/sampling/balanced.csv",
+    shell:
+        """
+        touch {output.raw}
+        touch {output.balanced}
+        """
+
+rule dummy_raw_files:
+    input:
+        fin ="resources/{dataset}/{targets_or_features}/{name}.csv",
+    output:
+        fout ="resources/{dataset}/{targets_or_features}/{name}_raw.csv",
+    shell:
+        """
+        ln -s {input.fin} {output.fout}
+        """
+
+rule confound_regression:
+    input:
+        features ="resources/{dataset}/{targets_or_features}/{name}_raw.csv",
+        sampling="resources/{dataset}/sampling/{sampling}.csv",
+    output:
+        features ="resources/{dataset}/{targets_or_features}/{name}_{sampling}.csv",
+    script:
+        "scripts/confound_regression.py"
 
 rule split:
     input:
-        features="resources/{dataset}/features/{features}.csv",
-        targets="resources/{dataset}/targets/{targets}.csv",
-        matching="resources/{dataset}/matching/{matching}.csv",
+        features="resources/{dataset}/features/{features}_{features_trafo}.csv",
+        targets="resources/{dataset}/targets/{targets}_{targets_trafo}.csv",
+        sampling="resources/{dataset}/sampling/{sampling}.csv",
+    params:
+        val_test_frac = config['val_test_frac'],
+        val_test_max = config['val_test_max'],
+        stratify = config['stratify'],
     output:
-        split="results/splits/{dataset}/{features}_{targets}_{matching}_{stratify}_{samplesize}_{seed}.json",
+        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}.json",
     script:
         "scripts/generate_splits.py"
 
 
 rule fit:
     input:
-        features="resources/{dataset}/features/{features}.csv",
-        targets="resources/{dataset}/targets/{targets}.csv",
-        split="results/splits/{dataset}/{features}_{targets}_{matching}_{stratify}_{samplesize}_{seed}.json",
+        features="resources/{dataset}/features/{features}_{features_trafo}.csv",
+        targets="resources/{dataset}/targets/{targets}_{targets_trafo}.csv",
+        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     output:
-        scores="results/fits/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{samplesize}_{seed}_{grid}.csv",
+        scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}_{grid}.csv",
     script:
         "scripts/fit.py"
 
@@ -42,12 +69,12 @@ rule fit:
 rule aggregate:
     input:
         scores=expand(
-            "results/fits/{{model}}/{{dataset}}/{{features}}_{{targets}}_{{matching}}_{{stratify}}_{samplesize}_{seed}_{{grid}}.csv",
+            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_trafo}}_{{targets}}_{{targets_trafo}}_{{sampling}}_{samplesize}_{seed}_{{grid}}.csv",
             seed=config["seeds"],
             samplesize=config["sample_sizes"],
         ),
     output:
-        scores="results/scores/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.csv",
     script:
         "scripts/aggregate.py"
 
@@ -55,9 +82,11 @@ rule aggregate:
 
 rule extrapolate:
     input:
-        scores="results/scores/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.csv",
+    params:
+        bootstrap_repetitions = config['bootstrap_repetitions']
     output:
-        stats="results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.stats.json",
-        bootstraps="results/statistics/{model}/{dataset}/{features}_{targets}_{matching}_{stratify}_{grid}.boostrap.json",
+        stats="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.stats.json",
+        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.boostrap.json",
     script:
         "scripts/extrapolate.py"

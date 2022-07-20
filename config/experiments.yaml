@@ -1,0 +1,27 @@
+dataset: "diabetes"
+grid: "default"
+seeds: [0,1,2,3]
+sample_sizes: [64, 128, 256, 512, 1024]
+
+experiments:
+  classification:
+    features: ["x",]
+    features_trafo: ["raw",]
+    targets: ["y",]
+    targets_trafo: ["raw",]
+    sampling: ["raw",]
+    model: ["ridge-cls",]
+  regression:
+    features: ["x",]
+    features_trafo: ["raw","y",]
+    targets: ["y",]
+    targets_trafo: ["raw",]
+    sampling: ["raw",]
+    model: ["ridge-reg",]
+  matched_classification:
+    features: ["x",]
+    features_trafo: ["raw",]
+    targets: ["y",]
+    targets_trafo: ["raw",]
+    sampling: ["y",]
+    model: ["ridge-cls",]

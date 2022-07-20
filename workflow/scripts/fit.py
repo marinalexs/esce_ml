@@ -132,8 +132,11 @@ MODELS = {
         lambda **args: DummyClassifier(strategy="most_frequent",
                                        **args), 'majority classifier'
     ),
-    "ridge": ClassifierModel(
+    "ridge-cls": ClassifierModel(
         lambda **args: RidgeClassifier(**args), 'ridge classifier'
+    ),
+    "ridge-reg": RegressionModel(
+        lambda **args: Ridge(**args), 'ridge regressor'
     ),
 
 }

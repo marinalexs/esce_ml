@@ -21,7 +21,7 @@ def extrapolate(
         stats_path: str,
         extra_path:str,
         bootstrap_path:str,
-        repeats) -> None:
+        repeats: int) -> None:
     df = pd.read_csv(stats_path, index_col=False)
     metric = 'r2_val' if 'r2_val' in df.columns else 'acc_val'
     result = {'n_seeds':len(df['s'].unique())}
@@ -32,7 +32,7 @@ def extrapolate(
         y_mean.append(df[df['n']==n][metric].mean())
         y_std.append(df[df['n']==n][metric].std())
         y_sem.append(df[df['n']==n][metric].std() / np.sqrt(result['n_seeds']))
-    p_mean, _ = scipy.optimize.curve_fit(lambda t,a,b,c: a*t**(-b)+c,  x, y_mean, sigma=None, maxfev=5000, p0=(-1,0.01,0.7),bounds=((-np.inf, 0,0),(0,np.inf,1)))
+    p_mean, _ = scipy.optimize.curve_fit(lambda t,a,b,c: a*t**(-b)+c,  x, y_mean, sigma=None, maxfev=5000, p0=(-1,0.01,0.7),bounds=((-1, 0,0),(0,1,1)))
    
     p_bootstrap = []
     y_bootstrap = [[] for _ in x]
@@ -43,7 +43,7 @@ def extrapolate(
             y.append(y_sample)
             y_bootstrap[i].append(y_sample)
         try:
-            p_, _ = scipy.optimize.curve_fit(lambda t,a,b,c: a*t**(-b)+c,  x, y, sigma=None, maxfev=5000, p0=(-1,0.01,0.7),bounds=((-np.inf, 0,0),(0,np.inf,1)))
+            p_, _ = scipy.optimize.curve_fit(lambda t,a,b,c: a*t**(-b)+c,  x, y, sigma=None, maxfev=5000, p0=(-1,0.01,0.7),bounds=((-1, 0,0),(0,1,1)))
             p_bootstrap.append(p_)
         except RuntimeError:
             print('failed to fit')
@@ -79,4 +79,4 @@ def extrapolate(
     with open(bootstrap_path, 'w') as f:
         json.dump(p_bootstrap, f, cls=NpEncoder, indent=0)
 
-extrapolate(snakemake.input.scores, snakemake.output.stats,snakemake.output.bootstraps, snakemake.config['bootstrap_repetitions'])
+extrapolate(snakemake.input.scores, snakemake.output.stats,snakemake.output.bootstraps, snakemake.params.bootstrap_repetitions)
