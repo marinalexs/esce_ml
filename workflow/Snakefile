@@ -21,10 +21,20 @@ rule all:
         todo,
 
 
+rule download_mnist:
+    output:
+        x="results/mnist/features/x_raw.csv",
+        y="results/mnist/targets/y_raw.csv",
+    script:
+        "scripts/download_mnist.py"
+
+
+
+
 rule dummy_sampling_files:
     output:
-        raw="resources/{dataset}/sampling/raw.csv",
-        balanced="resources/{dataset}/sampling/balanced.csv",
+        raw="results/{dataset}/sampling/raw.csv",
+        balanced="results/{dataset}/sampling/balanced.csv",
     shell:
         """
         touch {output.raw}
@@ -32,32 +42,21 @@ rule dummy_sampling_files:
         """
 
 
-rule dummy_raw_files:
-    input:
-        fin="resources/{dataset}/{targets_or_features}/{name}.csv",
-    output:
-        fout="resources/{dataset}/{targets_or_features}/{name}_raw.csv",
-    shell:
-        """
-        cp {input.fin} {output.fout}
-        """
-
-
 rule confound_regression:
     input:
-        features="resources/{dataset}/{targets_or_features}/{name}_raw.csv",
-        sampling="resources/{dataset}/sampling/{sampling}.csv",
+        features="results/{dataset}/{targets_or_features}/{name}_raw.csv",
+        sampling="results/{dataset}/sampling/{sampling}.csv",
     output:
-        features="resources/{dataset}/{targets_or_features}/{name}_{sampling}.csv",
+        features="results/{dataset}/{targets_or_features}/{name}_{sampling}.csv",
     script:
         "scripts/confound_regression.py"
 
 
 rule split:
     input:
-        features="resources/{dataset}/features/{features}_{features_trafo}.csv",
-        targets="resources/{dataset}/targets/{targets}_{targets_trafo}.csv",
-        sampling="resources/{dataset}/sampling/{sampling}.csv",
+        features="results/{dataset}/features/{features}_{features_trafo}.csv",
+        targets="results/{dataset}/targets/{targets}_{targets_trafo}.csv",
+        sampling="results/{dataset}/sampling/{sampling}.csv",
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
@@ -70,8 +69,8 @@ rule split:
 
 rule fit:
     input:
-        features="resources/{dataset}/features/{features}_{features_trafo}.csv",
-        targets="resources/{dataset}/targets/{targets}_{targets_trafo}.csv",
+        features="results/{dataset}/features/{features}_{features_trafo}.csv",
+        targets="results/{dataset}/targets/{targets}_{targets_trafo}.csv",
         split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     output:
