@@ -39,7 +39,7 @@ rule dummy_raw_files:
         fout="resources/{dataset}/{targets_or_features}/{name}_raw.csv",
     shell:
         """
-        ln -s {input.fin} {output.fout}
+        cp {input.fin} {output.fout}
         """
 
 
