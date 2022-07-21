@@ -12,12 +12,26 @@ import json
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.kernel_ridge import KernelRidge
-from sklearn.linear_model import (Lasso, LinearRegression, LogisticRegression,
-                                  Ridge, RidgeClassifier)
-from sklearn.metrics import (accuracy_score, f1_score, mean_absolute_error,
-                             mean_squared_error, r2_score)
-from sklearn.metrics.pairwise import (linear_kernel, polynomial_kernel,
-                                      rbf_kernel, sigmoid_kernel)
+from sklearn.linear_model import (
+    Lasso,
+    LinearRegression,
+    LogisticRegression,
+    Ridge,
+    RidgeClassifier,
+)
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+)
+from sklearn.metrics.pairwise import (
+    linear_kernel,
+    polynomial_kernel,
+    rbf_kernel,
+    sigmoid_kernel,
+)
 from sklearn.model_selection import ParameterGrid
 from sklearn.svm import SVC, SVR
 
@@ -38,7 +52,9 @@ class BaseModel(ABC):
         y_hat_train = model.predict(x[idx_train])
         y_hat_val = model.predict(x[idx_val])
         y_hat_test = model.predict(x[idx_test])
-        return self.compute_metrics(y_hat_train, y_hat_val, y_hat_test, y[idx_train], y[idx_val], y[idx_test])
+        return self.compute_metrics(
+            y_hat_train, y_hat_val, y_hat_test, y[idx_train], y[idx_val], y[idx_test]
+        )
 
     @abstractmethod
     def compute_metrics(
@@ -129,42 +145,51 @@ class RegressionModel(BaseModel):
 
 MODELS = {
     "majority-classifier": ClassifierModel(
-        lambda **args: DummyClassifier(strategy="most_frequent",
-                                       **args), 'majority classifier'
+        lambda **args: DummyClassifier(strategy="most_frequent", **args),
+        "majority classifier",
     ),
     "ridge-cls": ClassifierModel(
-        lambda **args: RidgeClassifier(**args), 'ridge classifier'
+        lambda **args: RidgeClassifier(**args), "ridge classifier"
     ),
-    "ridge-reg": RegressionModel(
-        lambda **args: Ridge(**args), 'ridge regressor'
-    ),
-
+    "ridge-reg": RegressionModel(lambda **args: Ridge(**args), "ridge regressor"),
 }
 
 
 def fit(features_path, targets_path, split_path, scores_path, model_name, grid_path):
-    split = json.load(open(split_path, 'r'))
-    if 'error' in split:
+    split = json.load(open(split_path, "r"))
+    if "error" in split:
         Path(scores_path).touch()
         return
 
-    x = np.genfromtxt(features_path, delimiter=',')
-    y = np.genfromtxt(targets_path, delimiter=',')
-    grid = yaml.safe_load(open(grid_path, 'r'))
+    x = np.load(features_path)
+    y = np.load(targets_path)
+    grid = yaml.safe_load(open(grid_path, "r"))
     model = MODELS[model_name]
 
     scores = []
     # fixme: check which scores already exist from other grids
     for params in ParameterGrid(grid[model_name]):
         score = model.score(
-            x, y, idx_train=split['idx_train'], idx_val=split['idx_val'], idx_test=split['idx_test'], **params)
+            x,
+            y,
+            idx_train=split["idx_train"],
+            idx_val=split["idx_val"],
+            idx_test=split["idx_test"],
+            **params
+        )
         score.update(params)
-        score.update({'n': split['samplesize'], 's': split['seed']})
+        score.update({"n": split["samplesize"], "s": split["seed"]})
         scores.append(score)
 
     pd.DataFrame(scores).to_csv(scores_path, index=None)
 
 
-assert snakemake.wildcards.model in MODELS, 'model not found'
-fit(snakemake.input.features, snakemake.input.targets, snakemake.input.split,
-    snakemake.output.scores, snakemake.wildcards.model, snakemake.input.grid)
+assert snakemake.wildcards.model in MODELS, "model not found"
+fit(
+    snakemake.input.features,
+    snakemake.input.targets,
+    snakemake.input.split,
+    snakemake.output.scores,
+    snakemake.wildcards.model,
+    snakemake.input.grid,
+)

@@ -2,3 +2,17 @@ val_test_frac: 0.2
 val_test_max: 1000
 bootstrap_repetitions: 50
 stratify: True
+
+seeds: [0, 1, 2,]
+sample_sizes: [64, 128, 256, 512, 1024, 2048]
+
+experiments:
+  classification:
+    dataset: "mnist"
+    features: ["x",]
+    features_trafo: ["raw",]
+    targets: ["y",]
+    targets_trafo: ["raw",]
+    matching: ["none",]
+    model: ["ridge-cls",]
+    grid: "default"

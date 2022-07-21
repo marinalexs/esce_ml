@@ -1,14 +1,11 @@
 configfile: "config/config.yaml"
-configfile: "config/experiments.yaml"
 
 
 import itertools
 
 todo = [
     expand(
-        "results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.stats.json",
-        dataset=config["dataset"],
-        grid=config["grid"],
+        "results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.stats.json",
         **config["experiments"][experiment]
     )
     for experiment in config["experiments"]
@@ -23,58 +20,55 @@ rule all:
 
 rule download_mnist:
     output:
-        x="results/mnist/features/x_raw.csv",
-        y="results/mnist/targets/y_raw.csv",
+        x="results/mnist/features/x_raw.npy",
+        y="results/mnist/targets/y_raw.npy",
     script:
         "scripts/download_mnist.py"
 
 
-
-
-rule dummy_sampling_files:
+rule dummy_covariate_files:
     output:
-        raw="results/{dataset}/sampling/raw.csv",
-        balanced="results/{dataset}/sampling/balanced.csv",
-    shell:
-        """
-        touch {output.raw}
-        touch {output.balanced}
-        """
+        none="results/{dataset}/covariates/none.npy",
+        balanced="results/{dataset}/covariates/balanced.npy",
+    run:
+        import numpy as np
+        np.save(output.none,[])
+        np.save(output.balanced,[])
 
 
 rule confound_regression:
     input:
-        features="results/{dataset}/{targets_or_features}/{name}_raw.csv",
-        sampling="results/{dataset}/sampling/{sampling}.csv",
+        features="results/{dataset}/{targets_or_features}/{name}_raw.npy",
+        confounds="results/{dataset}/covariates/{confounds}.npy",
     output:
-        features="results/{dataset}/{targets_or_features}/{name}_{sampling}.csv",
+        features="results/{dataset}/{targets_or_features}/{name}_{confounds}.npy",
     script:
         "scripts/confound_regression.py"
 
 
 rule split:
     input:
-        features="results/{dataset}/features/{features}_{features_trafo}.csv",
-        targets="results/{dataset}/targets/{targets}_{targets_trafo}.csv",
-        sampling="results/{dataset}/sampling/{sampling}.csv",
+        features="results/{dataset}/features/{features}_{features_trafo}.npy",
+        targets="results/{dataset}/targets/{targets}_{targets_trafo}.npy",
+        matching="results/{dataset}/covariates/{matching}.npy",
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
         stratify=config["stratify"],
     output:
-        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}.json",
+        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
     script:
         "scripts/generate_splits.py"
 
 
 rule fit:
     input:
-        features="results/{dataset}/features/{features}_{features_trafo}.csv",
-        targets="results/{dataset}/targets/{targets}_{targets_trafo}.csv",
-        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}.json",
+        features="results/{dataset}/features/{features}_{features_trafo}.npy",
+        targets="results/{dataset}/targets/{targets}_{targets_trafo}.npy",
+        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     output:
-        scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{samplesize}_{seed}_{grid}.csv",
+        scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_{grid}.csv",
     script:
         "scripts/fit.py"
 
@@ -82,23 +76,23 @@ rule fit:
 rule aggregate:
     input:
         scores=expand(
-            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_trafo}}_{{targets}}_{{targets_trafo}}_{{sampling}}_{samplesize}_{seed}_{{grid}}.csv",
+            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_trafo}}_{{targets}}_{{targets_trafo}}_{{matching}}_{samplesize}_{seed}_{{grid}}.csv",
             seed=config["seeds"],
             samplesize=config["sample_sizes"],
         ),
     output:
-        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.csv",
     script:
         "scripts/aggregate.py"
 
 
 rule extrapolate:
     input:
-        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.csv",
     params:
         bootstrap_repetitions=config["bootstrap_repetitions"],
     output:
-        stats="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.stats.json",
-        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{sampling}_{grid}.boostrap.json",
+        stats="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.stats.json",
+        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.boostrap.json",
     script:
         "scripts/extrapolate.py"
