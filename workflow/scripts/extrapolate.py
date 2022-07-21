@@ -22,7 +22,7 @@ def extrapolate(
     stats_path: str, extra_path: str, bootstrap_path: str, repeats: int
 ) -> None:
     df = pd.read_csv(stats_path, index_col=False)
-    metric = "r2_val" if "r2_val" in df.columns else "acc_val"
+    metric = "r2_test" if "r2_test" in df.columns else "acc_test"
     result = {"n_seeds": len(df["s"].unique())}
 
     x, y_mean, y_std, y_sem = [], [], [], []
