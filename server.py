@@ -11,12 +11,22 @@ st.title("ESCE Viewer")
 
 @st.cache
 def get_available_results():
-    return glob.glob("results/stats/*/*/*")
+    return glob.glob("results/*/statistics/*/*.stats.json")
 
 
 available_results = get_available_results()
+print(available_results)
 
 df = pd.DataFrame(available_results, columns=["full_path"])
+print(df)
+print((
+    df["full_path"]
+    .str.replace("results/", "")
+    .str.replace("statistics/", "")
+    .str.replace("stats.csv", "")
+    .str.replace("/", "_")
+    .str.split("_", expand=True)
+))
 df[
     [
         "dataset",
@@ -32,26 +42,30 @@ df[
     df["full_path"]
     .str.replace("results/", "")
     .str.replace("statistics/", "")
-    .str.replace(".csv", "")
+    .str.replace("stats.json", "")
     .str.replace("/", "_")
     .str.split("_", expand=True)
 )
 
-available_targets = df["target"].unique()
+available_targets = df["targets"].unique()
 selected_targets = st.multiselect(label="Targets:", options=available_targets)
 
-available_features = df[df["target"].isin(selected_targets)]["features"].unique()
-selected_features = st.multiselect(label="Features:", options=available_features)
+available_features = df[df["target"].isin(
+    selected_targets)]["features"].unique()
+selected_features = st.multiselect(
+    label="Features:", options=available_features)
 
 available_models = df[
-    (df["target"].isin(selected_targets)) & (df["features"].isin(selected_features))
+    (df["target"].isin(selected_targets)) & (
+        df["features"].isin(selected_features))
 ]["model"].unique()
 selected_models = st.multiselect(label="Models:", options=available_models)
 
 
 grid = st.sidebar.selectbox(label="HP grid", options=["default"], index=0)
 
-st.sidebar.number_input(label="Extrapolation sample size", value=100000, step=1000)
+st.sidebar.number_input(
+    label="Extrapolation sample size", value=100000, step=1000)
 
 classification_metrics = [
     "r2_test",
