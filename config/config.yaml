@@ -1,10 +1,10 @@
-val_test_frac: 0.2
+val_test_frac: .5
 val_test_max: 1000
 bootstrap_repetitions: 50
 stratify: True
 
-seeds: [0, 1, 2,]
-sample_sizes: [64, 128, 256, 512, 1024, 2048]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+sample_sizes: [128, 256, 512, 1024, 2048, 4096, 8192]
 
 experiments:
   classification:
@@ -15,4 +15,4 @@ experiments:
     targets_trafo: ["raw",]
     matching: ["none",]
     model: ["ridge-cls",]
-    grid: "default"
+    grid: "minimal"

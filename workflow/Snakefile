@@ -1,7 +1,7 @@
 configfile: "config/config.yaml"
 
 
-import itertools
+import itertools, glob
 
 todo = [
     expand(
@@ -67,6 +67,8 @@ rule fit:
         targets="results/{dataset}/targets/{targets}_{targets_trafo}.npy",
         split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
+    params:
+        existing_scores = lambda wildcards: glob.glob("results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_*.csv".format(**wildcards))
     output:
         scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_{grid}.csv",
     script:

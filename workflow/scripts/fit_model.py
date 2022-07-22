@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-import json
+import json, os
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.kernel_ridge import KernelRidge
@@ -155,7 +155,25 @@ MODELS = {
 }
 
 
-def fit(features_path, targets_path, split_path, scores_path, model_name, grid_path):
+def get_existing_scores(scores_path_list):
+    df_list = []
+    for filename in scores_path_list:
+        if os.stat(filename).st_size > 0:
+            df_list.append(pd.read_csv(filename, index_col=False))
+
+    if not df_list:
+        return pd.DataFrame()
+
+    df = pd.concat(
+        df_list,
+        axis=0,
+        ignore_index=True,
+    )
+
+    return df
+
+
+def fit(features_path, targets_path, split_path, scores_path, model_name, grid_path, existing_scores_path_list):
     split = json.load(open(split_path, "r"))
     if "error" in split:
         Path(scores_path).touch()
@@ -166,19 +184,27 @@ def fit(features_path, targets_path, split_path, scores_path, model_name, grid_p
     grid = yaml.safe_load(open(grid_path, "r"))
     model = MODELS[model_name]
 
+    df_existing_scores = get_existing_scores(existing_scores_path_list)
+
     scores = []
-    # fixme: check which scores already exist from other grids
     for params in ParameterGrid(grid[model_name]):
-        score = model.score(
+        df_ =  df_existing_scores.loc[(df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)]
+        if df_.empty:
+            score = model.score(
             x,
             y,
             idx_train=split["idx_train"],
             idx_val=split["idx_val"],
             idx_test=split["idx_test"],
             **params
-        )
-        score.update(params)
-        score.update({"n": split["samplesize"], "s": split["seed"]})
+            )
+            score.update(params)
+            score.update({"n": split["samplesize"], "s": split["seed"]})
+            print('computed score', score)
+        else:
+            score = dict(df_.iloc[0])
+            print('retreived score', score)
+
         scores.append(score)
 
     pd.DataFrame(scores).to_csv(scores_path, index=None)
@@ -192,4 +218,5 @@ fit(
     snakemake.output.scores,
     snakemake.wildcards.model,
     snakemake.input.grid,
+    snakemake.params.existing_scores
 )
