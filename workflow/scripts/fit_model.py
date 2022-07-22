@@ -8,7 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-import json, os
+import json
+import os
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.kernel_ridge import KernelRidge
@@ -194,10 +195,12 @@ def fit(
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        df_ = df_existing_scores.loc[
-            (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
-        ]
-        if df_.empty:
+        if not df_existing_scores.empty and df_existing_scores.loc[
+            (df_existing_scores[list(params)] == pd.Series(params)).all(
+                axis=1)]:
+            score = dict(df_.iloc[0])
+            print("retreived score", score)
+        else:
             score = model.score(
                 x,
                 y,
@@ -209,9 +212,6 @@ def fit(
             score.update(params)
             score.update({"n": split["samplesize"], "s": split["seed"]})
             print("computed score", score)
-        else:
-            score = dict(df_.iloc[0])
-            print("retreived score", score)
 
         scores.append(score)
 
