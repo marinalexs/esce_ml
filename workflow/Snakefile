@@ -32,8 +32,9 @@ rule dummy_covariate_files:
         balanced="results/{dataset}/covariates/balanced.npy",
     run:
         import numpy as np
-        np.save(output.none,[])
-        np.save(output.balanced,[])
+
+        np.save(output.none, [])
+        np.save(output.balanced, [])
 
 
 rule confound_regression:
@@ -68,7 +69,11 @@ rule fit:
         split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     params:
-        existing_scores = lambda wildcards: glob.glob("results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_*.csv".format(**wildcards))
+        existing_scores=lambda wildcards: glob.glob(
+            "results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_*.csv".format(
+                **wildcards
+            )
+        ),
     output:
         scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_{grid}.csv",
     script:

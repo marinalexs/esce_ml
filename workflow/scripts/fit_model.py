@@ -161,19 +161,25 @@ def get_existing_scores(scores_path_list):
         if os.stat(filename).st_size > 0:
             df_list.append(pd.read_csv(filename, index_col=False))
 
-    if not df_list:
+    if df_list:
+        return pd.concat(
+            df_list,
+            axis=0,
+            ignore_index=True,
+        )
+    else:
         return pd.DataFrame()
 
-    df = pd.concat(
-        df_list,
-        axis=0,
-        ignore_index=True,
-    )
 
-    return df
-
-
-def fit(features_path, targets_path, split_path, scores_path, model_name, grid_path, existing_scores_path_list):
+def fit(
+    features_path,
+    targets_path,
+    split_path,
+    scores_path,
+    model_name,
+    grid_path,
+    existing_scores_path_list,
+):
     split = json.load(open(split_path, "r"))
     if "error" in split:
         Path(scores_path).touch()
@@ -188,22 +194,24 @@ def fit(features_path, targets_path, split_path, scores_path, model_name, grid_p
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        df_ =  df_existing_scores.loc[(df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)]
+        df_ = df_existing_scores.loc[
+            (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
+        ]
         if df_.empty:
             score = model.score(
-            x,
-            y,
-            idx_train=split["idx_train"],
-            idx_val=split["idx_val"],
-            idx_test=split["idx_test"],
-            **params
+                x,
+                y,
+                idx_train=split["idx_train"],
+                idx_val=split["idx_val"],
+                idx_test=split["idx_test"],
+                **params
             )
             score.update(params)
             score.update({"n": split["samplesize"], "s": split["seed"]})
-            print('computed score', score)
+            print("computed score", score)
         else:
             score = dict(df_.iloc[0])
-            print('retreived score', score)
+            print("retreived score", score)
 
         scores.append(score)
 
@@ -218,5 +226,5 @@ fit(
     snakemake.output.scores,
     snakemake.wildcards.model,
     snakemake.input.grid,
-    snakemake.params.existing_scores
+    snakemake.params.existing_scores,
 )
