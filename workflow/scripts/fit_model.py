@@ -195,12 +195,17 @@ def fit(
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        if not df_existing_scores.empty and not df_existing_scores.loc[
-            (df_existing_scores[list(params)] == pd.Series(params)).all(
-                axis=1)].empty:
-            score = dict(df_existing_scores.loc[
-            (df_existing_scores[list(params)] == pd.Series(params)).all(
-                axis=1)].iloc[0])
+        if (
+            not df_existing_scores.empty
+            and not df_existing_scores.loc[
+                (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
+            ].empty
+        ):
+            score = dict(
+                df_existing_scores.loc[
+                    (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
+                ].iloc[0]
+            )
             # print("retreived score", score)
         else:
             score = model.score(
