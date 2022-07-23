@@ -12,8 +12,8 @@ def download_mnist(
 
     x, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)
     x = StandardScaler().fit_transform(x)
-    np.save(x_raw_path, x.astype(int))
-    np.save(x_pca_path, PCA(whiten=True).fit_transform(x.astype(int)))
+    np.save(x_raw_path, x.astype(float))
+    np.save(x_pca_path, PCA(whiten=True).fit_transform(x.astype(float)))
     np.save(y_raw_path, y.astype(int))
     np.save(y_odd_path, (y.astype(int) % 2 == 0).astype(int))
 
