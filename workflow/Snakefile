@@ -20,8 +20,10 @@ rule all:
 
 rule download_mnist:
     output:
-        x="results/mnist/features/x_raw.npy",
-        y="results/mnist/targets/y_raw.npy",
+        x_raw="results/mnist/features/pixel_raw.npy",
+        x_pca="results/mnist/features/pca_raw.npy",
+        y_raw="results/mnist/targets/ten-digits_raw.npy",
+        y_odd="results/mnist/targets/odd-even_raw.npy",
     script:
         "scripts/download_mnist.py"
 
@@ -100,6 +102,6 @@ rule extrapolate:
         bootstrap_repetitions=config["bootstrap_repetitions"],
     output:
         stats="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.stats.json",
-        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.boostrap.json",
+        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.bootstrap.json",
     script:
         "scripts/extrapolate.py"

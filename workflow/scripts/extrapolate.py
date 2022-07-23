@@ -38,7 +38,7 @@ def extrapolate(
         sigma=None,
         maxfev=5000,
         p0=(-1, 0.01, 0.7),
-        bounds=((-1, 0, 0), (0, 1, 1)),
+        bounds=((-np.inf, 0, 0), (0, 1, 1)),
     )
 
     p_bootstrap = []
@@ -57,13 +57,14 @@ def extrapolate(
                 sigma=None,
                 maxfev=5000,
                 p0=(-1, 0.01, 0.7),
-                bounds=((-1, 0, 0), (0, 1, 1)),
+                bounds=((-np.inf, 0, 0), (0, 1, 1)),
             )
             p_bootstrap.append(p_)
         except RuntimeError:
             print("failed to fit")
             continue
 
+    result['metric'] = metric
     result["x"] = x
     result["y_mean"] = y_mean
     result["y_std"] = y_std

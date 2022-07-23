@@ -9,10 +9,10 @@ sample_sizes: [128, 256, 512, 1024, 2048, 4096, 8192]
 experiments:
   classification:
     dataset: "mnist"
-    features: ["x",]
+    features: ["pixel","pca"]
     features_trafo: ["raw",]
-    targets: ["y",]
+    targets: ["ten-digits","odd-even"]
     targets_trafo: ["raw",]
     matching: ["none",]
     model: ["ridge-cls",]
-    grid: "minimal"
+    grid: "default"

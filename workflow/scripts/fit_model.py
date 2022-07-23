@@ -195,11 +195,13 @@ def fit(
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        if not df_existing_scores.empty and df_existing_scores.loc[
+        if not df_existing_scores.empty and not df_existing_scores.loc[
             (df_existing_scores[list(params)] == pd.Series(params)).all(
-                axis=1)]:
-            score = dict(df_.iloc[0])
-            print("retreived score", score)
+                axis=1)].empty:
+            score = dict(df_existing_scores.loc[
+            (df_existing_scores[list(params)] == pd.Series(params)).all(
+                axis=1)].iloc[0])
+            # print("retreived score", score)
         else:
             score = model.score(
                 x,
@@ -211,7 +213,7 @@ def fit(
             )
             score.update(params)
             score.update({"n": split["samplesize"], "s": split["seed"]})
-            print("computed score", score)
+            # print("computed score", score)
 
         scores.append(score)
 

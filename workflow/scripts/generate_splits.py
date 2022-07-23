@@ -114,16 +114,12 @@ def write_splitfile(
     seed,
     stratify=False,
 ):
-    print("start")
     x = np.load(features_path)
     x_mask = np.all(np.isfinite(x), 1)
-    print("read x")
     y = np.load(targets_path)
     y_mask = np.isfinite(y)
-    print("read y")
 
     xy_mask = np.logical_and(x_mask, y_mask)
-    print("read nanmask")
 
     n_classes = np.unique(y)
     idx_all = np.arange(len(y))
@@ -138,7 +134,7 @@ def write_splitfile(
         idx_undersampled = RandomUnderSampler(random_state=seed).fit_resample(
             idx_all[xy_mask], y[xy_mask]
         )
-        mask[[i for i in idx_all if i not in idx_undersampled]] = False
+        xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
     elif len(matching) == len(y) and len(matching.shape) > 1:
         assert n_classes == 2
         m_mask = np.all(np.isfinite(matching), 1)
