@@ -8,6 +8,10 @@ import yaml
 import plotly.graph_objs as go
 
 
+st.set_page_config(
+    page_title="ESCE Viewer",
+    initial_sidebar_state="collapsed",
+)
 st.title("ESCE Viewer")
 
 
@@ -53,40 +57,23 @@ available_models = df[
 ]["model"].unique()
 selected_models = st.multiselect(label="Models:", options=available_models)
 
+
+st.sidebar.subheader("Additional parameters")
+
 available_grids = df[
     (df["target"].isin(selected_targets))
     & (df["features"].isin(selected_features))
     & (df["model"].isin(selected_models))
 ]["grid"].unique()
-grid = st.sidebar.selectbox(label="HP grid", options=available_grids, index=0)
+grid = st.sidebar.selectbox(
+    label="Hyperparameter grid", options=available_grids, index=0
+)
 
-max_x = st.sidebar.number_input(label="Extrapolation sample size", value=5, step=1)
+max_x = st.sidebar.number_input(
+    label="Extrapolation sample size [log10]", value=5, step=1
+)
 
-# classification_metrics = [
-#     "r2_test",
-#     "mse_test",
-#     "mae_test",
-#     "r2_val",
-#     "mse_val",
-#     "mae_val",
-#     "r2_train",
-#     "mse_train",
-#     "mae_train",
-# ]
-# regression_metrics = [
-#     "acc_test",
-#     "f1_test",
-#     "acc_val",
-#     "f1_val",
-#     "acc_train",
-#     "f1_train",
-# ]
-# selected_metrics = st.sidebar.multiselect(
-#     label="Metrics:",
-#     options=classification_metrics + regression_metrics,
-#     default=["r2_test", "acc_test"],
-# )
-
+st.sidebar.subheader("Figure style elements")
 
 color_variable = st.sidebar.selectbox(
     label="Color",
@@ -94,14 +81,16 @@ color_variable = st.sidebar.selectbox(
     index=1,
     key="color_variable",
 )
+
 linestyle_variable = st.sidebar.selectbox(
-    label="Linestyle",
+    label="Line style",
     options=[None, "target", "features", "model"],
     index=2,
     key="linestyle_variable",
 )
+
 shape_variable = st.sidebar.selectbox(
-    label="Shape",
+    label="Marker shape",
     options=[None, "target", "features", "model"],
     index=3,
     key="shape_variable",
@@ -129,12 +118,9 @@ if len(df_selected) > 0:
         df_["model"] = row.model
         df_["features"] = row.features
         df_["target"] = row.target
-        # x_exp = np.linspace(128,2*max(score['x']))
-        # y_exp = score['p_mean'][0] * np.power(x_exp,-score['p_mean'][1]) + score['p_mean'][2]
         data.append(df_)
 
     data = pd.concat(data, axis=0, ignore_index=True)
-    # print(data)
 
     fig = px.line(
         data,
@@ -159,29 +145,10 @@ if len(df_selected) > 0:
                 go.Scatter(
                     x=x_exp,
                     y=y_exp,
-                    line=dict(color=fig.data[i].line.color),
-                    opacity=5 / len(p),
+                    line=dict(color=fig.data[i].line.color, dash=fig.data[i].line.dash),
+                    opacity=1 / len(p),
                     showlegend=False,
                 )
             )
 
     st.plotly_chart(fig)
-
-
-# if len(df_selected) > 0:
-#     data = []
-#     for _, row in df_selected.iterrows():
-#         df_ = pd.read_csv(row.full_path, index_col=False)
-#         df_["model"] = row.model
-#         df_["features"] = row.features
-#         df_["target"] = row.target
-#         data.append(df_)
-#     data = pd.concat(data, axis=0, ignore_index=True)
-
-#     result = data.groupby(['n', 'model', 'features', 'target'], as_index=False).agg(['mean', 'std'])
-#     result =  result.reindex(columns=sorted(result.columns))
-#     print(result)
-
-
-#     fig = px.line(data, x="n", y='acc_test', title='Life expectancy in Canada')
-#     st.plotly_chart(fig)
