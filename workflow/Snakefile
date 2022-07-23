@@ -21,7 +21,6 @@ rule all:
 rule download_mnist:
     output:
         x_raw="results/mnist/features/pixel_raw.npy",
-        x_pca="results/mnist/features/pca_raw.npy",
         y_raw="results/mnist/targets/ten-digits_raw.npy",
         y_odd="results/mnist/targets/odd-even_raw.npy",
     script:

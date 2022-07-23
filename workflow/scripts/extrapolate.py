@@ -77,7 +77,7 @@ def extrapolate(
     result["p_mean"] = p_mean
     result["r2"] = r2_score(y_mean, p_mean[0] * x ** (-p_mean[1]) + p_mean[2])
     result["chi2"] = sum(
-        (y_mean - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) ** 2 / y_sem ** 2
+        (y_mean - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) ** 2 / y_sem**2
     ) / (len(x) - len(p_mean))
     result["mu"], result["sigma"] = np.mean(
         (y_mean - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) / y_sem
