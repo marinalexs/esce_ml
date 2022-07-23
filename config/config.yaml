@@ -7,7 +7,7 @@ seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 sample_sizes: [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
 
 experiments:
-  classification:
+  mnist_benchmark:
     dataset: "mnist"
     features: ["pixel",]
     features_trafo: ["raw",]
@@ -16,3 +16,23 @@ experiments:
     matching: ["none",]
     model: ["ridge-cls",]
     grid: "default"
+  # another_set_of_experiments:
+  #   dataset: "mnist"
+  #   features: ["pixel",]
+  #   features_trafo: ["raw",]
+  #   targets: ["ten-digits","odd-even"]
+  #   targets_trafo: ["raw",]
+  #   matching: ["none",]
+  #   model: ["ridge-cls",]
+  #   grid: "default"
+
+
+custom_datasets:
+  # dataset_name:
+  #   features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  # another_dataset_name:
+  #   features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']

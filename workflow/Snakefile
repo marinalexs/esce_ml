@@ -18,24 +18,13 @@ rule all:
         todo,
 
 
-rule download_mnist:
+rule prepare_data:
     output:
-        x_raw="results/mnist/features/pixel_raw.npy",
-        y_raw="results/mnist/targets/ten-digits_raw.npy",
-        y_odd="results/mnist/targets/odd-even_raw.npy",
+        npy="results/{dataset}/{features_targets_covariates}/{name}_raw.npy",
+    params:
+        custom_datasets=config["custom_datasets"],
     script:
-        "scripts/download_mnist.py"
-
-
-rule dummy_covariate_files:
-    output:
-        none="results/{dataset}/covariates/none.npy",
-        balanced="results/{dataset}/covariates/balanced.npy",
-    run:
-        import numpy as np
-
-        np.save(output.none, [])
-        np.save(output.balanced, [])
+        "scripts/prepare_data.py"
 
 
 rule confound_regression:
