@@ -121,10 +121,10 @@ def write_splitfile(
 
     xy_mask = np.logical_and(x_mask, y_mask)
 
-    n_classes = np.unique(y)
+    n_classes = len(np.unique(y))
     idx_all = np.arange(len(y))
 
-    stratify = True if stratify and len(n_classes <= 10) else False
+    stratify = True if stratify and (n_classes <= 10) else False
 
     matching = np.load(sampling_path)
     if sampling_type == "none":
