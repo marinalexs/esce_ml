@@ -1,4 +1,5 @@
 configfile: "config/config.yaml"
+print("Config is: ", config)
 
 
 import itertools, glob
@@ -18,9 +19,18 @@ rule all:
         todo,
 
 
-rule prepare_data:
+rule prepare_features_targets:
     output:
-        npy="results/{dataset}/{features_targets_covariates}/{name}_raw.npy",
+        npy="results/{dataset}/{features_or_targets}/{name}_raw.npy",
+    params:
+        custom_datasets=config["custom_datasets"],
+    script:
+        "scripts/prepare_data.py"
+
+
+rule prepare_covariates:
+    output:
+        npy="results/{dataset}/covariates/{name}.npy",
     params:
         custom_datasets=config["custom_datasets"],
     script:

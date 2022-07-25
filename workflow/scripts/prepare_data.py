@@ -28,22 +28,24 @@ def download_mnist(
     elif features_targets_covariates == 'covariates' and variant in ['none', 'balanced']:
         data = []
     else:
-        in_path = Path(custom_datasets[dataset][features_or_targets][name])
-        if path.suffix == '.csv':
-            data = pd.read_csv(in_path)
-        if path.suffix == '.tsv':
-            data = pd.read_csv(in_path, delimiter='\t')
-        if path.suffix == '.npy':
+        in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])
+        if in_path.suffix == '.csv':
+            data = pd.read_csv(in_path).values
+        if in_path.suffix == '.tsv':
+            data = pd.read_csv(in_path, delimiter='\t').values
+        if in_path.suffix == '.npy':
             data = np.load(in_path)
     if features_targets_covariates == 'features':
         data = StandardScaler().fit_transform(data)
+    if features_targets_covariates == 'targets':
+        data = data.reshape(-1)
     np.save(out_path, data)
 
 
 download_mnist(
     snakemake.output.npy,
     snakemake.wildcards.dataset,
-    snakemake.wildcards.features_targets_covariates,
+    snakemake.wildcards.features_or_targets if hasattr(snakemake.wildcards, 'features_or_targets') else 'covariates',
     snakemake.wildcards.name,
     snakemake.params.custom_datasets,
 )
