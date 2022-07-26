@@ -12,18 +12,18 @@ experiments: {}
   # mnist_benchmark:
   #   dataset: "mnist"
   #   features: ["pixel",]
-  #   features_trafo: ["raw",]
+  #   features_cni: ["raw",]
   #   targets: ["ten-digits","odd-even"]
-  #   targets_trafo: ["raw",]
+  #   targets_cni: ["raw",]
   #   matching: ["none",]
   #   model: ["ridge-cls",]
   #   grid: "default"
   # another_set_of_experiments:
   #   dataset: "mnist"
   #   features: ["pixel",]
-  #   features_trafo: ["raw",]
+  #   features_cni: ["raw",]
   #   targets: ["ten-digits","odd-even"]
-  #   targets_trafo: ["raw",]
+  #   targets_cni: ["raw",]
   #   matching: ["none",]
   #   model: ["ridge-cls",]
   #   grid: "default"

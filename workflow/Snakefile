@@ -8,7 +8,7 @@ import itertools, glob
 
 todo = [
     expand(
-        "results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.stats.json",
+        "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         **config["experiments"][experiment]
     )
     for experiment in config["experiments"]
@@ -51,33 +51,33 @@ rule confound_regression:
 
 rule split:
     input:
-        features="results/{dataset}/features/{features}_{features_trafo}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_trafo}.npy",
+        features="results/{dataset}/features/{features}_{features_cni}.npy",
+        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
         matching="results/{dataset}/covariates/{matching}.npy",
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
         stratify=config["stratify"],
     output:
-        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
+        split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
     script:
         "scripts/generate_splits.py"
 
 
 rule fit:
     input:
-        features="results/{dataset}/features/{features}_{features_trafo}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_trafo}.npy",
-        split="results/{dataset}/splits/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}.json",
+        features="results/{dataset}/features/{features}_{features_cni}.npy",
+        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
+        split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     params:
         existing_scores=lambda wildcards: glob.glob(
-            "results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_*.csv".format(
+            "results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_*.csv".format(
                 **wildcards
             )
         ),
     output:
-        scores="results/{dataset}/fits/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{samplesize}_{seed}_{grid}.csv",
+        scores="results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv",
     script:
         "scripts/fit_model.py"
 
@@ -85,23 +85,23 @@ rule fit:
 rule aggregate:
     input:
         scores=expand(
-            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_trafo}}_{{targets}}_{{targets_trafo}}_{{matching}}_{samplesize}_{seed}_{{grid}}.csv",
+            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{samplesize}_{seed}_{{grid}}.csv",
             seed=config["seeds"],
             samplesize=config["sample_sizes"],
         ),
     output:
-        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
     script:
         "scripts/aggregate.py"
 
 
 rule extrapolate:
     input:
-        scores="results/{dataset}/scores/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
     params:
         bootstrap_repetitions=config["bootstrap_repetitions"],
     output:
-        stats="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.stats.json",
-        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_trafo}_{targets}_{targets_trafo}_{matching}_{grid}.bootstrap.json",
+        stats="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
+        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.bootstrap.json",
     script:
         "scripts/extrapolate.py"
