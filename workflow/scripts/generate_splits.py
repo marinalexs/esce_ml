@@ -1,10 +1,9 @@
-from typing import Dict, Iterable, List, Tuple, Optional, Union
+import json
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
-import os
-import json
-from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
+from sklearn.model_selection import train_test_split
 
 
 def generate_random_split(
@@ -116,7 +115,7 @@ def write_splitfile(
 ):
     x = np.load(features_path)
     x_mask = np.all(np.isfinite(x), 1)
-    y = np.load(targets_path)
+    y = np.load(targets_path).reshape(-1)
     y_mask = np.isfinite(y)
 
     xy_mask = np.logical_and(x_mask, y_mask)

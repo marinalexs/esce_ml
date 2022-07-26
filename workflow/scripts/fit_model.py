@@ -1,25 +1,14 @@
-"""This module provides models and the sample complexity estimation code."""
-
-import pickle
+import json
+import os
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
 from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
 
 import numpy as np
 import pandas as pd
 import yaml
-import json
-import os
 from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.kernel_ridge import KernelRidge
-from sklearn.linear_model import (
-    Lasso,
-    LinearRegression,
-    LogisticRegression,
-    Ridge,
-    RidgeClassifier,
-)
+from sklearn.linear_model import Ridge, RidgeClassifier
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -27,14 +16,7 @@ from sklearn.metrics import (
     mean_squared_error,
     r2_score,
 )
-from sklearn.metrics.pairwise import (
-    linear_kernel,
-    polynomial_kernel,
-    rbf_kernel,
-    sigmoid_kernel,
-)
 from sklearn.model_selection import ParameterGrid
-from sklearn.svm import SVC, SVR
 
 
 class BaseModel(ABC):

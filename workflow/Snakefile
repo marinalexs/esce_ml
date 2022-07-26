@@ -1,4 +1,6 @@
 configfile: "config/config.yaml"
+
+
 print("Config is: ", config)
 
 
@@ -19,7 +21,7 @@ rule all:
         todo,
 
 
-rule prepare_features_targets:
+rule prepare_features_or_targets:
     output:
         npy="results/{dataset}/{features_or_targets}/{name}_raw.npy",
     params:

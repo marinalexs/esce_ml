@@ -1,10 +1,9 @@
-import pandas as pd
-import os
-from pathlib import Path
+import json
+
 import numpy as np
+import pandas as pd
 import scipy.optimize
 from sklearn.metrics import r2_score
-import json
 
 
 class NpEncoder(json.JSONEncoder):
@@ -31,6 +30,7 @@ def extrapolate(
         y_mean.append(df[df["n"] == n][metric].mean())
         y_std.append(df[df["n"] == n][metric].std())
         y_sem.append(df[df["n"] == n][metric].std() / np.sqrt(result["n_seeds"]))
+
     p_mean, _ = scipy.optimize.curve_fit(
         lambda t, a, b, c: a * t ** (-b) + c,
         x,
