@@ -6,6 +6,22 @@ from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
 
 
+predefined_datasets = {
+    ("mnist", "pixel"): lambda: fetch_openml(
+        "mnist_784", version=1, return_X_y=True, as_frame=False
+    )[0],
+    ("mnist", "ten-digits"): lambda: fetch_openml(
+        "mnist_784", version=1, return_X_y=True, as_frame=False
+    )[1].astype(int),
+    ("mnist", "odd-even"): lambda: (
+        fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)[1].astype(
+            int
+        )
+        % 2
+    ).astype(int),
+}
+
+
 def prepare_data(
     out_path: str,
     dataset: str,
@@ -13,15 +29,8 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ) -> None:
-    if dataset == "mnist" and variant == "pixel":
-        x, _ = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)
-        data = x
-    elif dataset == "mnist" and variant == "ten-digits":
-        _, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)
-        data = y.astype(int)
-    elif dataset == "mnist" and variant == "odd-even":
-        _, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)
-        data = (y.astype(int) % 2 == 0).astype(int)
+    if (dataset, variant) in predefined_datasets:
+        data = predefined_datasets[(dataset, variant)]()
     elif features_targets_covariates == "covariates" and variant in [
         "none",
         "balanced",
@@ -35,10 +44,13 @@ def prepare_data(
             data = pd.read_csv(in_path, delimiter="\t").values
         if in_path.suffix == ".npy":
             data = np.load(in_path)
+
     if features_targets_covariates == "features":
         data = StandardScaler().fit_transform(data)
+
     if features_targets_covariates == "targets":
         data = data.reshape(-1)
+
     np.save(out_path, data)
 
 
