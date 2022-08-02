@@ -6,6 +6,17 @@ from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
 def generate_random_split(
     y: np.ndarray,
     n_train: int,
@@ -36,15 +47,15 @@ def generate_random_split(
         stratify=stratify,
         random_state=seed,
     )
+
     split = {
         "idx_train": idx_originial[idx_train],
         "idx_val": idx_originial[idx_val],
         "idx_test": idx_originial[idx_test],
+        "samplesize": n_train,
+        "seed": seed,
+        "stratify": do_stratify,
     }
-    split = {k: v.tolist() for k, v in split.items()}  # for yaml
-    split.update(
-        {"samplesize": n_train, "seed": seed, "stratify": do_stratify}
-    )  # metadata
 
     return split
 
@@ -170,7 +181,7 @@ def write_splitfile(
         split_dict = {"error": "insufficient samples"}
 
     with open(split_path, "w") as f:
-        json.dump(split_dict, f, indent=0)
+        json.dump(split_dict, f, cls=NpEncoder, indent=0)
 
 
 n_train = int(snakemake.wildcards.samplesize)
