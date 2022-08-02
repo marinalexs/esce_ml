@@ -28,7 +28,7 @@ def prepare_data(
     features_targets_covariates: str,
     variant: str,
     custom_datasets: dict,
-) -> None:
+):
     if (dataset, variant) in predefined_datasets:
         data = predefined_datasets[(dataset, variant)]()
     elif features_targets_covariates == "covariates" and variant in [
@@ -44,9 +44,6 @@ def prepare_data(
             data = pd.read_csv(in_path, delimiter="\t").values
         if in_path.suffix == ".npy":
             data = np.load(in_path)
-
-    if features_targets_covariates == "features":
-        data = StandardScaler().fit_transform(data)
 
     if features_targets_covariates == "targets":
         data = data.reshape(-1)

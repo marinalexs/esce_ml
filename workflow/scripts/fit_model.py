@@ -16,6 +16,7 @@ from sklearn.metrics import (
     mean_squared_error,
     r2_score,
 )
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
 
 
@@ -30,11 +31,17 @@ class BaseModel(ABC):
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
         """Provide a score for the model performance on the data."""
         model = self.model_generator(**kwargs)
-        model.fit(x[idx_train], y[idx_train])
 
-        y_hat_train = model.predict(x[idx_train])
-        y_hat_val = model.predict(x[idx_val])
-        y_hat_test = model.predict(x[idx_test])
+        scaler = StandardScaler()
+        x_train = scaler.fit_transform(x[idx_train])
+        x_val = scaler.transform(x[idx_val])
+        x_test = scaler.transform(x[idx_test])
+
+        model.fit(x_train, y[idx_train])
+
+        y_hat_train = model.predict(x_train)
+        y_hat_val = model.predict(x_val)
+        y_hat_test = model.predict(x_test)
         return self.compute_metrics(
             y_hat_train, y_hat_val, y_hat_test, y[idx_train], y[idx_val], y[idx_test]
         )
@@ -57,32 +64,20 @@ class ClassifierModel(BaseModel):
 
     def compute_metrics(
         self,
-        y_hat_train: np.ndarray,
-        y_hat_val: np.ndarray,
-        y_hat_test: np.ndarray,
-        y_train: np.ndarray,
-        y_val: np.ndarray,
-        y_test: np.ndarray,
+        y_hat_train,
+        y_hat_val,
+        y_hat_test,
+        y_train,
+        y_val,
+        y_test,
     ) -> Dict[str, float]:
-        # Train score
-        acc_train = accuracy_score(y_train, y_hat_train)
-        f1_train = f1_score(y_train, y_hat_train, average="weighted")
-
-        # Val score
-        acc_val = accuracy_score(y_val, y_hat_val)
-        f1_val = f1_score(y_val, y_hat_val, average="weighted")
-
-        # Test score
-        acc_test = accuracy_score(y_test, y_hat_test)
-        f1_test = f1_score(y_test, y_hat_test, average="weighted")
-
         return {
-            "acc_train": acc_train,
-            "acc_val": acc_val,
-            "acc_test": acc_test,
-            "f1_train": f1_train,
-            "f1_val": f1_val,
-            "f1_test": f1_test,
+            "acc_train": accuracy_score(y_train, y_hat_train),
+            "acc_val": accuracy_score(y_val, y_hat_val),
+            "acc_test": accuracy_score(y_test, y_hat_test),
+            "f1_train": f1_score(y_train, y_hat_train, average="weighted"),
+            "f1_val": f1_score(y_val, y_hat_val, average="weighted"),
+            "f1_test": f1_score(y_test, y_hat_test, average="weighted"),
         }
 
 
@@ -91,38 +86,23 @@ class RegressionModel(BaseModel):
 
     def compute_metrics(
         self,
-        y_hat_train: np.ndarray,
-        y_hat_val: np.ndarray,
-        y_hat_test: np.ndarray,
-        y_train: np.ndarray,
-        y_val: np.ndarray,
-        y_test: np.ndarray,
+        y_hat_train,
+        y_hat_val,
+        y_hat_test,
+        y_train,
+        y_val,
+        y_test,
     ) -> Dict[str, float]:
-        # Train score
-        r2_train = r2_score(y_train, y_hat_train)
-        mae_train = mean_absolute_error(y_train, y_hat_train)
-        mse_train = mean_squared_error(y_train, y_hat_train)
-
-        # Val score
-        r2_val = r2_score(y_val, y_hat_val)
-        mae_val = mean_absolute_error(y_val, y_hat_val)
-        mse_val = mean_squared_error(y_val, y_hat_val)
-
-        # Test score
-        r2_test = r2_score(y_test, y_hat_test)
-        mae_test = mean_absolute_error(y_test, y_hat_test)
-        mse_test = mean_squared_error(y_test, y_hat_test)
-
         return {
-            "r2_train": r2_train,
-            "r2_val": r2_val,
-            "r2_test": r2_test,
-            "mae_train": mae_train,
-            "mae_val": mae_val,
-            "mae_test": mae_test,
-            "mse_train": mse_train,
-            "mse_val": mse_val,
-            "mse_test": mse_test,
+            "r2_train": r2_score(y_train, y_hat_train),
+            "r2_val": r2_score(y_val, y_hat_val),
+            "r2_test": r2_score(y_test, y_hat_test),
+            "mae_train": mean_absolute_error(y_train, y_hat_train),
+            "mae_val": mean_absolute_error(y_val, y_hat_val),
+            "mae_test": mean_absolute_error(y_test, y_hat_test),
+            "mse_train": mean_squared_error(y_train, y_hat_train),
+            "mse_val": mean_squared_error(y_val, y_hat_val),
+            "mse_test": mean_squared_error(y_test, y_hat_test),
         }
 
 
@@ -177,18 +157,12 @@ def fit(
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        if (
-            not df_existing_scores.empty
-            and not df_existing_scores.loc[
-                (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
-            ].empty
-        ):
-            score = dict(
-                df_existing_scores.loc[
-                    (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
-                ].iloc[0]
-            )
-            # print("retreived score", score)
+        df_existing_scores_filtered = df_existing_scores.loc[
+            (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
+        ]
+        if not df_existing_scores.empty and not df_existing_scores_filtered.empty:
+            score = dict(df_existing_scores_filtered.iloc[0])
+            # print("retrieved score", score)
         else:
             score = model.score(
                 x,
