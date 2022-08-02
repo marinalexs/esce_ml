@@ -1,11 +1,11 @@
 import glob
-from select import kevent
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 import yaml
 
 st.set_page_config(
@@ -29,9 +29,9 @@ df[
         "dataset",
         "model",
         "features",
-        "features_trafo",
+        "features_cni",
         "target",
-        "targets_trafo",
+        "targets_cni",
         "matching",
         "grid",
     ]
@@ -44,33 +44,17 @@ df[
     .str.split("_", expand=True)
 )
 
-print(df)
-
-available_targets = df["target"].unique()
-selected_targets = st.multiselect(label="Targets:", options=available_targets)
-
-available_features = df[df["target"].isin(selected_targets)]["features"].unique()
-selected_features = st.multiselect(label="Features:", options=available_features)
-
-available_models = df[
-    (df["target"].isin(selected_targets)) & (df["features"].isin(selected_features))
-]["model"].unique()
-selected_models = st.multiselect(label="Models:", options=available_models)
-
-
 st.sidebar.subheader("Additional parameters")
 
-available_grids = df[
-    (df["target"].isin(selected_targets))
-    & (df["features"].isin(selected_features))
-    & (df["model"].isin(selected_models))
-]["grid"].unique()
-grid = st.sidebar.selectbox(
-    label="Hyperparameter grid", options=available_grids, index=0
+available_grids = df["grid"].unique()
+grid = st.sidebar.multiselect(
+    label="Hyperparameter grid", options=available_grids, default="default"
 )
+print(grid)
+df = df[df["grid"].isin(grid)].drop(columns="grid")
 
 max_x = st.sidebar.number_input(
-    label="Extrapolation sample size [log10]", value=5, step=1
+    label="Extrapolation sample size [log10]", value=6, step=1
 )
 
 st.sidebar.subheader("Figure style elements")
@@ -97,15 +81,33 @@ shape_variable = st.sidebar.selectbox(
 )
 
 
-df_selected = df[
-    (df["target"].isin(selected_targets))
-    & (df["features"].isin(selected_features))
-    & (df["model"].isin(selected_models))
-    & (df["grid"] == grid)
-]
+options_builder = GridOptionsBuilder.from_dataframe(
+    df[
+        [
+            "dataset",
+            "model",
+            "features",
+            "features_cni",
+            "target",
+            "targets_cni",
+            "matching",
+            "full_path",
+        ]
+    ]
+)
+options_builder.configure_selection(
+    "multiple", use_checkbox=False, rowMultiSelectWithClick=True
+)
+for column in df.columns:
+    options_builder.configure_column(
+        column, filter="agTextColumnFilter", floatingFilter=True
+    )
+grid_options = options_builder.build()
+grid_response = AgGrid(df, grid_options, update_mode=GridUpdateMode.MODEL_CHANGED)
 
+selected = grid_response["selected_rows"]
+df_selected = pd.DataFrame(selected)
 
-# st.dataframe(df_selected[df_selected.columns[1:]])
 
 if len(df_selected) > 0:
     data = []
@@ -133,7 +135,10 @@ if len(df_selected) > 0:
         log_x=True,
         template="simple_white",
     )
-    fig.update_layout(plot_bgcolor="white")
+    fig.update_layout(
+        plot_bgcolor="white",
+        legend=dict(orientation="h", yanchor="top", xanchor="center", y=-0.2, x=0.5),
+    )
 
     for i, (_, row) in enumerate(df_selected.iterrows()):
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
@@ -146,9 +151,10 @@ if len(df_selected) > 0:
                     x=x_exp,
                     y=y_exp,
                     line=dict(color=fig.data[i].line.color, dash=fig.data[i].line.dash),
-                    opacity=1 / len(p),
+                    opacity=2 / len(p),
                     showlegend=False,
                 )
             )
+    fig.update_yaxes(rangemode="nonnegative")
 
     st.plotly_chart(fig)
