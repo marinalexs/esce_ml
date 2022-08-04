@@ -16,7 +16,7 @@ experiments: {}
   #   targets: ["ten-digits","odd-even"]
   #   targets_cni: ["raw",]
   #   matching: ["none",]
-  #   model: ["ridge-cls",]
+  #   models: ["ridge-cls",]
   #   grid: "default"
   # another_set_of_experiments:
   #   dataset: "mnist"
@@ -25,7 +25,7 @@ experiments: {}
   #   targets: ["ten-digits","odd-even"]
   #   targets_cni: ["raw",]
   #   matching: ["none",]
-  #   model: ["ridge-cls",]
+  #   models: ["ridge-cls",]
   #   grid: "default"
 
 

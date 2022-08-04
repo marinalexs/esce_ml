@@ -8,7 +8,7 @@ import itertools, glob
 
 todo = [
     expand(
-        "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
+        "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         **config["experiments"][experiment]
     )
     for experiment in config["experiments"]
@@ -23,7 +23,7 @@ rule all:
 
 rule prepare_features_or_targets:
     output:
-        npy="results/{dataset}/{features_or_targets}/{name}_raw.npy",
+        npy="results/{dataset}/{features_or_targets}/{name}_none.npy",
     params:
         custom_datasets=config["custom_datasets"],
     script:
@@ -41,7 +41,7 @@ rule prepare_covariates:
 
 rule confound_regression:
     input:
-        features="results/{dataset}/{targets_or_features}/{name}_raw.npy",
+        features="results/{dataset}/{targets_or_features}/{name}_none.npy",
         confounds="results/{dataset}/covariates/{confounds}.npy",
     output:
         features="results/{dataset}/{targets_or_features}/{name}_{confounds}.npy",
