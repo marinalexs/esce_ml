@@ -150,6 +150,10 @@ def fit(
 
     x = np.load(features_path)
     y = np.load(targets_path)
+
+    assert np.isfinite(x[split["idx_train"]]).all()
+    assert np.isfinite(y[split["idx_train"]]).all()
+
     grid = yaml.safe_load(open(grid_path, "r"))
     model = MODELS[model_name]
 

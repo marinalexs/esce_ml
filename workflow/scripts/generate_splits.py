@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
-
+from sklearn.preprocessing import StandardScaler
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -71,6 +71,9 @@ def generate_matched_split(
     mask: Optional[np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     random_state = np.random.RandomState(seed)
+    mask_orig = mask.copy()
+
+    # patients
     split = generate_random_split(
         y,
         n_train // 2,
@@ -78,33 +81,35 @@ def generate_matched_split(
         n_test // 2,
         do_stratify,
         seed,
-        np.logical_and(mask, y > 0),
+        np.logical_and(mask, y == 1),
     )
     idx_all = np.arange(len(y))
 
-    mask[split["idx_train"]] = False
-    mask[split["idx_val"]] = False
-    mask[split["idx_test"]] = False
-    mask[y > 0] = False
+    mask[y == 1] = False
+    assert np.isfinite(match[mask]).all( )
 
+    match = StandardScaler().fit_transform(match)
     matching_scores = []
     for idx_set in ["idx_train", "idx_val", "idx_test"]:
         control_group = []
         for idx in split[idx_set]:
             idx_pool = idx_all[mask]
-            scores = (match[mask] - match[idx]) ** 2
+            scores = (match[idx_pool] - match[idx]) ** 2
+            scores = np.sum(scores, axis=1)
 
             t = random_state.permutation(np.column_stack((scores, idx_pool)))
-            t_idx = np.argmin(t.T[0])
+            t_idx = np.nanargmin(t.T[0])
 
             score_match = t.T[0][t_idx]
             matching_scores.append(score_match)
 
             idx_match = t.T[1][t_idx].astype(int)
-            control_group.append(int(idx_match))
+            control_group.append(idx_match)
             mask[idx_match] = False
 
-        split[idx_set] += control_group
+            assert mask_orig[idx_match], (scores, t, t[t_idx], score_match, idx_match)
+
+        split[idx_set] = np.hstack((split[idx_set], control_group))
 
     split.update({"average_matching_score": np.mean(matching_scores)})
     split["samplesize"] *= 2
@@ -131,7 +136,7 @@ def write_splitfile(
 
     xy_mask = np.logical_and(x_mask, y_mask)
 
-    n_classes = len(np.unique(y))
+    n_classes = len(np.unique(y[xy_mask]))
     idx_all = np.arange(len(y))
 
     stratify = True if stratify and (n_classes <= 10) else False
@@ -179,6 +184,11 @@ def write_splitfile(
         )
     else:
         split_dict = {"error": "insufficient samples"}
+
+    if not 'error' in split_dict:
+        assert np.isfinite(x[split_dict["idx_train"]]).all()
+        assert np.isfinite(y[split_dict["idx_train"]]).all()
+
 
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)
