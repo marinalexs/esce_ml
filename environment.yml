@@ -1,0 +1,13 @@
+name: esce
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python
+  - snakemake
+  - scikit-learn
+  - pandas
+  - scipy
+  - imbalanced-learn
+  - streamlit
+  - plotly
