@@ -12,25 +12,19 @@ experiments: {}
   # mnist_benchmark:
   #   dataset: "mnist"
   #   features: ["pixel",]
-  #   features_cni: ["raw",]
+  #   features_cni: ["none",]
   #   targets: ["ten-digits","odd-even"]
-  #   targets_cni: ["raw",]
+  #   targets_cni: ["none",]
   #   matching: ["none",]
-  #   model: ["ridge-cls",]
+  #   models: ["ridge-cls",]
   #   grid: "default"
   # another_set_of_experiments:
-  #   dataset: "mnist"
-  #   features: ["pixel",]
-  #   features_cni: ["raw",]
-  #   targets: ["ten-digits","odd-even"]
-  #   targets_cni: ["raw",]
-  #   matching: ["none",]
-  #   model: ["ridge-cls",]
-  #   grid: "default"
-
+  #   [...]
 
 custom_datasets: {}
 
+
+## custom names should only use hyphens, never use underscores
 # custom_datasets:
   # dataset_name:
   #   features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']

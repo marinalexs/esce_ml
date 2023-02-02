@@ -7,13 +7,22 @@ import pandas as pd
 def aggregate(
     score_path_list: str,
     stats_path: str,
-) -> None:
+):
+    """
+    for each score file in score_path_list,
+    identify best performing hyperparameter combination on validation set
+    and collect corresponding metrics.
+
+    save resulting table to new csv file stats_path
+    """
 
     df_list = []
     for filename in score_path_list:
+        # ignore empty files (insufficient samples in dataset)
         if os.stat(filename).st_size > 0:
             df_list.append(pd.read_csv(filename, index_col=False))
 
+    # create empty token file for snakemake if empty (insufficient samples in dataset)
     if not df_list:
         Path(stats_path).touch()
         return

@@ -23,7 +23,7 @@ from sklearn.model_selection import ParameterGrid
 class BaseModel(ABC):
     """Base model class for each model."""
 
-    def __init__(self, model_generator: Callable[..., Any], model_name: str) -> None:
+    def __init__(self, model_generator: Callable[..., Any], model_name: str):
         """Initialize class using a model that is initialized later."""
         self.model_generator = model_generator
         self.model_name = model_name
@@ -70,7 +70,7 @@ class ClassifierModel(BaseModel):
         y_train,
         y_val,
         y_test,
-    ) -> Dict[str, float]:
+    ):
         return {
             "acc_train": accuracy_score(y_train, y_hat_train),
             "acc_val": accuracy_score(y_val, y_hat_val),
@@ -92,7 +92,7 @@ class RegressionModel(BaseModel):
         y_train,
         y_val,
         y_test,
-    ) -> Dict[str, float]:
+    ):
         return {
             "r2_train": r2_score(y_train, y_hat_train),
             "r2_val": r2_score(y_val, y_hat_val),
@@ -150,6 +150,10 @@ def fit(
 
     x = np.load(features_path)
     y = np.load(targets_path)
+
+    assert np.isfinite(x[split["idx_train"]]).all()
+    assert np.isfinite(y[split["idx_train"]]).all()
+
     grid = yaml.safe_load(open(grid_path, "r"))
     model = MODELS[model_name]
 
@@ -157,11 +161,11 @@ def fit(
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        df_existing_scores_filtered = df_existing_scores.loc[
+        df_existing_scores_filtered = lambda: df_existing_scores.loc[
             (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
         ]
-        if not df_existing_scores.empty and not df_existing_scores_filtered.empty:
-            score = dict(df_existing_scores_filtered.iloc[0])
+        if not df_existing_scores.empty and not df_existing_scores_filtered().empty:
+            score = dict(df_existing_scores_filtered().iloc[0])
             # print("retrieved score", score)
         else:
             score = model.score(

@@ -16,6 +16,15 @@ st.title("ESCE Viewer")
 
 
 # @st.cache
+def extract_results():
+    import shutil
+
+    shutil.unpack_archive("results.tar.gz")
+
+
+extract_results()
+
+# @st.cache
 def get_available_results():
     return glob.glob("results/*/statistics/*/*.stats.json")
 
@@ -143,6 +152,7 @@ if len(df_selected) > 0:
     for i, (_, row) in enumerate(df_selected.iterrows()):
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
             p = yaml.safe_load(f)
+        if not p: continue
         for p_ in p:
             x_exp = np.logspace(np.log10(128), max_x)
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
