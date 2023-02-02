@@ -16,6 +16,15 @@ st.title("ESCE Viewer")
 
 
 # @st.cache
+def extract_results():
+    import shutils
+
+    shutil.unpack_archive("results.tar.gz")
+
+
+extract_results()
+
+# @st.cache
 def get_available_results():
     return glob.glob("results/*/statistics/*/*.stats.json")
 
