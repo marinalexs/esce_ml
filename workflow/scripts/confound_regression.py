@@ -3,6 +3,9 @@ from sklearn.linear_model import LinearRegression
 
 
 def confound_regression(data_path: str, confounds_path: str, out_path: str):
+    """
+    read data, run linear confound correction, save new corrected dataset
+    """
     data_raw = np.load(data_path)
     confounds = np.load(confounds_path)
 

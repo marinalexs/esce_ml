@@ -6,6 +6,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -86,7 +87,7 @@ def generate_matched_split(
     idx_all = np.arange(len(y))
 
     mask[y == 1] = False
-    assert np.isfinite(match[mask]).all( )
+    assert np.isfinite(match[mask]).all()
 
     match = StandardScaler().fit_transform(match)
     matching_scores = []
@@ -185,10 +186,9 @@ def write_splitfile(
     else:
         split_dict = {"error": "insufficient samples"}
 
-    if not 'error' in split_dict:
+    if not "error" in split_dict:
         assert np.isfinite(x[split_dict["idx_train"]]).all()
         assert np.isfinite(y[split_dict["idx_train"]]).all()
-
 
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)
