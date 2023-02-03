@@ -10,7 +10,7 @@ then run the workflow:
 
 `snakemake --configfile example/example_config.yaml --cores 1 --rerun-incomplete all`
 
-view results
+view results (via a tiny web server)
 
 `streamlit run server.py`
 
