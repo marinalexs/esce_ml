@@ -3,59 +3,36 @@ configfile: "config/config.yaml"
 
 import itertools, glob
 
-sample_complexity_results = [
-    expand(
-        "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
-        **config["experiments"][experiment]
-    )
-    for experiment in config["experiments"]
-]
-sample_complexity_results = list(itertools.chain(*sample_complexity_results))
 
-individual_plots = [
-    expand(
-        "results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png",
-        **config["experiments"][experiment]
+def expand_from_config(filename):
+    return list(
+        itertools.chain(
+            [
+                expand(filename, **config["experiments"][experiment])
+                for experiment in config["experiments"]
+            ]
+        )
     )
-    for experiment in config["experiments"]
-]
-individual_plots = list(itertools.chain(*individual_plots))
 
-by_feature_plots = [
-    expand(
-        "results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png",
-        **config["experiments"][experiment]
-    )
-    for experiment in config["experiments"]
-]
-by_feature_plots = list(itertools.chain(*by_feature_plots))
 
-by_target_plots = [
-    expand(
-        "results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{models}_{grid}.png",
-        **config["experiments"][experiment]
-    )
-    for experiment in config["experiments"]
-]
-by_target_plots = list(itertools.chain(*by_target_plots))
-
-by_model_plots = [
-    expand(
-        "results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
-        **config["experiments"][experiment]
-    )
-    for experiment in config["experiments"]
-]
-by_model_plots = list(itertools.chain(*by_model_plots))
-
-by_cni_plots = [
-    expand(
-        "results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{models}_{grid}.png",
-        **config["experiments"][experiment]
-    )
-    for experiment in config["experiments"]
-]
-by_cni_plots = list(itertools.chain(*by_cni_plots))
+sample_complexity_results = expand_from_config(
+    "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json"
+)
+individual_plots = expand_from_config(
+    "results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
+)
+by_feature_plots = expand_from_config(
+    "results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
+)
+by_target_plots = expand_from_config(
+    "results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{models}_{grid}.png"
+)
+by_model_plots = expand_from_config(
+    "results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
+)
+by_cni_plots = expand_from_config(
+    "results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{models}_{grid}.png",
+)
 
 
 rule all:
@@ -187,16 +164,8 @@ rule plot_individually:
 
 rule plot_by_features:
     input:
-        stats=expand(
-            "results/{{dataset}}/statistics/{{model}}/{features}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
-            features=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["features"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
+        stats=expand_from_config(
+            "results/{{dataset}}/statistics/{{model}}/{features}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json"
         ),
     params:
         title="all-features (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
@@ -212,16 +181,8 @@ rule plot_by_features:
 
 rule plot_by_targets:
     input:
-        stats=expand(
+        stats=expand_from_config(
             "results/{{dataset}}/statistics/{{model}}/{{features}}_{{features_cni}}_{targets}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
-            targets=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["targets"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
         ),
     params:
         title="{features} (cni={features_cni}) vs<br>all-targets (cni={targets_cni})<br>with matching={matching} using {model}",
@@ -237,16 +198,8 @@ rule plot_by_targets:
 
 rule plot_by_models:
     input:
-        stats=expand(
-            "results/{{dataset}}/statistics/{model}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
-            model=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["models"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
+        stats=expand_from_config(
+            "results/{{dataset}}/statistics/{models}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
         ),
     params:
         title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching}",
@@ -262,32 +215,8 @@ rule plot_by_models:
 
 rule plot_by_cni:
     input:
-        stats=expand(
+        stats=expand_from_config(
             "results/{{dataset}}/statistics/{{model}}/{{features}}_{features_cni}_{{targets}}_{targets_cni}_{matching}_{{grid}}.stats.json",
-            features_cni=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["features_cni"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
-            targets_cni=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["targets_cni"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
-            matching=list(
-                itertools.chain(
-                    *[
-                        config["experiments"][experiment]["matching"]
-                        for experiment in config["experiments"]
-                    ]
-                )
-            ),
         ),
     params:
         title="{features} vs {targets}<br>using {model}",
