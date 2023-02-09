@@ -1,31 +1,78 @@
 configfile: "config/config.yaml"
 
-
-print("Config is: ", config)
-
-
 import itertools, glob
 
-todo = [
+sample_complexity_results = [
     expand(
         "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         **config["experiments"][experiment]
     )
     for experiment in config["experiments"]
 ]
-todo = list(itertools.chain(*todo))
+sample_complexity_results = list(itertools.chain(*sample_complexity_results))
+
+individual_plots = [
+    expand(
+        "results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png",
+        **config["experiments"][experiment]
+    )
+    for experiment in config["experiments"]
+]
+individual_plots = list(itertools.chain(*individual_plots))
+
+by_feature_plots = [
+    expand(
+        "results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png",
+        **config["experiments"][experiment]
+    )
+    for experiment in config["experiments"]
+]
+by_feature_plots = list(itertools.chain(*by_feature_plots))
+
+by_target_plots = [
+    expand(
+        "results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{models}_{grid}.png",
+        **config["experiments"][experiment]
+    )
+    for experiment in config["experiments"]
+]
+by_target_plots = list(itertools.chain(*by_target_plots))
+
+by_model_plots = [
+    expand(
+        "results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
+        **config["experiments"][experiment]
+    )
+    for experiment in config["experiments"]
+]
+by_model_plots = list(itertools.chain(*by_model_plots))
+
+by_cni_plots = [
+    expand(
+        "results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{models}_{grid}.png",
+        **config["experiments"][experiment]
+    )
+    for experiment in config["experiments"]
+]
+by_cni_plots = list(itertools.chain(*by_cni_plots))
 
 
 rule all:
     input:
-        todo,
-
+        sample_complexity_results,
+        individual_plots,
+        by_feature_plots,
+        by_target_plots,
+        by_model_plots,
+        by_cni_plots
 
 rule prepare_features_or_targets:
     output:
         npy="results/{dataset}/{features_or_targets}/{name}_none.npy",
     params:
         custom_datasets=config["custom_datasets"],
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/prepare_data.py"
 
@@ -35,39 +82,45 @@ rule prepare_covariates:
         npy="results/{dataset}/covariates/{name}.npy",
     params:
         custom_datasets=config["custom_datasets"],
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/prepare_data.py"
 
 
 rule confound_regression:
     input:
-        features="results/{dataset}/{targets_or_features}/{name}_none.npy",
-        confounds="results/{dataset}/covariates/{confounds}.npy",
+        features=ancient("results/{dataset}/{targets_or_features}/{name}_none.npy"),
+        confounds=ancient("results/{dataset}/covariates/{confounds}.npy"),
     output:
         features="results/{dataset}/{targets_or_features}/{name}_{confounds}.npy",
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/confound_regression.py"
 
 
 rule split:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
-        matching="results/{dataset}/covariates/{matching}.npy",
+        features=ancient("results/{dataset}/features/{features}_{features_cni}.npy"),
+        targets=ancient("results/{dataset}/targets/{targets}_{targets_cni}.npy"),
+        matching=ancient("results/{dataset}/covariates/{matching}.npy"),
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
         stratify=config["stratify"],
     output:
         split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/generate_splits.py"
 
 
 rule fit:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
+        features=ancient("results/{dataset}/features/{features}_{features_cni}.npy"),
+        targets=ancient("results/{dataset}/targets/{targets}_{targets_cni}.npy"),
         split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
         grid="config/grids/{grid}.yaml",
     params:
@@ -78,6 +131,8 @@ rule fit:
         ),
     output:
         scores="results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv",
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/fit_model.py"
 
@@ -91,6 +146,8 @@ rule aggregate:
         ),
     output:
         scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/aggregate.py"
 
@@ -103,5 +160,83 @@ rule extrapolate:
     output:
         stats="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         bootstraps="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.bootstrap.json",
+    conda:
+        "envs/environment.yaml"
     script:
         "scripts/extrapolate.py"
+
+
+rule plot_individually:
+    input:
+        stats=["results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",]
+    params:
+        title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
+        color_variable=None,
+        linestyle_variable=None
+    output:
+        plot="results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot.py"
+
+
+rule plot_by_features:
+    input:
+        stats=expand("results/{{dataset}}/statistics/{{model}}/{features}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",features=list(itertools.chain(*[config["experiments"][experiment]["features"] for experiment in config["experiments"]])))
+    params:
+        title="all-features (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
+        color_variable='features',
+        linestyle_variable=None
+    output:
+        plot="results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot.py"
+
+rule plot_by_targets:
+    input:
+        stats=expand("results/{{dataset}}/statistics/{{model}}/{{features}}_{{features_cni}}_{targets}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",targets=list(itertools.chain(*[config["experiments"][experiment]["targets"] for experiment in config["experiments"]])))
+    params:
+        title="{features} (cni={features_cni}) vs<br>all-targets (cni={targets_cni})<br>with matching={matching} using {model}",
+        color_variable='target',
+        linestyle_variable=None
+    output:
+        plot="results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{model}_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot.py"
+
+rule plot_by_models:
+    input:
+        stats=expand("results/{{dataset}}/statistics/{model}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",model=list(itertools.chain(*[config["experiments"][experiment]["models"] for experiment in config["experiments"]])))
+    params:
+        title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching}",
+        color_variable='model',
+        linestyle_variable=None
+    output:
+        plot="results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot.py"
+
+rule plot_by_cni:
+    input:
+        stats=expand("results/{{dataset}}/statistics/{{model}}/{{features}}_{features_cni}_{{targets}}_{targets_cni}_{matching}_{{grid}}.stats.json",
+            features_cni=list(itertools.chain(*[config["experiments"][experiment]["features_cni"] for experiment in config["experiments"]])),
+            targets_cni=list(itertools.chain(*[config["experiments"][experiment]["targets_cni"] for experiment in config["experiments"]])),
+            matching=list(itertools.chain(*[config["experiments"][experiment]["matching"] for experiment in config["experiments"]])),
+            )
+    params:
+        title="{features} vs {targets}<br>using {model}",
+        color_variable='cni',
+        linestyle_variable=None
+    output:
+        plot="results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{model}_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot.py"

@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - scikit-learn
+  - pandas
+  - scipy
+  - imbalanced-learn
+  - plotly
+  - python-kaleido
