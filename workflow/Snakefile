@@ -228,3 +228,14 @@ rule plot_by_cni:
         "envs/environment.yaml"
     script:
         "scripts/plot.py"
+
+
+rule compress_results:
+    input:
+        rules.all.input,
+    output:
+        "results_{dataset}.tar.gz",
+    shell:
+        """
+        tar -cvpzf results_{wildcards.dataset}.tar.gz results/{wildcards.dataset}/statistics results/{wildcards.dataset}/scores
+        """

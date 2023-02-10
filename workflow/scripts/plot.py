@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 
+
 def process_results(available_results):
     df = pd.DataFrame(available_results, columns=["full_path"])
     df[
@@ -24,7 +25,7 @@ def process_results(available_results):
         .str.replace("/", "_")
         .str.split("_", expand=True)
     )
-    df['cni']=df[['features_cni', 'targets_cni', 'matching']].agg('-'.join, axis=1)
+    df["cni"] = df[["features_cni", "targets_cni", "matching"]].agg("-".join, axis=1)
     return df
 
 
@@ -33,8 +34,8 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
 
     data = []
     for _, row in df.iterrows():
-        if not os.path.exists(row.full_path): 
-            print(row.full_path, 'does not exist - skipping')
+        if not os.path.exists(row.full_path):
+            print(row.full_path, "does not exist - skipping")
             continue
         with open(row.full_path) as f:
             score = yaml.safe_load(f)
@@ -63,13 +64,14 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="top", xanchor="center", y=-0.2, x=0.5),
         title_text=title,
-        title_x=0.5
+        title_x=0.5,
     )
 
     for i, (_, row) in enumerate(df.iterrows()):
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
             p = yaml.safe_load(f)
-        if not p: continue
+        if not p:
+            continue
         for p_ in p:
             x_exp = np.logspace(np.log10(128), max_x)
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
@@ -84,7 +86,7 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
             )
     fig.update_yaxes(rangemode="nonnegative")
 
-    fig.write_image(output_filename)    
+    fig.write_image(output_filename)
 
 
 plot(
