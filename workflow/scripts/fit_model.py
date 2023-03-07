@@ -60,9 +60,15 @@ class BaseModel(ABC):
         y_hat_test_scaled = model.predict(x_test_scaled)
 
         if y_scaler:
-            y_hat_train = y_scaler.inverse_transform(y_hat_train_scaled.reshape(-1, 1)).flatten()
-            y_hat_val = y_scaler.inverse_transform(y_hat_val_scaled.reshape(-1, 1)).flatten()
-            y_hat_test = y_scaler.inverse_transform(y_hat_test_scaled.reshape(-1, 1)).flatten()
+            y_hat_train = y_scaler.inverse_transform(
+                y_hat_train_scaled.reshape(-1, 1)
+            ).flatten()
+            y_hat_val = y_scaler.inverse_transform(
+                y_hat_val_scaled.reshape(-1, 1)
+            ).flatten()
+            y_hat_test = y_scaler.inverse_transform(
+                y_hat_test_scaled.reshape(-1, 1)
+            ).flatten()
         else:
             y_hat_train = y_hat_train_scaled
             y_hat_val = y_hat_val_scaled
