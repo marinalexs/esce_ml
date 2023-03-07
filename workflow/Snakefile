@@ -7,7 +7,7 @@ import itertools, glob
 def expand_from_config(filename):
     return list(
         itertools.chain(
-            [
+            *[
                 expand(filename, **config["experiments"][experiment])
                 for experiment in config["experiments"]
             ]
@@ -147,10 +147,11 @@ rule extrapolate:
 
 rule plot_individually:
     input:
+        sample_complexity_results,
+    params:
         stats=[
             "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         ],
-    params:
         title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
         color_variable=None,
         linestyle_variable=None,
@@ -164,10 +165,13 @@ rule plot_individually:
 
 rule plot_by_features:
     input:
-        stats=expand_from_config(
-            "results/{{dataset}}/statistics/{{model}}/{features}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json"
-        ),
+        sample_complexity_results,
     params:
+        stats=lambda wildcards: glob.glob(
+            "results/{dataset}/statistics/{model}/*_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json".format(
+                **wildcards
+            )
+        ),
         title="all-features (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
         color_variable="features",
         linestyle_variable=None,
@@ -181,10 +185,13 @@ rule plot_by_features:
 
 rule plot_by_targets:
     input:
-        stats=expand_from_config(
-            "results/{{dataset}}/statistics/{{model}}/{{features}}_{{features_cni}}_{targets}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
-        ),
+        sample_complexity_results,
     params:
+        stats=lambda wildcards: glob.glob(
+            "results/{dataset}/statistics/{model}/{features}_{features_cni}_*_{targets_cni}_{matching}_{grid}.stats.json".format(
+                **wildcards
+            )
+        ),
         title="{features} (cni={features_cni}) vs<br>all-targets (cni={targets_cni})<br>with matching={matching} using {model}",
         color_variable="target",
         linestyle_variable=None,
@@ -198,10 +205,13 @@ rule plot_by_targets:
 
 rule plot_by_models:
     input:
-        stats=expand_from_config(
-            "results/{{dataset}}/statistics/{models}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{{grid}}.stats.json",
-        ),
+        sample_complexity_results,
     params:
+        stats=lambda wildcards: glob.glob(
+            "results/{dataset}/statistics/*/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json".format(
+                **wildcards
+            )
+        ),
         title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching}",
         color_variable="model",
         linestyle_variable=None,
@@ -215,10 +225,13 @@ rule plot_by_models:
 
 rule plot_by_cni:
     input:
-        stats=expand_from_config(
-            "results/{{dataset}}/statistics/{{model}}/{{features}}_{features_cni}_{{targets}}_{targets_cni}_{matching}_{{grid}}.stats.json",
-        ),
+        sample_complexity_results,
     params:
+        stats=lambda wildcards: glob.glob(
+            "results/{dataset}/statistics/{model}/{features}_*_{targets}_*_*_{grid}.stats.json".format(
+                **wildcards
+            )
+        ),
         title="{features} vs {targets}<br>using {model}",
         color_variable="cni",
         linestyle_variable=None,

@@ -9,10 +9,19 @@ seeds: [0, 1, 2,]
 sample_sizes: [5, 10, 20, 30]
 
 experiments:
-  exampleexperiment:
+  example_regression:
     dataset: "example-dataset"
     features: ["example-features-a","example-features-b"]
     features_cni: ["example-covariates-of-no-interest",]
+    targets: ["example-targets",]
+    targets_cni: ["none",]
+    matching: ["none",]
+    models: ["ridge-reg",]
+    grid: "default"
+  example_classification:
+    dataset: "example-dataset"
+    features: ["example-features-b"]
+    features_cni: ["none",]
     targets: ["example-targets",]
     targets_cni: ["none",]
     matching: ["none",]
