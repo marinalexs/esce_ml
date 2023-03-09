@@ -76,7 +76,7 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
         if not p:
             continue
         for p_ in p:
-            x_exp = np.logspace(np.log10(128), max_x)
+            x_exp = np.logspace(np.log10(128), np.log10(max_x))
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
             fig.add_trace(
                 go.Scatter(
