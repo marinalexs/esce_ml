@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import textwrap
-
+import numpy as np
 
 def process_results(available_results):
     df = pd.DataFrame(available_results, columns=["full_path"])
