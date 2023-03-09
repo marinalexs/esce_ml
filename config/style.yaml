@@ -1,5 +1,7 @@
 # style parameters for visualisations
 
+extrapolatate_to: 100000
+
 figure_titles:
   individual: "{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
   features: "all-features (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"

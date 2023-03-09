@@ -30,7 +30,7 @@ def process_results(available_results):
     return df
 
 
-def plot(stats_file_list, output_filename, color_variable, linestyle_variable, title):
+def plot(stats_file_list, output_filename, color_variable, linestyle_variable, title, max_x=6):
     df = process_results(stats_file_list)
 
     data = []
@@ -98,4 +98,4 @@ plot(
     color_variable=snakemake.params.color_variable,
     linestyle_variable=snakemake.params.linestyle_variable,
     title=snakemake.params.title,
-)
+    max_x=snakemake.params.max_x,)
