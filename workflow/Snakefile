@@ -21,6 +21,9 @@ sample_complexity_results = expand_from_config(
 individual_plots = expand_from_config(
     "results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
 )
+hp_plots = expand_from_config(
+    "results/{dataset}/plots/hps/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",
+)
 by_feature_plots = expand_from_config(
     "results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
 )
@@ -43,6 +46,7 @@ rule all:
         by_target_plots,
         by_model_plots,
         by_cni_plots,
+        hp_plots,
 
 
 rule prepare_features_or_targets:
@@ -152,7 +156,7 @@ rule plot_individually:
         stats=[
             "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         ],
-        title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
+        title="{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
         color_variable=None,
         linestyle_variable=None,
     output:
@@ -172,7 +176,7 @@ rule plot_by_features:
                 **wildcards
             )
         ),
-        title="all-features (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching} using {model}",
+        title="all-features (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
         color_variable="features",
         linestyle_variable=None,
     output:
@@ -192,7 +196,7 @@ rule plot_by_targets:
                 **wildcards
             )
         ),
-        title="{features} (cni={features_cni}) vs<br>all-targets (cni={targets_cni})<br>with matching={matching} using {model}",
+        title="{features} (cni={features_cni}) vs all-targets (cni={targets_cni}) with matching={matching} using {model}",
         color_variable="target",
         linestyle_variable=None,
     output:
@@ -212,7 +216,7 @@ rule plot_by_models:
                 **wildcards
             )
         ),
-        title="{features} (cni={features_cni}) vs<br>{targets} (cni={targets_cni})<br>with matching={matching}",
+        title="{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching}",
         color_variable="model",
         linestyle_variable=None,
     output:
@@ -232,7 +236,7 @@ rule plot_by_cni:
                 **wildcards
             )
         ),
-        title="{features} vs {targets}<br>using {model}",
+        title="{features} vs {targets} using {model}",
         color_variable="cni",
         linestyle_variable=None,
     output:
@@ -241,6 +245,21 @@ rule plot_by_cni:
         "envs/environment.yaml"
     script:
         "scripts/plot.py"
+
+
+rule plot_hyperparameters:
+    input:
+        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
+    params:
+        title="best hyperparameters - {features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
+        style="config/style.yaml",
+        grid="config/grids/{grid}.yaml",
+    output:
+        plot="results/{dataset}/plots/hps/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",
+    conda:
+        "envs/environment.yaml"
+    script:
+        "scripts/plot_hps.py"
 
 
 rule compress_results:

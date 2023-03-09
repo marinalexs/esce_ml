@@ -2,6 +2,7 @@ import yaml, glob, os, textwrap
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
+import textwrap
 
 
 def process_results(available_results):
@@ -62,9 +63,11 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
     )
     fig.update_layout(
         plot_bgcolor="white",
-        legend=dict(orientation="h", yanchor="top", xanchor="center", y=-0.2, x=0.5),
-        title_text=title,
+        legend=dict(orientation="h", yanchor="top", xanchor="center", y=-0.125, x=0.5),
+        title_text=textwrap.fill(title, 90).replace("\n", "<br>"),
         title_x=0.5,
+        font={"size": 10},
+        margin=dict(l=20, r=20, t=40, b=20),
     )
 
     for i, (_, row) in enumerate(df.iterrows()):

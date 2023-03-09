@@ -1,0 +1,5 @@
+# style parameters for visualisations
+
+hyperparameter_scales:
+# by default linear, can be turned to log scale here
+  'alpha': 'log'
