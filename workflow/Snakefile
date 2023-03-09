@@ -1,4 +1,5 @@
 configfile: "config/config.yaml"
+configfile: "config/style.yaml"
 
 
 import itertools, glob
@@ -156,7 +157,7 @@ rule plot_individually:
         stats=[
             "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         ],
-        title="{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
+        title = config['figure_titles']['individual'],
         color_variable=None,
         linestyle_variable=None,
     output:
@@ -176,7 +177,7 @@ rule plot_by_features:
                 **wildcards
             )
         ),
-        title="all-features (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
+        title=config['figure_titles']['features'],
         color_variable="features",
         linestyle_variable=None,
     output:
@@ -196,7 +197,7 @@ rule plot_by_targets:
                 **wildcards
             )
         ),
-        title="{features} (cni={features_cni}) vs all-targets (cni={targets_cni}) with matching={matching} using {model}",
+        title= config['figure_titles']['targets'],
         color_variable="target",
         linestyle_variable=None,
     output:
@@ -216,7 +217,7 @@ rule plot_by_models:
                 **wildcards
             )
         ),
-        title="{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching}",
+        title = config['figure_titles']['models'],
         color_variable="model",
         linestyle_variable=None,
     output:
@@ -236,7 +237,7 @@ rule plot_by_cni:
                 **wildcards
             )
         ),
-        title="{features} vs {targets} using {model}",
+        title=config['figure_titles']['cni'],
         color_variable="cni",
         linestyle_variable=None,
     output:
@@ -251,8 +252,8 @@ rule plot_hyperparameters:
     input:
         scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
     params:
-        title="best hyperparameters - {features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}",
-        style="config/style.yaml",
+        title=config['figure_titles']['hyperparameters'],
+        hyperparameter_scales=config["hyperparameter_scales"],
         grid="config/grids/{grid}.yaml",
     output:
         plot="results/{dataset}/plots/hps/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",

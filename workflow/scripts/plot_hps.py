@@ -5,10 +5,9 @@ import plotly.graph_objs as go
 
 
 def plot(
-    stats_filename, output_filename, grid_filename, style_filename, model_name, title
+    stats_filename, output_filename, grid_filename, hyperparameter_scales, model_name, title
 ):
     scores = pd.read_csv(stats_filename)
-    style = yaml.safe_load(open(style_filename, "r"))
     grid = yaml.safe_load(open(grid_filename, "r"))[model_name]
     hp_names = list(grid.keys())
     metric = "r2_val" if "r2_val" in scores.columns else "acc_val"
@@ -30,10 +29,10 @@ def plot(
     )
 
     for i, v in enumerate(hp_names):
-        if v in style["hyperparameter_scales"]:
+        if v in hyperparameter_scales:
             fig.add_hline(y=min(grid[v]), line_dash="dot", col=i + 1)
             fig.add_hline(y=max(grid[v]), line_dash="dot", col=i + 1)
-            if style["hyperparameter_scales"][v] == "log":
+            if hyperparameter_scales[v] == "log":
                 fig.update_yaxes(type="log", col=i + 1)
 
     fig.write_image(output_filename)
@@ -43,7 +42,7 @@ plot(
     stats_filename=snakemake.input.scores,
     output_filename=snakemake.output.plot,
     grid_filename=snakemake.params.grid,
-    style_filename=snakemake.params.style,
+    hyperparameter_scales=snakemake.params.hyperparameter_scales,
     model_name=snakemake.wildcards.model,
     title=snakemake.params.title,
 )
