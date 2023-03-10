@@ -201,6 +201,8 @@ n_val = min(
 n_test = min(
     round(n_train * snakemake.params.val_test_frac), snakemake.params.val_test_max
 )
+n_val = max(n_val, snakemake.params.val_test_min)
+n_test = max(n_test, snakemake.params.val_test_min)
 
 write_splitfile(
     features_path=snakemake.input.features,
