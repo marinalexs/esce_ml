@@ -15,6 +15,9 @@ def expand_from_config(filename):
         )
     )
 
+all_fits = expand_from_config(
+    "results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv"
+)
 
 sample_complexity_results = expand_from_config(
     "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json"
@@ -41,6 +44,7 @@ by_cni_plots = expand_from_config(
 
 rule all:
     input:
+        all_fits,
         sample_complexity_results,
         individual_plots,
         by_feature_plots,
