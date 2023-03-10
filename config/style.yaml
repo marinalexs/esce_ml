@@ -1,0 +1,15 @@
+# style parameters for visualisations
+
+extrapolate_to: 100000
+
+figure_titles:
+  individual: "{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
+  features: "all-features (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
+  targets: "{features} (cni={features_cni}) vs all-targets (cni={targets_cni}) with matching={matching} using {model}"
+  models: "{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching}"
+  cni: "{features} vs {targets} using {model}"
+  hyperparameters: "best hyperparameters - {features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
+
+hyperparameter_scales:
+# by default linear, can be turned to log scale here
+  'alpha': 'log'

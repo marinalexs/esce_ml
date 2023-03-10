@@ -2,7 +2,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast, Union
 
 import numpy as np
 import pandas as pd
@@ -23,6 +23,9 @@ from sklearn.model_selection import ParameterGrid
 class BaseModel(ABC):
     """Base model class for each model."""
 
+    scale_features: bool
+    scale_targets: bool
+
     def __init__(self, model_generator: Callable[..., Any], model_name: str):
         """Initialize class using a model that is initialized later."""
         self.model_generator = model_generator
@@ -32,18 +35,47 @@ class BaseModel(ABC):
         """Provide a score for the model performance on the data."""
         model = self.model_generator(**kwargs)
 
-        scaler = StandardScaler()
-        x_train = scaler.fit_transform(x[idx_train])
-        x_val = scaler.transform(x[idx_val])
-        x_test = scaler.transform(x[idx_test])
+        x_scaler = StandardScaler() if self.scale_features else None
+        x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
+        if x_scaler:
+            x_train_scaled = x_scaler.fit_transform(x_train)
+            x_val_scaled = x_scaler.transform(x_val)
+            x_test_scaled = x_scaler.transform(x_test)
+        else:
+            x_train_scaled = x_train
+            x_val_scaled = x_val
+            x_test_scaled = x_test
 
-        model.fit(x_train, y[idx_train])
+        y_scaler = StandardScaler() if self.scale_targets else None
+        y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
+        if y_scaler:
+            y_train_scaled = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+        else:
+            y_train_scaled = y_train
 
-        y_hat_train = model.predict(x_train)
-        y_hat_val = model.predict(x_val)
-        y_hat_test = model.predict(x_test)
+        model.fit(x_train_scaled, y_train_scaled)
+
+        y_hat_train_scaled = model.predict(x_train_scaled)
+        y_hat_val_scaled = model.predict(x_val_scaled)
+        y_hat_test_scaled = model.predict(x_test_scaled)
+
+        if y_scaler:
+            y_hat_train = y_scaler.inverse_transform(
+                y_hat_train_scaled.reshape(-1, 1)
+            ).flatten()
+            y_hat_val = y_scaler.inverse_transform(
+                y_hat_val_scaled.reshape(-1, 1)
+            ).flatten()
+            y_hat_test = y_scaler.inverse_transform(
+                y_hat_test_scaled.reshape(-1, 1)
+            ).flatten()
+        else:
+            y_hat_train = y_hat_train_scaled
+            y_hat_val = y_hat_val_scaled
+            y_hat_test = y_hat_test_scaled
+
         return self.compute_metrics(
-            y_hat_train, y_hat_val, y_hat_test, y[idx_train], y[idx_val], y[idx_test]
+            y_hat_train, y_hat_val, y_hat_test, y_train, y_val, y_test
         )
 
     @abstractmethod
@@ -61,6 +93,9 @@ class BaseModel(ABC):
 
 class ClassifierModel(BaseModel):
     """Base class for classifier models."""
+
+    scale_features = True
+    scale_targets = False
 
     def compute_metrics(
         self,
@@ -83,6 +118,9 @@ class ClassifierModel(BaseModel):
 
 class RegressionModel(BaseModel):
     """Base class for regression models."""
+
+    scale_features = True
+    scale_targets = True
 
     def compute_metrics(
         self,
