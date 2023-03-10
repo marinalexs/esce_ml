@@ -6,19 +6,21 @@ import itertools, glob
 
 
 def expand_from_config(filename):
+    """Expand a filename template using the config file."""
     return list(
         itertools.chain(
             *[
-                expand(filename, **config["experiments"][experiment])
+                # merge the experiment-specific config with the global config
+                expand(filename, **{**config["experiments"][experiment],**config})
+                # for each experiment
                 for experiment in config["experiments"]
             ]
         )
     )
 
 all_fits = expand_from_config(
-    "results/{dataset}/fits/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv"
+    "results/{dataset}/fits/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{sample_sizes}_{seeds}_{grid}.csv"
 )
-
 sample_complexity_results = expand_from_config(
     "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json"
 )
