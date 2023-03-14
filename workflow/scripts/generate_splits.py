@@ -162,7 +162,7 @@ def write_splitfile(
     else:
         raise Exception("invalid sampling file")
 
-    if matching is False and sum(xy_mask) > n_train + n_val + n_test:
+    if matching is False and (sum(xy_mask) > n_train + n_val + n_test):
         split_dict = generate_random_split(
             y=y,
             n_train=n_train,
@@ -172,7 +172,7 @@ def write_splitfile(
             mask=xy_mask,
             seed=seed,
         )
-    elif sum(xy_mask[y == 1]) > n_train // 2 + n_val // 2 + n_test // 2:
+    elif matching is not False and (sum(xy_mask[y == 1]) > n_train // 2 + n_val // 2 + n_test // 2):
         split_dict = generate_matched_split(
             y=y,
             match=matching,
