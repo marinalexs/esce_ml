@@ -147,9 +147,10 @@ def write_splitfile(
         matching = False
     elif sampling_type == "balanced":
         matching = False
-        idx_undersampled = RandomUnderSampler(random_state=seed).fit_resample(
-            idx_all[xy_mask], y[xy_mask]
+        idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
+            idx_all[xy_mask].reshape(-1,1), y[xy_mask]
         )
+        idx_undersampled=idx_undersampled.reshape(-1)
         xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
     elif len(matching) == len(y) and len(matching.shape) > 1:
         assert n_classes == 2
