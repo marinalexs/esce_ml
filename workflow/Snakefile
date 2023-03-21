@@ -62,9 +62,9 @@ rule prepare_features_or_targets:
     params:
         custom_datasets=config["custom_datasets"],
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/prepare_data.py"
+        f"{workflow.basedir}/scripts/prepare_data.py"
 
 
 rule prepare_covariates:
@@ -73,9 +73,9 @@ rule prepare_covariates:
     params:
         custom_datasets=config["custom_datasets"],
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/prepare_data.py"
+        f"{workflow.basedir}/scripts/prepare_data.py"
 
 
 rule confound_regression:
@@ -85,9 +85,9 @@ rule confound_regression:
     output:
         features="results/{dataset}/{targets_or_features}/{name}_{confounds}.npy",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/confound_regression.py"
+        f"{workflow.basedir}/scripts/confound_regression.py"
 
 
 rule split:
@@ -103,9 +103,9 @@ rule split:
     output:
         split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/generate_splits.py"
+        f"{workflow.basedir}/scripts/generate_splits.py"
 
 
 rule fit:
@@ -113,7 +113,7 @@ rule fit:
         features=ancient("results/{dataset}/features/{features}_{features_cni}.npy"),
         targets=ancient("results/{dataset}/targets/{targets}_{targets_cni}.npy"),
         split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
-        grid="config/grids/{grid}.yaml",
+        grid=f"{workflow.basedir}/config/grids/{grid}.yaml",
     params:
         existing_scores=lambda wildcards: glob.glob(
             "results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_*.csv".format(
@@ -123,9 +123,9 @@ rule fit:
     output:
         scores="results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/fit_model.py"
+        f"{workflow.basedir}/scripts/fit_model.py"
 
 
 rule aggregate:
@@ -138,9 +138,9 @@ rule aggregate:
     output:
         scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/aggregate.py"
+        f"{workflow.basedir}/scripts/aggregate.py"
 
 
 rule extrapolate:
@@ -152,9 +152,9 @@ rule extrapolate:
         stats="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
         bootstraps="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.bootstrap.json",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/extrapolate.py"
+        f"{workflow.basedir}/scripts/extrapolate.py"
 
 
 rule plot_individually:
@@ -171,9 +171,9 @@ rule plot_individually:
     output:
         plot="results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot.py"
+        f"{workflow.basedir}/scripts/plot.py"
 
 
 rule plot_by_features:
@@ -192,9 +192,9 @@ rule plot_by_features:
     output:
         plot="results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot.py"
+        f"{workflow.basedir}/scripts/plot.py"
 
 
 rule plot_by_targets:
@@ -213,9 +213,9 @@ rule plot_by_targets:
     output:
         plot="results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{model}_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot.py"
+        f"{workflow.basedir}/scripts/plot.py"
 
 
 rule plot_by_models:
@@ -234,9 +234,9 @@ rule plot_by_models:
     output:
         plot="results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot.py"
+        f"{workflow.basedir}/scripts/plot.py"
 
 
 rule plot_by_cni:
@@ -255,9 +255,9 @@ rule plot_by_cni:
     output:
         plot="results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{model}_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot.py"
+        f"{workflow.basedir}/scripts/plot.py"
 
 
 rule plot_hyperparameters:
@@ -270,9 +270,9 @@ rule plot_hyperparameters:
     output:
         plot="results/{dataset}/plots/hps/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",
     conda:
-        "envs/environment.yaml"
+        f"{workflow.basedir}/envs/environment.yaml"
     script:
-        "scripts/plot_hps.py"
+        f"{workflow.basedir}/scripts/plot_hps.py"
 
 
 rule compress_results:
