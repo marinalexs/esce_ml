@@ -27,7 +27,7 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         if xy_mask[i]:
             data_corrected[i] = data_raw[i] - model.predict(confounds[i].reshape(1, -1))
         else:
-            data_corrected[i] = np.nan
+            data_corrected[i][:] = np.nan
     
     np.save(out_path, data_corrected)
 

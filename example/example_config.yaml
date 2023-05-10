@@ -1,12 +1,10 @@
 ## custom names should only use hyphens, never use underscores
 
-val_test_frac: .5
-val_test_max: 1000
+val_test_frac: .25
 bootstrap_repetitions: 100
-stratify: False
 
 seeds: [0, 1, 2,]
-sample_sizes: [5, 10, 20, 30]
+sample_sizes: [10, 20, 30]
 
 experiments:
   example_regression:
