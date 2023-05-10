@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 class NpEncoder(json.JSONEncoder):
+    """Encode numpy arrays to JSON."""
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -27,6 +28,7 @@ def generate_random_split(
     seed: int = 0,
     mask: Optional[np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generate a random split of the data."""
     if mask is False:
         idx_originial = np.arange(len(y))
         idx = np.arange(len(y))
@@ -71,6 +73,24 @@ def generate_matched_split(
     seed: int = 0,
     mask: Optional[np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generate a matched split of the data.
+
+    Assumes a binary classification target variable, coded as 0 and 1, with 1 being the positive (patient) class and 0 being the negative (control) class.
+    Masking allows to only consider a subset of the data for matching, i.e. for exluding participants with similar disorders from the control group. 
+
+    :param y: The target variable in the shape (n_samples,).
+    :param match: The covariates to use for matching, in the shape (n_samples, n_features).
+    :param n_train: The number of training samples.
+    :param n_val: The number of validation samples.
+    :param n_test: The number of test samples.
+    :param do_stratify: Whether to stratify the split.
+    :param seed: The random seed.
+    :param mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
+    :return: The split: list of training, validation and test indices and some additional information.
+    :rtype: Dict['idx_train', 'idx_val', 'idx_test', 'samplesize', 'seed', 'stratify','average_matching_score']
+
+    """
+
     random_state = np.random.RandomState(seed)
     mask_orig = mask.copy()
 
