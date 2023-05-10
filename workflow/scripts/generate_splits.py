@@ -196,14 +196,12 @@ def write_splitfile(
 
 
 n_train = int(snakemake.wildcards.samplesize)
-n_val = min(
+n_val = n_test = min(
     round(n_train * snakemake.params.val_test_frac), snakemake.params.val_test_max
-)
-n_test = min(
-    round(n_train * snakemake.params.val_test_frac), snakemake.params.val_test_max
-)
-n_val = max(n_val, snakemake.params.val_test_min)
-n_test = max(n_test, snakemake.params.val_test_min)
+) if snakemake.params.val_test_max else round(n_train * snakemake.params.val_test_frac)
+n_val = n_test = max(n_val, snakemake.params.val_test_min) if snakemake.params.val_test_min else n_val
+assert n_train > 1 and n_val > 1 and n_test > 1
+
 
 write_splitfile(
     features_path=snakemake.input.features,
