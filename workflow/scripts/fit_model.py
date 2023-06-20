@@ -53,7 +53,7 @@ class BaseModel(ABC):
         else:
             y_train_scaled = y_train
 
-        model.fit(x_train_scaled, y_train_scaled)
+        model.fit(x_train_scaled, y_train_scaled.astype(int))
 
         y_hat_train_scaled = model.predict(x_train_scaled)
         y_hat_val_scaled = model.predict(x_val_scaled)

@@ -166,9 +166,11 @@ def write_splitfile(
     if sampling_type == "none":
         matching = False
     elif sampling_type == "balanced":
+        assert n_classes <= 10, 'For too many classes, balancing strategy (in under sampling) doesn\'t make sense.'
+        
         matching = False
         idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
-            idx_all[xy_mask].reshape(-1,1), y[xy_mask]
+            idx_all[xy_mask].reshape(-1,1), y[xy_mask].astype(int)
         )
         idx_undersampled=idx_undersampled.reshape(-1)
         xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
