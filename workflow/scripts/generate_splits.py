@@ -157,7 +157,7 @@ def write_splitfile(
 
     xy_mask = np.logical_and(x_mask, y_mask)
 
-    n_classes = len(np.unique(y[xy_mask]))
+    n_classes = len(np.unique(y[xy_mask].astype(int)))
     idx_all = np.arange(len(y))
 
     stratify = True if stratify and (n_classes <= 10) else False
