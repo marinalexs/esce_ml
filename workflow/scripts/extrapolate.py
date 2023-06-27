@@ -156,9 +156,10 @@ def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: 
         json.dump(p_bootstrap, f, cls=NpEncoder, indent=0)
 
 
-extrapolate(
-    snakemake.input.scores,
-    snakemake.output.stats,
-    snakemake.output.bootstraps,
-    snakemake.params.bootstrap_repetitions,
-)
+if __name__ == "__main__":
+    extrapolate(
+        snakemake.input.scores,
+        snakemake.output.stats,
+        snakemake.output.bootstraps,
+        snakemake.params.bootstrap_repetitions,
+    )

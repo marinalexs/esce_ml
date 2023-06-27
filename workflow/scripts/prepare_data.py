@@ -1,26 +1,11 @@
 from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).parent))
 
 import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
-
-
-predefined_datasets = {
-    ("mnist", "pixel"): lambda: fetch_openml(
-        "mnist_784", version=1, return_X_y=True, as_frame=False
-    )[0],
-    ("mnist", "ten-digits"): lambda: fetch_openml(
-        "mnist_784", version=1, return_X_y=True, as_frame=False
-    )[1].astype(int),
-    ("mnist", "odd-even"): lambda: (
-        fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False)[1].astype(
-            int
-        )
-        % 2
-    ).astype(int),
-}
-
 
 def prepare_data(
     out_path: str,
@@ -50,13 +35,13 @@ def prepare_data(
 
     np.save(out_path, data)
 
-
-prepare_data(
-    snakemake.output.npy,
-    snakemake.wildcards.dataset,
-    snakemake.wildcards.features_or_targets
-    if hasattr(snakemake.wildcards, "features_or_targets")
-    else "covariates",
-    snakemake.wildcards.name,
-    snakemake.params.custom_datasets,
-)
+if __name__ == "__main__":
+    prepare_data(
+        snakemake.output.npy,
+        snakemake.wildcards.dataset,
+        snakemake.wildcards.features_or_targets
+        if hasattr(snakemake.wildcards, "features_or_targets")
+        else "covariates",
+        snakemake.wildcards.name,
+        snakemake.params.custom_datasets,
+    )
