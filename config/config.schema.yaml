@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "val_test_frac": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.25
+    },
+    "val_test_min": {
+      "anyOf": [
+        { "type": "boolean", "const": false },
+        { "type": "integer", "minimum": 1 }
+      ],
+      "default": false
+    },
+    "val_test_max": {
+      "anyOf": [
+        { "type": "boolean", "const": false },
+        { "type": "integer", "minimum": 1 }
+      ],
+      "default": false
+    },
+    "bootstrap_repetitions": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5000,
+      "default": 100
+    },
+    "stratify": {
+      "type": "boolean",
+      "const": false,
+      "default": false
+    },
+    "seeds": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "default": [0,]
+    },
+    "sample_sizes": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "default": [128, 256, 512, 1024, 2048, 4096]
+    },
+    "experiments": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "dataset": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "features_cni": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "targets_cni": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+          },
+          "matching": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grid": {
+            "type": "string"
+          }
+        },
+        "if": {
+          "properties": {
+            "targets_cni": {
+              "not": {
+                "const": ["none"]
+              }
+            }
+          },
+          "required": ["targets_cni"]
+        },
+        "then": {
+          "properties": {
+            "matching": {
+              "const": ["none"]
+            }
+          }
+        },
+        "required": ["dataset", "features", "features_cni", "targets", "targets_cni", "matching", "models", "grid"]
+      },
+    },
+    "custom_datasets": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[^_]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "features": {
+            "type": "object",
+            "propertyNames": {"pattern": "^[^_]*$"},
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "targets": {
+            "type": "object",
+            "propertyNames": {"pattern": "^[^_]*$"},
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "covariates": {
+            "type": "object",
+            "propertyNames": {"pattern": "^[^_]*$"},
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["features", "targets", "covariates"]
+      }
+    }
+  },
+  "required": ["val_test_frac", "bootstrap_repetitions", "seeds", "sample_sizes", "experiments", "custom_datasets"]
+}
