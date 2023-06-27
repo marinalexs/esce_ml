@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent))
-
+from predefined_datasets import predefined_datasets
 import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_openml
@@ -14,8 +14,8 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ):
-    if (dataset, variant) in predefined_datasets:
-        data = predefined_datasets[(dataset, variant)]()
+    if dataset in predefined_datasets and variant in predefined_datasets[dataset][features_targets_covariates]:
+        data = predefined_datasets[dataset][features_targets_covariates][variant]()
     elif features_targets_covariates == "covariates" and variant in [
         "none",
         "balanced",
