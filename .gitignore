@@ -3,3 +3,4 @@ results/
 old/
 slurm-*.out
 results.tar.gz
+*.pyc
