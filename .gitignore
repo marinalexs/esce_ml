@@ -4,3 +4,4 @@ old/
 slurm-*.out
 results.tar.gz
 *.pyc
+esce.egg-info/

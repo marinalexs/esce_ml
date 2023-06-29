@@ -8,3 +8,6 @@ dependencies:
   - imbalanced-learn
   - plotly
   - python-kaleido
+  - pip
+  - pip:
+    - -e ../../

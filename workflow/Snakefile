@@ -6,8 +6,6 @@ configfile: workflow.source_path("../config/style.yaml")
 validate(config, workflow.source_path("../config/config.schema.yaml"))
 validate(config, workflow.source_path("../config/style.schema.yaml"))
 
-
-
 import itertools, glob
 
 

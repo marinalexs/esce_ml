@@ -1,10 +1,7 @@
 from pathlib import Path
-import sys
-sys.path.append(str(Path(__file__).parent))
-
-from predefined_datasets import predefined_datasets as PREDEFINED_DATASETS
-from models import MODELS
-from base_models import RegressionModel
+from esce.predefined_datasets import predefined_datasets as PREDEFINED_DATASETS
+from esce.models import MODELS
+from esce.base_models import RegressionModel
 import os
 
 
