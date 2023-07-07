@@ -1,3 +1,13 @@
+"""
+base_models.py
+====================================
+
+
+
+"""
+
+
+
 import json
 import os
 from abc import ABC, abstractmethod
@@ -33,8 +43,11 @@ class BaseModel(ABC):
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
         """Provide a score for the model performance on the data."""
+
+        # generate model based on the given hyperparameters in kwargs
         model = self.model_generator(**kwargs)
 
+        # scale features if scale_features is True
         x_scaler = StandardScaler() if self.scale_features else None
         x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
         if x_scaler:
@@ -46,6 +59,7 @@ class BaseModel(ABC):
             x_val_scaled = x_val
             x_test_scaled = x_test
 
+        # scale targets if scale_targets is True
         y_scaler = StandardScaler() if self.scale_targets else None
         y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
         if y_scaler:
@@ -53,12 +67,13 @@ class BaseModel(ABC):
         else:
             y_train_scaled = y_train
 
+        # fit model and predict
         model.fit(x_train_scaled, y_train_scaled)
-
         y_hat_train_scaled = model.predict(x_train_scaled)
         y_hat_val_scaled = model.predict(x_val_scaled)
         y_hat_test_scaled = model.predict(x_test_scaled)
 
+        # scale y_hat back to original scale (so that MAE has unit of original target variable)
         if y_scaler:
             y_hat_train = y_scaler.inverse_transform(
                 y_hat_train_scaled.reshape(-1, 1)
@@ -74,6 +89,7 @@ class BaseModel(ABC):
             y_hat_val = y_hat_val_scaled
             y_hat_test = y_hat_test_scaled
 
+        # compute metrics (definded in subclasses)
         return self.compute_metrics(
             y_hat_train, y_hat_val, y_hat_test, y_train, y_val, y_test
         )
@@ -88,6 +104,7 @@ class BaseModel(ABC):
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
+        """Compute metrics for the model performance on the data."""
         pass
 
 
