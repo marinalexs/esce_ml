@@ -24,7 +24,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: esce-dev
-        environment-file: env.yaml
+        environment-file: environment.yaml
         auto-activate-base: false
 
     - name: Install module
