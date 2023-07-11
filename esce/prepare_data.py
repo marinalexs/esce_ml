@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
+import h5py
 
 def prepare_data(
     out_path: str,
@@ -21,7 +22,7 @@ def prepare_data(
         "none",
         "balanced",
     ]:
-        data = []
+        data = np.empty(0)
     else:
         in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])
         if in_path.suffix == ".csv":
@@ -33,6 +34,18 @@ def prepare_data(
 
     if features_targets_covariates == "targets":
         data = data.reshape(-1)
+        mask = np.isfinite(data)
+    elif features_targets_covariates == "features":
+        assert np.ndim(data) == 2
+        mask = np.isfinite(data).all(axis=1)
+    elif features_targets_covariates == "covariates" and data:
+        if np.ndim(data) == 1:
+            data = data.reshape(-1, 1)
+        mask = np.isfinite(data).all(axis=1)
+    else:
+        mask = np.empty(0)
 
-    np.save(out_path, data)
+    with h5py.File(out_path, 'w') as f:
+        f.create_dataset('data', data=data)
+        f.create_dataset('mask', data=mask)
 

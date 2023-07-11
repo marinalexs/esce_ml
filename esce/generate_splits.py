@@ -5,7 +5,7 @@ import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
+import h5py
 
 class NpEncoder(json.JSONEncoder):
     """Encode numpy arrays to JSON."""
@@ -151,10 +151,17 @@ def write_splitfile(
     seed,
     stratify=False,
 ):
-    x = np.load(features_path)
-    x_mask = np.all(np.isfinite(x), 1)
-    y = np.load(targets_path).reshape(-1)
-    y_mask = np.isfinite(y)
+    print(features_path)
+    with h5py.File(features_path, 'r') as f:
+        x_mask = f['mask'][:]
+
+    with h5py.File(targets_path, 'r') as f:
+        y = f['data'][:]
+        y_mask = f['mask'][:]
+
+    with h5py.File(sampling_path, 'r') as f:
+        matching = f['data'][:]
+        matching_mask = f['mask'][:]
 
     xy_mask = np.logical_and(x_mask, y_mask)
 
@@ -162,8 +169,6 @@ def write_splitfile(
     idx_all = np.arange(len(y))
 
     stratify = True if stratify and (n_classes <= 10) else False
-
-    matching = np.load(sampling_path)
 
     # no special splitting procedure specified, use random split
     if sampling_type == "none":
@@ -236,10 +241,6 @@ def write_splitfile(
 
     else:
         raise Exception("invalid sampling file")
-
-    if not "error" in split_dict:
-        assert np.isfinite(x[split_dict["idx_train"]]).all()
-        assert np.isfinite(y[split_dict["idx_train"]]).all()
 
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)

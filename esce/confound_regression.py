@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
-
+import h5py
 
 def confound_regression(data_path: str, confounds_path: str, out_path: str):
     """
@@ -44,6 +44,9 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         else:
             data_corrected[i][:] = np.nan
     
-    np.save(out_path, data_corrected)
+    with h5py.File(out_path, 'w') as f:
+            f.create_dataset('data', data=data_corrected)
+            f.create_dataset('mask', data=xy_mask)
+
 
 

@@ -10,5 +10,6 @@ dependencies:
   - python-kaleido
   - pip
   - pyyaml
+  - h5py
   - pip:
     - -e ../../

@@ -5,7 +5,7 @@ import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast, Union
-
+import h5py
 import numpy as np
 import pandas as pd
 import yaml
@@ -53,8 +53,11 @@ def fit(
         Path(scores_path).touch()
         return
 
-    x = np.load(features_path)
-    y = np.load(targets_path)
+    with h5py.File(features_path, 'r') as f:
+        x = f['data'][:]
+
+    with h5py.File(targets_path, 'r') as f:
+        y = f['data'][:]
 
     assert np.isfinite(x[split["idx_train"]]).all()
     assert np.isfinite(y[split["idx_train"]]).all()
