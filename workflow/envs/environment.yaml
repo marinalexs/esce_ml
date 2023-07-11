@@ -9,5 +9,6 @@ dependencies:
   - plotly
   - python-kaleido
   - pip
+  - pyyaml
   - pip:
     - -e ../../
