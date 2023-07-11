@@ -1,0 +1,38 @@
+name: Python application test
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Cache conda
+      id: cache-conda
+      uses: actions/cache@v2
+      with:
+        path: ~/miniconda3
+        key: ${{ runner.os }}-conda-${{ hashFiles('**/env.yaml') }}
+
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: esce-dev
+        environment-file: env.yaml
+        auto-activate-base: false
+
+    - name: Install module
+      shell: bash -l {0}
+      run: |
+        python -m pip install .
+
+    - name: Run Pytest
+      shell: bash -l {0}
+      run: |
+        pytest tests/

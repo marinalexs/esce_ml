@@ -1,3 +1,4 @@
+name: esce-dev
 channels:
   - conda-forge
 dependencies:
