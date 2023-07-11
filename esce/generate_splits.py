@@ -92,9 +92,10 @@ def generate_matched_split(
     """
 
     random_state = np.random.RandomState(seed)
+    mask = mask.copy()
     mask_orig = mask.copy()
 
-    # patients
+    # take a subset of patients
     split = generate_random_split(
         y,
         n_train // 2,
@@ -106,34 +107,34 @@ def generate_matched_split(
     )
     idx_all = np.arange(len(y))
 
-    mask[y == 1] = False
+    mask[y == 1] = False # exclude all patients from matching pool
     assert np.isfinite(match[mask]).all()
 
     match = StandardScaler().fit_transform(match)
     matching_scores = []
     for idx_set in ["idx_train", "idx_val", "idx_test"]:
-        control_group = []
-        for idx in split[idx_set]:
-            idx_pool = idx_all[mask]
-            scores = (match[idx_pool] - match[idx]) ** 2
-            scores = np.sum(scores, axis=1)
+        control_group = [] # generate a control group for each set (train, val, test)
+        for idx in split[idx_set]: # for each patient in the set
+            idx_pool = idx_all[mask] # pool of control group candidates
+            scores = (match[idx_pool] - match[idx]) ** 2 # for all control group candidates, calculate distance to patient
+            scores = np.sum(scores, axis=1) # sum over all features
 
-            t = random_state.permutation(np.column_stack((scores, idx_pool)))
-            t_idx = np.nanargmin(t.T[0])
+            t = random_state.permutation(np.column_stack((scores, idx_pool))) # shuffle, so that we dont always match with the first participant in case of ties
+            t_idx = np.nanargmin(t.T[0]) # find the control group candidate with the smallest distance to the patient
 
-            score_match = t.T[0][t_idx]
-            matching_scores.append(score_match)
+            score_match = t.T[0][t_idx] # get the distance
+            matching_scores.append(score_match) # store the distance for diagnostics
 
-            idx_match = t.T[1][t_idx].astype(int)
-            control_group.append(idx_match)
-            mask[idx_match] = False
+            idx_match = t.T[1][t_idx].astype(int) # get the index of the control group candidate in the original data
+            control_group.append(idx_match) 
+            mask[idx_match] = False # exclude the chosen candidate from the control group pool
 
             assert mask_orig[idx_match], (scores, t, t[t_idx], score_match, idx_match)
 
-        split[idx_set] = np.hstack((split[idx_set], control_group))
+        split[idx_set] = np.hstack((split[idx_set], control_group)) # add the control group to the patient group to get the final set
 
-    split.update({"average_matching_score": np.mean(matching_scores)})
-    split["samplesize"] *= 2
+    split.update({"average_matching_score": np.mean(matching_scores)}) 
+    split["samplesize"] *= 2 # double the (patient group) sample size, since we have added a control group
 
     return split
 
