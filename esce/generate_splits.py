@@ -167,7 +167,7 @@ def write_splitfile(
 
     # no special splitting procedure specified, use random split
     if sampling_type == "none":
-        if (sum(xy_mask) > n_train + n_val + n_test):
+        if (sum(xy_mask) >= n_train + n_val + n_test):
             split_dict = generate_random_split(
                 y=y,
                 n_train=n_train,
@@ -200,13 +200,13 @@ def write_splitfile(
             """
             raise ValueError(error_message) from e
 
-        if  sum(xy_mask) > n_train + n_val + n_test:
+        if  sum(xy_mask) >= n_train + n_val + n_test:
             split_dict = generate_random_split(
                 y=y,
                 n_train=n_train,
                 n_val=n_val,
                 n_test=n_test,
-                do_stratify=stratify,
+                do_stratify=True,
                 mask=xy_mask,
                 seed=seed,
             )
@@ -227,7 +227,7 @@ def write_splitfile(
                 n_train=n_train,
                 n_val=n_val,
                 n_test=n_test,
-                do_stratify=stratify,
+                do_stratify=True,
                 mask=xy_mask,
                 seed=seed,
             )

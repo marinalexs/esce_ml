@@ -82,7 +82,7 @@ def test_write_splitfile_random(tmpdir):
 
     features_path = str(tmpdir.join('features.npy'))
     targets_path = str(tmpdir.join('targets.npy'))
-    matching_path = str(tmpdir.join('none.npy'))
+    matching_path = str(tmpdir.join('matching.npy'))
 
     np.save(features_path, features)
     np.save(targets_path, targets)
@@ -113,78 +113,84 @@ def test_write_splitfile_random(tmpdir):
     assert len(split_dict['idx_val']) == 20
     assert len(split_dict['idx_test']) == 20
 
-# def test_write_splitfile_balanced(tmpdir):
-#     features = np.random.rand(100, 5)
-#     targets = np.random.randint(0, 2, 100)
-#     matching = []
+def test_write_splitfile_balanced(tmpdir):
+    features = np.random.rand(100, 5)
+    targets = np.random.randint(0, 2, 100)
+    matching = []
 
-#     features_path = str(tmpdir.join('features.npy'))
-#     targets_path = str(tmpdir.join('targets.npy'))
-#     matching_path = str(tmpdir.join('matching.npy'))
+    features_path = str(tmpdir.join('features.npy'))
+    targets_path = str(tmpdir.join('targets.npy'))
+    matching_path = str(tmpdir.join('matching.npy'))
 
-#     np.save(features_path, features)
-#     np.save(targets_path, targets)
-#     np.save(matching_path, matching)
+    np.save(features_path, features)
+    np.save(targets_path, targets)
+    np.save(matching_path, matching)
 
-#     split_path = str(tmpdir.join('split.json'))
+    split_path = str(tmpdir.join('split.json'))
 
-#     write_splitfile(
-#         features_path,
-#         targets_path,
-#         split_path,
-#         matching_path,
-#         'balanced',
-#         n_train=60,
-#         n_val=20,
-#         n_test=20,
-#         seed=0,
-#     )
+    write_splitfile(
+        features_path,
+        targets_path,
+        split_path,
+        matching_path,
+        'balanced',
+        n_train=20,
+        n_val=20,
+        n_test=20,
+        seed=0,
+    )
 
-#     # Load the split file and check if it is correct
-#     with open(split_path, 'r') as f:
-#         split_dict = json.load(f)
+    # Load the split file and check if it is correct
+    with open(split_path, 'r') as f:
+        split_dict = json.load(f)
 
-#     assert 'idx_train' in split_dict
-#     assert 'idx_val' in split_dict
-#     assert 'idx_test' in split_dict
-#     assert len(split_dict['idx_train']) == 60
-#     assert len(split_dict['idx_val']) == 20
-#     assert len(split_dict['idx_test']) == 20
+    assert 'idx_train' in split_dict
+    assert 'idx_val' in split_dict
+    assert 'idx_test' in split_dict
+    assert len(split_dict['idx_train']) == 20
+    assert len(split_dict['idx_val']) == 20
+    assert len(split_dict['idx_test']) == 20
 
-#     assert targets[split_dict['idx_train']].mean() == 0.5
+    assert targets[split_dict['idx_train']].mean() == 0.5
 
 
-# def test_write_splitfile_matched(tmpdir):
-#     features = np.random.rand(100, 5)
-#     targets = np.random.randint(0, 2, 100)
-#     matching = np.random.rand(100, 3)
+def test_write_splitfile_matched(tmpdir):
+    features = np.random.rand(100, 5)
+    targets = np.random.randint(0, 2, 100)
+    matching = np.random.rand(100, 3)
 
-#     features_path = str(tmpdir.join('features.npy'))
-#     targets_path = str(tmpdir.join('targets.npy'))
-#     matching_path = str(tmpdir.join('matching.npy'))
+    features_path = str(tmpdir.join('features.npy'))
+    targets_path = str(tmpdir.join('targets.npy'))
+    matching_path = str(tmpdir.join('matching.npy'))
 
-#     np.save(features_path, features)
-#     np.save(targets_path, targets)
-#     np.save(matching_path, matching)
+    np.save(features_path, features)
+    np.save(targets_path, targets)
+    np.save(matching_path, matching)
 
-#     split_path = str(tmpdir.join('split.json'))
+    split_path = str(tmpdir.join('split.json'))
 
-#     write_splitfile(
-#         features_path,
-#         targets_path,
-#         split_path,
-#         matching_path,
-#         'matching',
-#         n_train=20,
-#         n_val=20,
-#         n_test=20,
-#         seed=0,
-#     )
+    write_splitfile(
+        features_path,
+        targets_path,
+        split_path,
+        matching_path,
+        'matching',
+        n_train=20,
+        n_val=20,
+        n_test=20,
+        seed=0,
+    )
 
-#     # Load the split file and check if it is correct
-#     with open(split_path, 'r') as f:
-#         split_dict = json.load(f)
+    # Load the split file and check if it is correct
+    with open(split_path, 'r') as f:
+        split_dict = json.load(f)
 
-#     assert isinstance(split_dict, dict)
+    assert 'idx_train' in split_dict
+    assert 'idx_val' in split_dict
+    assert 'idx_test' in split_dict
+    assert len(split_dict['idx_train']) == 20
+    assert len(split_dict['idx_val']) == 20
+    assert len(split_dict['idx_test']) == 20
 
+    assert targets[split_dict['idx_train']].mean() == 0.5
 
