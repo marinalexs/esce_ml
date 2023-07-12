@@ -14,8 +14,9 @@ dependencies:
   - pytest-cov
   - sphinx
   - sphinx_rtd_theme
-  - flake8
   - pyyaml
   - black
+  - h5py
   - pip:
+    - ruff
     - -e ./
