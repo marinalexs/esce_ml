@@ -7,18 +7,10 @@ base_models.py
 """
 
 
-
-import json
-import os
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast, Union
+from typing import Any, Callable
 
 import numpy as np
-import pandas as pd
-import yaml
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.linear_model import Ridge, RidgeClassifier
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -27,7 +19,6 @@ from sklearn.metrics import (
     r2_score,
 )
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import ParameterGrid
 
 
 class BaseModel(ABC):
@@ -103,7 +94,7 @@ class BaseModel(ABC):
         y_train: np.ndarray,
         y_val: np.ndarray,
         y_test: np.ndarray,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Compute metrics for the model performance on the data."""
         pass
 

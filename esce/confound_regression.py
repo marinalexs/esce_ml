@@ -4,14 +4,14 @@ from sklearn.linear_model import LinearRegression
 
 def confound_regression(data_path: str, confounds_path: str, out_path: str):
     """
-    
+
     A confound is a variable that is correlated with both the dependent variable and the independent variable.
     For instance, when predicting the disease status of a person based on their brain structure, both variables may be dependent on age.
     In such a case, a machine learning model may learn to predict the disease status based on age-related changes in brain structure, instead of the disease status itself.
 
-    We can eliminate the effect of confounding variables by confound regression, i.e. regressing out the confounding variables from the data.    
+    We can eliminate the effect of confounding variables by confound regression, i.e. regressing out the confounding variables from the data.
     This function reads a data file, runs linear confound correction, then save the new corrected data file.
-    
+
     The confound data can be mulitvariate, i.e. have multiple columns. Note that in such a case, weighing the confound data is not possible.
     If you want to a certain weighing, you need to create a new confound data file with weighted univariate confound data (i.e. a linear combination of the columns).
 
@@ -43,7 +43,5 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
             data_corrected[i] = data_raw[i] - model.predict(confounds[i].reshape(1, -1))
         else:
             data_corrected[i][:] = np.nan
-    
+
     np.save(out_path, data_corrected)
-
-

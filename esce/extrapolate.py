@@ -1,11 +1,11 @@
 import json
+import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import scipy.optimize
 from sklearn.metrics import r2_score
-from pathlib import Path
-import os
 
 MIN_DOF = 2
 
@@ -18,7 +18,7 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        return super(NpEncoder, self).default(obj)
+        return super().default(obj)
 
 
 def fit_curve(x, y, y_e):
@@ -46,30 +46,25 @@ def fit_curve(x, y, y_e):
             bounds=((-np.inf, 0, -np.inf), (0, np.inf, np.inf)),
         )
         result["p_mean"] = p_mean
-        result["r2"] = r2_score(
-            y, p_mean[0] * x ** (-p_mean[1]) + p_mean[2]
-        )
+        result["r2"] = r2_score(y, p_mean[0] * x ** (-p_mean[1]) + p_mean[2])
         result["chi2"] = (
-            sum(
-                (y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) ** 2
-                / y_e ** 2
-            )
-            / dof
+            sum((y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) ** 2 / y_e**2) / dof
         )
         result["mu"], result["sigma"] = np.mean(
-            (y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2]))
-            / y_e
-        ), np.std(
-            (y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2]))
-            / y_e
-        )
+            (y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) / y_e
+        ), np.std((y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) / y_e)
         return result
     except Exception as e:
         print(e)
         return result
 
 
-def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: int, ):
+def extrapolate(
+    stats_path: str,
+    extra_path: str,
+    bootstrap_path: str,
+    repeats: int,
+):
     if os.stat(stats_path).st_size == 0:
         Path(extra_path).touch()
         Path(bootstrap_path).touch()
@@ -159,5 +154,3 @@ def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: 
 
     with open(bootstrap_path, "w") as f:
         json.dump(p_bootstrap, f, cls=NpEncoder, indent=0)
-
-

@@ -1,11 +1,10 @@
-
-
 from pathlib import Path
-from esce.predefined_datasets import predefined_datasets
+
 import numpy as np
 import pandas as pd
-from sklearn.datasets import fetch_openml
-from sklearn.preprocessing import StandardScaler
+
+from esce.predefined_datasets import predefined_datasets
+
 
 def prepare_data(
     out_path: str,
@@ -15,7 +14,10 @@ def prepare_data(
     custom_datasets: dict,
 ):
     print(dataset, features_targets_covariates, variant)
-    if dataset in predefined_datasets and variant in predefined_datasets[dataset][features_targets_covariates]:
+    if (
+        dataset in predefined_datasets
+        and variant in predefined_datasets[dataset][features_targets_covariates]
+    ):
         data = predefined_datasets[dataset][features_targets_covariates][variant]()
     elif features_targets_covariates == "covariates" and variant in [
         "none",
@@ -35,4 +37,3 @@ def prepare_data(
         data = data.reshape(-1)
 
     np.save(out_path, data)
-
