@@ -10,22 +10,24 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.7"  # or whatever your Python version requirement is
-scikit-learn = "*"
-pandas = "*"
-scipy = "*"
-imbalanced-learn = "*"
-plotly = "*"
-kaleido = "*"
-pyyaml = "*"
+python = "^3.7"
+scikit-learn = "^0.20.4"
+numpy = "^1.19.5"
+pandas = "^0.24.2"
+scipy = "^1.2.1"
+imbalanced-learn = "^0.4.3"
+plotly = "^3.10.0"
+kaleido = "^0.2.1"
+pyyaml = "^5.1"
+snakemake = "^5.4.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "*"  # or whatever your test requirements are
-pytest-cov = "*"
-black = "*"
-flake8 = "*"
-sphinx = "*"
-sphinx_rtd_theme = "*"
+pytest = "^4.6.0"
+pytest-cov = "^2.7.1"
+black = "^19.3b0"
+flake8 = "^3.7.0"
+sphinx = "^1.8.5"
+sphinx_rtd_theme = "^0.4.3"
 
 [tool.pytest.ini_options]
 norecursedirs = ".snakemake"
