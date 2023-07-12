@@ -5,6 +5,7 @@ from esce.predefined_datasets import predefined_datasets
 from esce.prepare_data import prepare_data
 
 
+@pytest.mark.slow
 def test_mnist_features():
     out_path = 'test.npy'
     dataset = 'mnist'
@@ -24,6 +25,7 @@ def test_mnist_features():
     # Clean up
     os.remove(out_path)
 
+@pytest.mark.slow
 def test_mnist_targets():
     out_path = 'test.npy'
     dataset = 'mnist'

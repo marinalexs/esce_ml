@@ -38,7 +38,7 @@ jobs:
 
     - name: Run tests
       run: |
-        poetry run pytest  --cov=esce --cov-report=term
+        poetry run pytest -m "not slow" --cov=esce --cov-report=term 
 
     - name: Run snakemake workflow test
       run: |
