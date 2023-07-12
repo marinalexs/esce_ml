@@ -28,6 +28,7 @@ black = "^22.0"
 flake8 = "^5.0"
 sphinx = "^6.0"
 sphinx_rtd_theme = "^1.0"
+ruff = "^0.0.277"
 
 
 [tool.pytest.ini_options]
@@ -35,3 +36,21 @@ norecursedirs = ".snakemake"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
+
+
+[tool.ruff]
+select = ["E", "F", "I", "NPY", "PL", "PD", "SIM", "Q", "PT", "C4", "A", "B", "FBT", "UP" ]
+ignore = []
+fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+unfixable = []
+line-length = 88
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+target-version = "py39"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
