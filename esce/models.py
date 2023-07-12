@@ -1,7 +1,7 @@
-
-from esce.base_models import ClassifierModel, RegressionModel
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.linear_model import Ridge, RidgeClassifier
+
+from esce.base_models import ClassifierModel, RegressionModel
 
 MODELS = {
     "majority-classifier": ClassifierModel(

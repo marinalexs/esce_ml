@@ -8,7 +8,6 @@ hyperparameter combination, grouped by sample size and seed.
 """
 
 
-
 import os
 from pathlib import Path
 
@@ -20,7 +19,7 @@ def aggregate(
     stats_path: str,
 ):
     """
-    
+
     For each score file in score_path_list,
     identify best performing hyperparameter combination on validation set
     and collect corresponding metrics.
@@ -29,7 +28,9 @@ def aggregate(
 
     Args:
         score_path_list: the path for the input score files
-        stats_path: the path for the output stats csv file. which stores the best performing combinationbased on the the average coefficient of determination or accuracy on validation set
+        stats_path: the path for the output stats csv file. which stores the best
+            performing combinationbased on the the average coefficient of determination
+            or accuracy on validation set
 
     """
     df_list = []
@@ -49,10 +50,11 @@ def aggregate(
         ignore_index=True,
     )
 
-    # R^2 is the average coefficient of determination ; R^2 or accuracy due to classification/regression models
+    # R^2 is the average coefficient of determination
+    # R^2 or accuracy due to classification/regression models
     metric = "r2_val" if "r2_val" in df.columns else "acc_val"
-    # n: trainin sample size ; s: random seed -- groupby --> (hyperparameters + seed) combination
+    # n: trainin sample size ; s: random seed -- groupby
+    #  --> (hyperparameters + seed) combination
     idx_best = df.groupby(["n", "s"])[metric].idxmax()
     # best (hyperparameters + seed) combination
     df.loc[idx_best].to_csv(stats_path, index=False)
-

@@ -1,10 +1,13 @@
-import yaml, glob, os, textwrap
+import os
+import textwrap
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-import textwrap
-import numpy as np
-from pathlib import Path
+import yaml
+
 
 def process_results(available_results):
     df = pd.DataFrame(available_results, columns=["full_path"])
@@ -31,7 +34,9 @@ def process_results(available_results):
     return df
 
 
-def plot(stats_file_list, output_filename, color_variable, linestyle_variable, title, max_x=6):
+def plot(
+    stats_file_list, output_filename, color_variable, linestyle_variable, title, max_x=6
+):
     df = process_results(stats_file_list)
 
     data = []
@@ -72,11 +77,17 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
     )
     fig.update_layout(
         plot_bgcolor="white",
-        legend=dict(orientation="h", yanchor="top", xanchor="center", y=-0.125, x=0.5),
+        legend={
+            "orientation": "h",
+            "yanchor": "top",
+            "xanchor": "center",
+            "y": -0.125,
+            "x": 0.5,
+        },
         title_text=textwrap.fill(title, 90).replace("\n", "<br>"),
         title_x=0.5,
         font={"size": 10},
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
     )
 
     for i, (_, row) in enumerate(df.iterrows()):
@@ -91,7 +102,10 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
                 go.Scatter(
                     x=x_exp,
                     y=y_exp,
-                    line=dict(color=fig.data[i].line.color, dash=fig.data[i].line.dash),
+                    line={
+                        "color": fig.data[i].line.color,
+                        "dash": fig.data[i].line.dash,
+                    },
                     opacity=2 / len(p),
                     showlegend=False,
                 )
@@ -99,4 +113,3 @@ def plot(stats_file_list, output_filename, color_variable, linestyle_variable, t
     fig.update_yaxes(rangemode="nonnegative")
 
     fig.write_image(output_filename)
-

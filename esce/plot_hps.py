@@ -1,21 +1,28 @@
-import yaml, glob, os, textwrap
+import os
+import textwrap
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objs as go
-from pathlib import Path
+import yaml
 
 
 def plot(
-    stats_filename, output_filename, grid_filename, hyperparameter_scales, model_name, title
+    stats_filename,
+    output_filename,
+    grid_filename,
+    hyperparameter_scales,
+    model_name,
+    title,
 ):
-    grid = yaml.safe_load(open(grid_filename, "r"))[model_name]
+    grid = yaml.safe_load(open(grid_filename))[model_name]
     # ignore empty files (insufficient samples in dataset)
     if os.stat(stats_filename).st_size == 0 or not grid:
         Path(output_filename).touch()
         return
 
     scores = pd.read_csv(stats_filename)
-    
+
     hp_names = list(grid.keys())
     metric = "r2_val" if "r2_val" in scores.columns else "acc_val"
 
@@ -32,7 +39,7 @@ def plot(
         title_text=textwrap.fill(title, 90).replace("\n", "<br>"),
         title_x=0.5,
         font={"size": 10},
-        margin=dict(l=20, r=20, t=80, b=20),
+        margin={"l": 20, "r": 20, "t": 80, "b": 20},
     )
 
     for i, v in enumerate(hp_names):
