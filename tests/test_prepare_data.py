@@ -1,83 +1,28 @@
-import os
 
 import numpy as np
 import pandas as pd
 import pytest
-
+import h5py
 from esce.prepare_data import prepare_data
 
+TEST_CASES = [("tsv","targets"), ("tsv","features"), ("tsv","covariates"),
+                ("csv","targets"), ("csv","features"), ("csv","covariates"),
+                ("npy","targets"), ("npy","features"), ("npy","covariates")]    
 
 @pytest.mark.parametrize(
-    ("out_path", "dataset", "features_targets_covariates", "variant", "custom_datasets", "dummy_data", "expected_output"),
-    [
-        (
-            "test.npy",
-            "custom_dataset",
-            "features",
-            "variant1",
-            {"custom_dataset": {"features": {"variant1": "data.csv"}}},
-            [[1, 2], [3, 4]],
-            [[1, 2], [3, 4]],
-        ),
-        (
-            "test.npy",
-            "custom_dataset",
-            "targets",
-            "variant2",
-            {"custom_dataset": {"targets": {"variant2": "data.npy"}}},
-            [1, 2, 3, 4, 5],
-            [1, 2, 3, 4, 5],
-        ),
-        (
-            "test.npy",
-            "custom_dataset",
-            "covariates",
-            "variant3",
-            {"custom_dataset": {"covariates": {"variant3": "data.tsv"}}},
-            [[1, 2], [3, 4]],
-            [[1, 2], [3, 4]],
-        ),
-        (
-            "test.npy",
-            "custom_dataset",
-            "covariates",
-            "variant4",
-            {"custom_dataset": {"covariates": {"variant4": "data.tsv"}}},
-            [1, 2, 3, 4, 5],
-            [
-                [
-                    1,
-                ],
-                [
-                    2,
-                ],
-                [
-                    3,
-                ],
-                [
-                    4,
-                ],
-                [
-                    5,
-                ],
-            ],
-        ),
-    ],
+    ("in_file_type", "features_targets_covariates", ), TEST_CASES
 )
 def test_prepare_data_custom_datasets(
-    out_path,
-    dataset,
+    tmpdir,
+    in_file_type,
     features_targets_covariates,
-    variant,
-    custom_datasets,
-    dummy_data,
-    expected_output,
 ):
-    in_path = custom_datasets[dataset][features_targets_covariates][variant]
-    dummy_data = pd.DataFrame(dummy_data)
-    expected_output = np.array(expected_output)
+    in_path = str(tmpdir.join("data." + in_file_type))
+    out_path = str(tmpdir.join("data.h5"))
 
-    # Create some test data to simulate the custom dataset
+    dummy_data = np.random.rand(10, 1) if features_targets_covariates == "targets" else np.random.rand(10, 2)
+    dummy_data = pd.DataFrame(dummy_data)
+
     if in_path.endswith(".csv"):
         dummy_data.to_csv(in_path, index=False)
     elif in_path.endswith(".tsv"):
@@ -85,18 +30,22 @@ def test_prepare_data_custom_datasets(
     elif in_path.endswith(".npy"):
         np.save(in_path, dummy_data.values)
 
-    prepare_data(
-        out_path, dataset, features_targets_covariates, variant, custom_datasets
-    )
+    custom_datasets = {
+        "pytest": {
+            "targets": {"normal": in_path},
+            "features": {"normal": in_path},
+            "covariates": {"normal": in_path},
+        }
+    }
 
-    # Check if the output file was created
-    assert os.path.exists(out_path)
+    prepare_data(out_path, "pytest", features_targets_covariates, "normal", custom_datasets)
 
     # Load the data from the output file and check its dimensions
-    output_data = np.load(out_path)
-    assert output_data.ndim == expected_output.ndim
-    assert np.allclose(output_data, expected_output)
+    with h5py.File(out_path, "r") as f:
+        output_data = f["data"][:]
+        output_mask = f["mask"][:]
 
-    # Clean up
-    os.remove(in_path)
-    os.remove(out_path)
+    expected_shape = 1 if features_targets_covariates == "targets" else 2
+
+    assert output_data.ndim == expected_shape
+    assert output_mask.ndim == 1

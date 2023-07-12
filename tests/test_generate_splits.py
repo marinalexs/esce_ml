@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 import pytest
-
+import h5py
 from esce.generate_splits import (
     generate_matched_split,
     generate_random_split,
@@ -143,9 +143,17 @@ def test_write_splitfile_random(tmpdir):
     targets_path = str(tmpdir.join("targets.npy"))
     matching_path = str(tmpdir.join("matching.npy"))
 
-    np.save(features_path, features)
-    np.save(targets_path, targets)
-    np.save(matching_path, matching)
+    with h5py.File(features_path, "w") as f:
+        f.create_dataset("data", data=features)
+        f.create_dataset("mask", data=np.isfinite(features).all(axis=1))
+
+    with h5py.File(targets_path, "w") as f:
+        f.create_dataset("data", data=targets)
+        f.create_dataset("mask", data=np.isfinite(targets))
+
+    with h5py.File(matching_path, "w") as f:
+        f.create_dataset("data", data=matching)
+        f.create_dataset("mask", data=matching)
 
     split_path = str(tmpdir.join("split.json"))
 
@@ -182,9 +190,17 @@ def test_write_splitfile_balanced(tmpdir):
     targets_path = str(tmpdir.join("targets.npy"))
     matching_path = str(tmpdir.join("matching.npy"))
 
-    np.save(features_path, features)
-    np.save(targets_path, targets)
-    np.save(matching_path, matching)
+    with h5py.File(features_path, "w") as f:
+        f.create_dataset("data", data=features)
+        f.create_dataset("mask", data=np.isfinite(features).all(axis=1))
+
+    with h5py.File(targets_path, "w") as f:
+        f.create_dataset("data", data=targets)
+        f.create_dataset("mask", data=np.isfinite(targets))
+
+    with h5py.File(matching_path, "w") as f:
+        f.create_dataset("data", data=matching)
+        f.create_dataset("mask", data=matching)
 
     split_path = str(tmpdir.join("split.json"))
 
@@ -223,9 +239,17 @@ def test_write_splitfile_matched(tmpdir):
     targets_path = str(tmpdir.join("targets.npy"))
     matching_path = str(tmpdir.join("matching.npy"))
 
-    np.save(features_path, features)
-    np.save(targets_path, targets)
-    np.save(matching_path, matching)
+    with h5py.File(features_path, "w") as f:
+        f.create_dataset("data", data=features)
+        f.create_dataset("mask", data=np.isfinite(features).all(axis=1))
+
+    with h5py.File(targets_path, "w") as f:
+        f.create_dataset("data", data=targets)
+        f.create_dataset("mask", data=np.isfinite(targets))
+
+    with h5py.File(matching_path, "w") as f:
+        f.create_dataset("data", data=matching)
+        f.create_dataset("mask", data=np.isfinite(matching).all(axis=1))
 
     split_path = str(tmpdir.join("split.json"))
 

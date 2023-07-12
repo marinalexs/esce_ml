@@ -1,5 +1,5 @@
 import json
-
+import h5py
 import numpy as np
 import pandas as pd
 import yaml
@@ -28,8 +28,14 @@ def test_fit(tmpdir):
     targets_path = str(tmpdir.join("targets.npy"))
     split_path = str(tmpdir.join("split.json"))
 
-    np.save(features_path, X)
-    np.save(targets_path, y)
+    with h5py.File(features_path, "w") as f:
+        f.create_dataset("data", data=X)
+        f.create_dataset("mask", data=np.isfinite(X).all(axis=1))
+
+    with h5py.File(targets_path, "w") as f:
+        f.create_dataset("data", data=y)
+        f.create_dataset("mask", data=np.isfinite(y))
+
     with open(split_path, "w") as f:
         json.dump(split, f)
 
@@ -88,8 +94,14 @@ def test_fit_with_existing_scores(tmpdir):
     targets_path = str(tmpdir.join("targets.npy"))
     split_path = str(tmpdir.join("split.json"))
 
-    np.save(features_path, X)
-    np.save(targets_path, y)
+    with h5py.File(features_path, "w") as f:
+        f.create_dataset("data", data=X)
+        f.create_dataset("mask", data=np.isfinite(X).all(axis=1))
+
+    with h5py.File(targets_path, "w") as f:
+        f.create_dataset("data", data=y)
+        f.create_dataset("mask", data=np.isfinite(y))
+
     with open(split_path, "w") as f:
         json.dump(split, f)
 
