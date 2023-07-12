@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "esce"
+version = "0.1.2"
+description = "Tools for eastimating and extrapolating learning curves."
+authors = ["Marc-Andre Schulz <marc-andre.schulz@charite.de>"]
+license = "GPLv3" 
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.7"  # or whatever your Python version requirement is
+scikit-learn = "*"
+pandas = "*"
+scipy = "*"
+imbalanced-learn = "*"
+plotly = "*"
+kaleido = "*"
+pyyaml = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"  # or whatever your test requirements are
+pytest-cov = "*"
+black = "*"
+flake8 = "*"
+sphinx = "*"
+sphinx_rtd_theme = "*"
+
+[tool.pytest.ini_options]
+norecursedirs = ".snakemake"
