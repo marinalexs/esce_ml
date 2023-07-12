@@ -9,34 +9,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Install poetry
+      run: pipx install poetry
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.9
-
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-
-    - name: Configure Poetry
-      run: |
-        poetry config virtualenvs.create false
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/pypoetry
-        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-poetry-
+        python-version: '3.9'
+        cache: 'poetry'
 
     - name: Install dependencies
       run: |
         poetry install
 
-    - name: Run tests
+    - name: Run unit tests
       run: |
         poetry run pytest -m "not slow" --cov=esce --cov-report=term 
 
