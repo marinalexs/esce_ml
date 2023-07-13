@@ -11,4 +11,4 @@ dependencies:
   - pip
   - pyyaml
   - pip:
-    - -e ../../
+    - git+https://${GITHUB_TOKEN}@github.com/user/project.git@dev
