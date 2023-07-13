@@ -1,3 +1,4 @@
+import h5py
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
@@ -21,8 +22,12 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         out_path: path to save the newly corrected data
 
     """
-    data_raw = np.load(data_path)
-    confounds = np.load(confounds_path)
+    with h5py.File(data_path, "r") as f:
+        data_raw = f["data"][:]
+        data_mask = f["mask"][:]
+    with h5py.File(confounds_path, "r") as f:
+        confounds = f["data"][:]
+        confounds_mask = f["mask"][:]
 
     if len(data_raw.shape) == 1:
         data_raw = data_raw.reshape(-1, 1)
@@ -30,9 +35,7 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         confounds = confounds.reshape(-1, 1)
     assert len(data_raw) == len(confounds)
 
-    x_mask = np.all(np.isfinite(data_raw), 1)
-    y_mask = np.all(np.isfinite(confounds), 1)
-    xy_mask = np.logical_and(x_mask, y_mask)
+    xy_mask = np.logical_and(data_mask, confounds_mask)
 
     model = LinearRegression()
     model.fit(confounds[xy_mask], data_raw[xy_mask])
@@ -44,4 +47,6 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         else:
             data_corrected[i][:] = np.nan
 
-    np.save(out_path, data_corrected)
+    with h5py.File(out_path, "w") as f:
+        f.create_dataset("data", data=data_corrected)
+        f.create_dataset("mask", data=xy_mask)

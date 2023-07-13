@@ -1,14 +1,12 @@
-import os
-
-import numpy as np
+import h5py
 import pytest
 
 from esce.prepare_data import prepare_data
 
 
 @pytest.mark.slow()
-def test_mnist_features():
-    out_path = "test.npy"
+def test_mnist_features(tmpdir):
+    out_path = str(tmpdir / "test.h5")
     dataset = "mnist"
     features_targets_covariates = "features"
     variant = "pixel"
@@ -18,20 +16,16 @@ def test_mnist_features():
         out_path, dataset, features_targets_covariates, variant, custom_datasets
     )
 
-    # Check if the output file was created
-    assert os.path.exists(out_path)
-
     # Load the data from the output file and check dimensions
-    output_data = np.load(out_path)
-    assert output_data.shape == (70000, 784)
+    with h5py.File(out_path, "r") as f:
+        output_data = f["data"][:]
 
-    # Clean up
-    os.remove(out_path)
+    assert output_data.shape == (70000, 784)
 
 
 @pytest.mark.slow()
-def test_mnist_targets():
-    out_path = "test.npy"
+def test_mnist_targets(tmpdir):
+    out_path = str(tmpdir / "test.h5")
     dataset = "mnist"
     features_targets_covariates = "targets"
     variant = "ten-digits"
@@ -41,12 +35,8 @@ def test_mnist_targets():
         out_path, dataset, features_targets_covariates, variant, custom_datasets
     )
 
-    # Check if the output file was created
-    assert os.path.exists(out_path)
-
     # Load the data from the output file and check dimensions
-    output_data = np.load(out_path)
-    assert output_data.shape == (70000,)
+    with h5py.File(out_path, "r") as f:
+        output_data = f["data"][:]
 
-    # Clean up
-    os.remove(out_path)
+    assert output_data.shape == (70000,)

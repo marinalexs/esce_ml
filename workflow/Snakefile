@@ -1,10 +1,12 @@
 from snakemake.utils import validate
+from esce.validate_config import validate_details
 
 configfile: workflow.source_path("../config/config.yaml")
 configfile: workflow.source_path("../config/style.yaml")
 
 validate(config, workflow.source_path("../config/config.schema.yaml"))
 validate(config, workflow.source_path("../config/style.schema.yaml"))
+validate_details(config)
 
 import itertools, glob
 
@@ -62,7 +64,7 @@ rule all:
 
 rule prepare_features_or_targets:
     output:
-        npy="results/{dataset}/{features_or_targets}/{name}_none.npy",
+        out="results/{dataset}/{features_or_targets}/{name}_none.h5",
     params:
         custom_datasets=config["custom_datasets"],
     conda:
@@ -73,7 +75,7 @@ rule prepare_features_or_targets:
 
 rule prepare_covariates:
     output:
-        npy="results/{dataset}/covariates/{name}.npy",
+        out="results/{dataset}/covariates/{name}.h5",
     params:
         custom_datasets=config["custom_datasets"],
     conda:
@@ -84,10 +86,10 @@ rule prepare_covariates:
 
 rule confound_regression:
     input:
-        features="results/{dataset}/{targets_or_features}/{name}_none.npy",
-        confounds="results/{dataset}/covariates/{confounds}.npy",
+        features="results/{dataset}/{targets_or_features}/{name}_none.h5",
+        confounds="results/{dataset}/covariates/{confounds}.h5",
     output:
-        features="results/{dataset}/{targets_or_features}/{name}_{confounds}.npy",
+        features="results/{dataset}/{targets_or_features}/{name}_{confounds}.h5",
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
@@ -96,9 +98,9 @@ rule confound_regression:
 
 rule split:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
-        matching="results/{dataset}/covariates/{matching}.npy",
+        features="results/{dataset}/features/{features}_{features_cni}.h5",
+        targets="results/{dataset}/targets/{targets}_{targets_cni}.h5",
+        matching="results/{dataset}/covariates/{matching}.h5",
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
@@ -114,8 +116,8 @@ rule split:
 
 rule fit:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.npy",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.npy",
+        features="results/{dataset}/features/{features}_{features_cni}.h5",
+        targets="results/{dataset}/targets/{targets}_{targets_cni}.h5",
         split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
         grid=lambda wildcards: workflow.source_path("../config/grids/{grid}.yaml".format(**wildcards)),
     params:

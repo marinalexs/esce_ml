@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-import numpy as np
+import h5py
 import pandas as pd
 import yaml
 from sklearn.model_selection import ParameterGrid
@@ -40,11 +40,11 @@ def fit(
         Path(scores_path).touch()
         return
 
-    x = np.load(features_path)
-    y = np.load(targets_path)
+    fx = h5py.File(features_path, "r")
+    x = fx["data"]
 
-    assert np.isfinite(x[split["idx_train"]]).all()
-    assert np.isfinite(y[split["idx_train"]]).all()
+    fy = h5py.File(targets_path, "r")
+    y = fy["data"]
 
     grid = yaml.safe_load(open(grid_path))
     model = MODELS[model_name]
@@ -78,5 +78,8 @@ def fit(
             # print("computed score", score)
 
         scores.append(score)
+
+    fy.close()
+    fx.close()
 
     pd.DataFrame(scores).to_csv(scores_path, index=None)

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import h5py
 import numpy as np
 import pandas as pd
 
@@ -13,7 +14,6 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ):
-    print(dataset, features_targets_covariates, variant)
     if (
         dataset in predefined_datasets
         and variant in predefined_datasets[dataset][features_targets_covariates]
@@ -23,7 +23,7 @@ def prepare_data(
         "none",
         "balanced",
     ]:
-        data = []
+        data = np.array([])
     else:
         in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])
         if in_path.suffix == ".csv":
@@ -35,5 +35,17 @@ def prepare_data(
 
     if features_targets_covariates == "targets":
         data = data.reshape(-1)
+        mask = np.isfinite(data)
+    elif features_targets_covariates == "features":
+        assert np.ndim(data) == 2
+        mask = np.isfinite(data).all(axis=1)
+    elif features_targets_covariates == "covariates" and len(data) > 0:
+        if np.ndim(data) == 1:
+            data = data.reshape(-1, 1)
+        mask = np.isfinite(data).all(axis=1)
+    else:
+        mask = np.array([])
 
-    np.save(out_path, data)
+    with h5py.File(out_path, "w") as f:
+        f.create_dataset("data", data=data)
+        f.create_dataset("mask", data=mask)

@@ -10,5 +10,6 @@ dependencies:
   - python-kaleido
   - pip
   - pyyaml
+  - h5py
   - pip:
     - git+https://${GITHUB_TOKEN}@github.com/brain-tools/esce.git@dev

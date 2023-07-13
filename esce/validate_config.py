@@ -1,5 +1,7 @@
 import os
 
+import yaml
+
 from esce.base_models import RegressionModel
 from esce.models import MODELS
 from esce.predefined_datasets import predefined_datasets as PREDEFINED_DATASETS
@@ -70,8 +72,7 @@ def validate_details(config):
                 f"experiment {exp_name}['grid'] should be a string from: {os.listdir('config/grids')}"
             )
         else:
-            with open(grid_path) as f:
-                grid = yaml.load(f)
+            grid = yaml.safe_load(open(grid_path))
             for model in exp["models"]:
                 if model not in grid:
                     errors.append(
