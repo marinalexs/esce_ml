@@ -1,16 +1,29 @@
-
+import h5py
 import numpy as np
 import pandas as pd
 import pytest
-import h5py
+
 from esce.prepare_data import prepare_data
 
-TEST_CASES = [("tsv","targets"), ("tsv","features"), ("tsv","covariates"),
-                ("csv","targets"), ("csv","features"), ("csv","covariates"),
-                ("npy","targets"), ("npy","features"), ("npy","covariates")]    
+TEST_CASES = [
+    ("tsv", "targets"),
+    ("tsv", "features"),
+    ("tsv", "covariates"),
+    ("csv", "targets"),
+    ("csv", "features"),
+    ("csv", "covariates"),
+    ("npy", "targets"),
+    ("npy", "features"),
+    ("npy", "covariates"),
+]
+
 
 @pytest.mark.parametrize(
-    ("in_file_type", "features_targets_covariates", ), TEST_CASES
+    (
+        "in_file_type",
+        "features_targets_covariates",
+    ),
+    TEST_CASES,
 )
 def test_prepare_data_custom_datasets(
     tmpdir,
@@ -20,7 +33,11 @@ def test_prepare_data_custom_datasets(
     in_path = str(tmpdir.join("data." + in_file_type))
     out_path = str(tmpdir.join("data.h5"))
 
-    dummy_data = np.random.rand(10, 1) if features_targets_covariates == "targets" else np.random.rand(10, 2)
+    dummy_data = (
+        np.random.rand(10, 1)
+        if features_targets_covariates == "targets"
+        else np.random.rand(10, 2)
+    )
     dummy_data = pd.DataFrame(dummy_data)
 
     if in_path.endswith(".csv"):
@@ -38,7 +55,9 @@ def test_prepare_data_custom_datasets(
         }
     }
 
-    prepare_data(out_path, "pytest", features_targets_covariates, "normal", custom_datasets)
+    prepare_data(
+        out_path, "pytest", features_targets_covariates, "normal", custom_datasets
+    )
 
     # Load the data from the output file and check its dimensions
     with h5py.File(out_path, "r") as f:

@@ -50,5 +50,3 @@ def prepare_data(
     with h5py.File(out_path, "w") as f:
         f.create_dataset("data", data=data)
         f.create_dataset("mask", data=mask)
-
-

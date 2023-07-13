@@ -1,8 +1,8 @@
-import os
 
+import h5py
 import numpy as np
 import pytest
-import h5py
+
 from esce.confound_regression import confound_regression
 
 
@@ -29,7 +29,7 @@ def test_confound_regression(tmpdir, data, confounds, expected):
     with h5py.File(confound_path, "w") as f:
         f.create_dataset("data", data=confounds)
         f.create_dataset("mask", data=np.ones(len(confounds)))
-        
+
     # Run the function
     confound_regression(data_path, confound_path, out_path)
 

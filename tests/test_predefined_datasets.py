@@ -1,6 +1,4 @@
-import os
 import h5py
-import numpy as np
 import pytest
 
 from esce.prepare_data import prepare_data
@@ -21,7 +19,7 @@ def test_mnist_features(tmpdir):
     # Load the data from the output file and check dimensions
     with h5py.File(out_path, "r") as f:
         output_data = f["data"][:]
-    
+
     assert output_data.shape == (70000, 784)
 
 

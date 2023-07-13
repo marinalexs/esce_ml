@@ -48,6 +48,5 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
             data_corrected[i][:] = np.nan
 
     with h5py.File(out_path, "w") as f:
-            f.create_dataset("data", data=data_corrected)
-            f.create_dataset("mask", data=xy_mask)
-
+        f.create_dataset("data", data=data_corrected)
+        f.create_dataset("mask", data=xy_mask)

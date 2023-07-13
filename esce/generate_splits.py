@@ -1,11 +1,12 @@
 import json
 from typing import Optional
 
+import h5py
 import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import h5py
+
 
 class NpEncoder(json.JSONEncoder):
     """Encode numpy arrays to JSON."""
@@ -60,7 +61,7 @@ def generate_random_split(
         "seed": seed,
         "stratify": do_stratify,
     }
-    
+
     return split
 
 
@@ -169,16 +170,16 @@ def write_splitfile(
     stratify=False,
 ):
     print(features_path)
-    with h5py.File(features_path, 'r') as f:
-        x_mask = f['mask'][:]
+    with h5py.File(features_path, "r") as f:
+        x_mask = f["mask"][:]
 
-    with h5py.File(targets_path, 'r') as f:
-        y = f['data'][:]
-        y_mask = f['mask'][:]
+    with h5py.File(targets_path, "r") as f:
+        y = f["data"][:]
+        y_mask = f["mask"][:]
 
-    with h5py.File(sampling_path, 'r') as f:
-        matching = f['data'][:]
-        matching_mask = f['mask'][:]
+    with h5py.File(sampling_path, "r") as f:
+        matching = f["data"][:]
+        f["mask"][:]
 
     xy_mask = np.logical_and(x_mask, y_mask)
 
@@ -265,9 +266,8 @@ def write_splitfile(
         raise Exception("invalid sampling file")
 
     # indices must be sorted for hdf5
-    for set_name in ['idx_train', 'idx_val', 'idx_test']:
+    for set_name in ["idx_train", "idx_val", "idx_test"]:
         split_dict[set_name] = sorted(split_dict[set_name])
-
 
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)

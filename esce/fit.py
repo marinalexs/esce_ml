@@ -1,8 +1,8 @@
 import json
 import os
 from pathlib import Path
+
 import h5py
-import numpy as np
 import pandas as pd
 import yaml
 from sklearn.model_selection import ParameterGrid
@@ -40,11 +40,11 @@ def fit(
         Path(scores_path).touch()
         return
 
-    fx = h5py.File(features_path, 'r')
-    x = fx['data']
+    fx = h5py.File(features_path, "r")
+    x = fx["data"]
 
-    fy = h5py.File(targets_path, 'r')
-    y = fy['data']
+    fy = h5py.File(targets_path, "r")
+    y = fy["data"]
 
     grid = yaml.safe_load(open(grid_path))
     model = MODELS[model_name]
