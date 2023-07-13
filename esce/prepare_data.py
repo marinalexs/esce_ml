@@ -24,7 +24,7 @@ def prepare_data(
         "none",
         "balanced",
     ]:
-        data = None
+        data = np.array([])
     else:
         in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])
         if in_path.suffix == ".csv":
@@ -40,12 +40,12 @@ def prepare_data(
     elif features_targets_covariates == "features":
         assert np.ndim(data) == 2
         mask = np.isfinite(data).all(axis=1)
-    elif features_targets_covariates == "covariates" and data is not None:
+    elif features_targets_covariates == "covariates" and len(data) > 0:
         if np.ndim(data) == 1:
             data = data.reshape(-1, 1)
         mask = np.isfinite(data).all(axis=1)
     else:
-        mask = None
+        mask = np.array([])
 
     with h5py.File(out_path, "w") as f:
         f.create_dataset("data", data=data)
