@@ -11,4 +11,4 @@ dependencies:
   - pip
   - pyyaml
   - pip:
-    - git+https://${GITHUB_TOKEN}@github.com/user/project.git@dev
+    - git+https://${GITHUB_TOKEN}@github.com/brain-tools/esce.git@dev
