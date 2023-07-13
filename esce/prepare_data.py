@@ -14,7 +14,6 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ):
-    print(dataset, features_targets_covariates, variant)
     if (
         dataset in predefined_datasets
         and variant in predefined_datasets[dataset][features_targets_covariates]

@@ -169,7 +169,6 @@ def write_splitfile(
     seed,
     stratify=False,
 ):
-    print(features_path)
     with h5py.File(features_path, "r") as f:
         x_mask = f["mask"][:]
 
