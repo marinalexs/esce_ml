@@ -6,13 +6,14 @@ min_version("7.0")
 
 configfile: workflow.source_path("../tests/test_config.yaml")
 configfile: workflow.source_path("../config/style.yaml")
+configfile: workflow.source_path("../config/grids.yaml")
 
 
 
 # declare https://github.com/brain-tools/esce as a module
 module esce:
     snakefile:
-        github("brain-tools/esce", path="workflow/Snakefile", branch="dev")
+        github("brain-tools/esce", path="workflow/Snakefile", branch="revert_esce_modularisation")
     config:
         config
 
