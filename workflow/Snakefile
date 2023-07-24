@@ -56,6 +56,20 @@ by_cni_plots = expand_from_config(
 )
 
 
+rule all:
+    input:
+        'results/config_validation.done',
+        all_data,
+        all_fits,
+        sample_complexity_results,
+        individual_plots,
+        by_feature_plots,
+        by_target_plots,
+        by_model_plots,
+        by_cni_plots,
+        hp_plots,
+
+
 rule check_config:
     priority: 100
     input:
@@ -285,20 +299,6 @@ rule plot_hyperparameters:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot_hps.py")
-
-
-rule all:
-    input:
-        rules.check_config.output,
-        all_data,
-        all_fits,
-        sample_complexity_results,
-        individual_plots,
-        by_feature_plots,
-        by_target_plots,
-        by_model_plots,
-        by_cni_plots,
-        hp_plots,
 
 
 rule compress_results:
