@@ -13,7 +13,7 @@ configfile: workflow.source_path("../config/grids.yaml")
 # declare https://github.com/brain-tools/esce as a module
 module esce:
     snakefile:
-        github("brain-tools/esce", path="workflow/Snakefile", branch="dev")
+        github("brain-tools/esce", path="workflow/Snakefile", branch="main")
     config:
         config
 
