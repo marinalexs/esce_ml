@@ -31,7 +31,7 @@ jobs:
 
     - name: Run snakemake workflow test
       run: |
-        poetry run snakemake -F -c1 --configfile tests/test_config.yaml all
+        poetry run snakemake --configfile tests/test_config.yaml -F -c1 all
 
     - name: Run snakemake submodule test
       run: |
