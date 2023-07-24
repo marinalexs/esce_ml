@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "esce"
-version = "0.1.2"
+version = "0.2.0"
 description = "Tools for eastimating and extrapolating learning curves."
 authors = ["Marc-Andre Schulz <marc-andre.schulz@charite.de>"]
 license = "GPLv3" 
