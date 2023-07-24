@@ -1,0 +1,22 @@
+val_test_frac: .25
+bootstrap_repetitions: 100
+
+seeds: [0, 1,]
+sample_sizes: [10, 20]
+
+experiments:
+  test_regression:
+    dataset: "pytest"
+    features: ["example-features-a",]
+    features_cni: ["example-covariates-of-no-interest",]
+    targets: ["example-targets",]
+    targets_cni: ["example-covariates-of-no-interest",]
+    matching: ["none",]
+    models: ["ridge-reg",]
+    grid: "default"
+
+custom_datasets:
+  pytest:
+    features: {'example-features-a':'example/x_a.csv','example-features-b':'example/x_b.csv',}
+    targets: {'example-targets':'example/y.csv',}
+    covariates: {'example-covariates-of-no-interest':'example/cni.csv',}

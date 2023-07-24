@@ -18,7 +18,7 @@ experiments:
     grid: "default"
   example_classification:
     dataset: "example-dataset"
-    features: ["example-features-b"]
+    features: ["example-features-b",]
     features_cni: ["none",]
     targets: ["example-targets",]
     targets_cni: ["none",]

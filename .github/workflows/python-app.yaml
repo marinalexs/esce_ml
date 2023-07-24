@@ -1,0 +1,44 @@
+name: Python Tests
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install poetry
+      run: pipx install poetry
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'poetry'
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run unit tests
+      run: |
+        poetry run pytest -m "not slow" --cov=esce --cov-report=term 
+
+    - name: Run snakemake workflow test
+      run: |
+        poetry run snakemake --configfile tests/test_config.yaml -F -c1 all
+
+    - name: Run snakemake submodule test
+      run: |
+        export GITHUB_TOKEN=${{ github.token }}
+        poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F all
+        
+    # - name: Run snakemake submodule test with conda
+    #   run: |
+    #     export GITHUB_TOKEN=${{ github.token }}
+    #     poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F --use-conda --conda-frontend conda all

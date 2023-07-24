@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "extrapolate_to": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "figure_titles": {
+      "type": "object",
+      "properties": {
+        "individual": {
+          "type": "string"
+        },
+        "features": {
+          "type": "string"
+        },
+        "targets": {
+          "type": "string"
+        },
+        "models": {
+          "type": "string"
+        },
+        "cni": {
+          "type": "string"
+        },
+        "hyperparameters": {
+          "type": "string"
+        }
+      },
+      "required": ["individual", "features", "targets", "models", "cni", "hyperparameters"]
+    },
+    "hyperparameter_scales": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["linear", "log"]
+      }
+    }
+  },
+  "required": ["extrapolate_to", "figure_titles", "hyperparameter_scales"]
+}

@@ -1,11 +1,11 @@
 import json
+import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import scipy.optimize
 from sklearn.metrics import r2_score
-from pathlib import Path
-import os
 
 MIN_DOF = 2
 
@@ -18,7 +18,7 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        return super(NpEncoder, self).default(obj)
+        return super().default(obj)
 
 
 def fit_curve(x, y, y_e):
@@ -32,6 +32,7 @@ def fit_curve(x, y, y_e):
 
     dof = len(x) - 3
     if dof < MIN_DOF:
+        print(f"Warning: dof = {dof} < {MIN_DOF}")
         return result
 
     try:
@@ -39,35 +40,31 @@ def fit_curve(x, y, y_e):
             lambda t, a, b, c: a * t ** (-b) + c,
             x,
             y,
-            sigma=y_e,
+            # sigma=y_e,
             maxfev=5000,
-            p0=(-1, 0.01, 0.7),
-            bounds=((-np.inf, 0, 0), (0, 1, 1)),
+            p0=(-1, 0.1, 0.5),
+            bounds=((-np.inf, 0, -np.inf), (0, np.inf, np.inf)),
         )
         result["p_mean"] = p_mean
-        result["r2"] = r2_score(
-            y_mean[mask], p_mean[0] * x[mask] ** (-p_mean[1]) + p_mean[2]
-        )
+        result["r2"] = r2_score(y, p_mean[0] * x ** (-p_mean[1]) + p_mean[2])
         result["chi2"] = (
-            sum(
-                (y_mean[mask] - (p_mean[0] * x[mask] ** (-p_mean[1]) + p_mean[2])) ** 2
-                / y_sem[mask] ** 2
-            )
-            / result["dof"]
+            sum((y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) ** 2 / y_e**2) / dof
         )
         result["mu"], result["sigma"] = np.mean(
-            (y_mean[mask] - (p_mean[0] * x[mask] ** (-p_mean[1]) + p_mean[2]))
-            / y_sem[mask]
-        ), np.std(
-            (y_mean[mask] - (p_mean[0] * x[mask] ** (-p_mean[1]) + p_mean[2]))
-            / y_sem[mask]
-        )
+            (y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) / y_e
+        ), np.std((y - (p_mean[0] * x ** (-p_mean[1]) + p_mean[2])) / y_e)
         return result
-    except:
+    except Exception as e:
+        print(e)
         return result
 
 
-def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: int):
+def extrapolate(
+    stats_path: str,
+    extra_path: str,
+    bootstrap_path: str,
+    repeats: int,
+):
     if os.stat(stats_path).st_size == 0:
         Path(extra_path).touch()
         Path(bootstrap_path).touch()
@@ -85,10 +82,12 @@ def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: 
         y_std.append(df[df["n"] == n][metric].std())
         y_sem.append(df[df["n"] == n][metric].sem())
         mask.append(bool((y_mean[-1] - y_sem[-1]) > 0))
+
     x = np.asarray(x)
     y_mean = np.asarray(y_mean)
     y_std = np.asarray(y_std)
     y_sem = np.asarray(y_sem)
+    mask = np.asarray(mask)
 
     result.update(
         {
@@ -120,6 +119,7 @@ def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: 
         if np.isfinite(p_).all():
             p_bootstrap.append(p_)
 
+    print(f"p_bootstrap: {len(p_bootstrap)} out of {repeats}")
     if len(p_bootstrap) > 0.9 * repeats:
         result.update(
             {
@@ -155,10 +155,10 @@ def extrapolate(stats_path: str, extra_path: str, bootstrap_path: str, repeats: 
     with open(bootstrap_path, "w") as f:
         json.dump(p_bootstrap, f, cls=NpEncoder, indent=0)
 
-
-extrapolate(
-    snakemake.input.scores,
-    snakemake.output.stats,
-    snakemake.output.bootstraps,
-    snakemake.params.bootstrap_repetitions,
-)
+if __name__ == "__main__":
+    extrapolate(
+        snakemake.input.scores,
+        snakemake.output.stats,
+        snakemake.output.bootstraps,
+        snakemake.params.bootstrap_repetitions,
+    )

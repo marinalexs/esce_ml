@@ -1,14 +1,16 @@
-import json
-import os
+"""
+base_models.py
+====================================
+
+
+
+"""
+
+
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, cast, Union
+from typing import Any, Callable, Dict
 
 import numpy as np
-import pandas as pd
-import yaml
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.linear_model import Ridge, RidgeClassifier
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -17,7 +19,6 @@ from sklearn.metrics import (
     r2_score,
 )
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import ParameterGrid
 
 
 class BaseModel(ABC):
@@ -33,8 +34,11 @@ class BaseModel(ABC):
 
     def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
         """Provide a score for the model performance on the data."""
+
+        # generate model based on the given hyperparameters in kwargs
         model = self.model_generator(**kwargs)
 
+        # scale features if scale_features is True
         x_scaler = StandardScaler() if self.scale_features else None
         x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
         if x_scaler:
@@ -46,6 +50,7 @@ class BaseModel(ABC):
             x_val_scaled = x_val
             x_test_scaled = x_test
 
+        # scale targets if scale_targets is True
         y_scaler = StandardScaler() if self.scale_targets else None
         y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
         if y_scaler:
@@ -53,12 +58,13 @@ class BaseModel(ABC):
         else:
             y_train_scaled = y_train
 
+        # fit model and predict
         model.fit(x_train_scaled, y_train_scaled)
-
         y_hat_train_scaled = model.predict(x_train_scaled)
         y_hat_val_scaled = model.predict(x_val_scaled)
         y_hat_test_scaled = model.predict(x_test_scaled)
 
+        # scale y_hat back to original scale (so that MAE has unit of original target variable)
         if y_scaler:
             y_hat_train = y_scaler.inverse_transform(
                 y_hat_train_scaled.reshape(-1, 1)
@@ -74,6 +80,7 @@ class BaseModel(ABC):
             y_hat_val = y_hat_val_scaled
             y_hat_test = y_hat_test_scaled
 
+        # compute metrics (definded in subclasses)
         return self.compute_metrics(
             y_hat_train, y_hat_val, y_hat_test, y_train, y_val, y_test
         )
@@ -88,6 +95,7 @@ class BaseModel(ABC):
         y_val: np.ndarray,
         y_test: np.ndarray,
     ) -> Dict[str, float]:
+        """Compute metrics for the model performance on the data."""
         pass
 
 
@@ -144,16 +152,34 @@ class RegressionModel(BaseModel):
         }
 
 
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.linear_model import Ridge, RidgeClassifier
+
+
 MODELS = {
     "majority-classifier": ClassifierModel(
         lambda **args: DummyClassifier(strategy="most_frequent", **args),
         "majority classifier",
+    ),
+    "mean-regressor": RegressionModel(
+        lambda **args: DummyRegressor(strategy="mean", **args), "mean regressor"
     ),
     "ridge-cls": ClassifierModel(
         lambda **args: RidgeClassifier(**args), "ridge classifier"
     ),
     "ridge-reg": RegressionModel(lambda **args: Ridge(**args), "ridge regressor"),
 }
+
+
+import json
+import os
+from pathlib import Path
+
+import h5py
+import pandas as pd
+import yaml
+from sklearn.model_selection import ParameterGrid
+
 
 
 def get_existing_scores(scores_path_list):
@@ -178,30 +204,32 @@ def fit(
     split_path,
     scores_path,
     model_name,
-    grid_path,
+    grid,
     existing_scores_path_list,
 ):
-    split = json.load(open(split_path, "r"))
+    split = json.load(open(split_path))
     if "error" in split:
         Path(scores_path).touch()
         return
 
-    x = np.load(features_path)
-    y = np.load(targets_path)
+    fx = h5py.File(features_path, "r")
+    x = fx["data"]
 
-    assert np.isfinite(x[split["idx_train"]]).all()
-    assert np.isfinite(y[split["idx_train"]]).all()
+    fy = h5py.File(targets_path, "r")
+    y = fy["data"]
 
-    grid = yaml.safe_load(open(grid_path, "r"))
     model = MODELS[model_name]
 
     df_existing_scores = get_existing_scores(existing_scores_path_list)
 
     scores = []
     for params in ParameterGrid(grid[model_name]):
-        df_existing_scores_filtered = lambda: df_existing_scores.loc[
-            (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
-        ]
+
+        def df_existing_scores_filtered():
+            return df_existing_scores.loc[
+                (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
+            ]
+
         if not df_existing_scores.empty and not df_existing_scores_filtered().empty:
             score = dict(df_existing_scores_filtered().iloc[0])
             # print("retrieved score", score)
@@ -212,7 +240,7 @@ def fit(
                 idx_train=split["idx_train"],
                 idx_val=split["idx_val"],
                 idx_test=split["idx_test"],
-                **params
+                **params,
             )
             score.update(params)
             score.update({"n": split["samplesize"], "s": split["seed"]})
@@ -220,16 +248,21 @@ def fit(
 
         scores.append(score)
 
+    fy.close()
+    fx.close()
+
     pd.DataFrame(scores).to_csv(scores_path, index=None)
 
 
-assert snakemake.wildcards.model in MODELS, "model not found"
-fit(
-    snakemake.input.features,
-    snakemake.input.targets,
-    snakemake.input.split,
-    snakemake.output.scores,
-    snakemake.wildcards.model,
-    snakemake.input.grid,
-    snakemake.params.existing_scores,
-)
+
+if __name__ == "__main__":
+    assert snakemake.wildcards.model in MODELS, "model not found"
+    fit(
+        snakemake.input.features,
+        snakemake.input.targets,
+        snakemake.input.split,
+        snakemake.output.scores,
+        snakemake.wildcards.model,
+        snakemake.params.grid,
+        snakemake.params.existing_scores,
+    )

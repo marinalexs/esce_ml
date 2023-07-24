@@ -3,3 +3,6 @@ results/
 old/
 slurm-*.out
 results.tar.gz
+*.pyc
+esce.egg-info/
+.vscode/settings.json
