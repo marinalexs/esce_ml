@@ -36,7 +36,7 @@ jobs:
     - name: Run snakemake submodule test
       run: |
         export GITHUB_TOKEN=${{ github.token }}
-        poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F run all
+        poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F all
         
     # - name: Run snakemake submodule test with conda
     #   run: |
