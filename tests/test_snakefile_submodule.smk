@@ -19,7 +19,7 @@ module esce:
 
 
 # use all rules from https://github.com/brain-tools/esce
-use rule all from esce as esce_all
+use rule * from esce as esce_*
 
 rule all:
     input:
