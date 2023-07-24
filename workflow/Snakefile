@@ -6,6 +6,7 @@ configfile: workflow.source_path("../config/grids.yaml")
 
 validate(config, workflow.source_path("../config/config.schema.yaml"))
 validate(config, workflow.source_path("../config/style.schema.yaml"))
+validate(config, workflow.source_path("../config/grids.schema.yaml"))
 
 import itertools, glob
 
@@ -23,6 +24,12 @@ def expand_from_config(filename):
         )
     )
 
+all_data = [
+    config["custom_datasets"][dataset][category][feature]
+    for dataset in config["custom_datasets"]
+    for category in config["custom_datasets"][dataset]
+    for feature in config["custom_datasets"][dataset][category]
+]
 all_fits = expand_from_config(
     "results/{dataset}/fits/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{sample_sizes}_{seeds}_{grid}.csv"
 )
@@ -49,26 +56,17 @@ by_cni_plots = expand_from_config(
 )
 
 
-rule onstart:
+rule check_config:
+    priority: 100
     input:
         fit_model = workflow.source_path('scripts/fit_model.py'),
         prepare_data = workflow.source_path('scripts/prepare_data.py'),
     params:
         config = config
+    output:
+        touch('results/config_validation.done')
     script:
         workflow.source_path('scripts/validate_config.py')
-
-rule all:
-    input:
-        all_fits,
-        sample_complexity_results,
-        individual_plots,
-        by_feature_plots,
-        by_target_plots,
-        by_model_plots,
-        by_cni_plots,
-        hp_plots,
-
 
 rule prepare_features_or_targets:
     output:
@@ -287,6 +285,20 @@ rule plot_hyperparameters:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot_hps.py")
+
+
+rule all:
+    input:
+        rules.check_config.output,
+        all_data,
+        all_fits,
+        sample_complexity_results,
+        individual_plots,
+        by_feature_plots,
+        by_target_plots,
+        by_model_plots,
+        by_cni_plots,
+        hp_plots,
 
 
 rule compress_results:

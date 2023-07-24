@@ -19,19 +19,8 @@ module esce:
 
 
 # use all rules from https://github.com/brain-tools/esce
-use rule * from esce as esce_*
+use rule all from esce as esce_all
 
-
-rule prepare_data:
-    input:
-        [
-            config["custom_datasets"][dataset][category][feature]
-            for dataset in config["custom_datasets"]
-            for category in config["custom_datasets"][dataset]
-            for feature in config["custom_datasets"][dataset][category]
-        ],
-
-
-rule run:
+rule all:
     input:
         rules.esce_all.input,
