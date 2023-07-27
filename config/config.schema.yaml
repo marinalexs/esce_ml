@@ -30,7 +30,6 @@
     },
     "stratify": {
       "type": "boolean",
-      "const": false,
       "default": false
     },
     "seeds": {
