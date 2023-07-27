@@ -33,7 +33,7 @@ def confound_regression(data_path: str, confounds_path: str, out_path: str):
         data_raw = data_raw.reshape(-1, 1)
     if len(confounds.shape) == 1:
         confounds = confounds.reshape(-1, 1)
-    assert len(data_raw) == len(confounds), f"got data n={len(data_raw)}, confounds n={len(confounds))
+    assert len(data_raw) == len(confounds), f"got data n={len(data_raw)}, confounds n={len(confounds)}"
 
     xy_mask = np.logical_and(data_mask, confounds_mask)
 
