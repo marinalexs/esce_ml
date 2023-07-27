@@ -265,8 +265,9 @@ def write_splitfile(
         raise Exception("invalid sampling file")
 
     # indices must be sorted for hdf5
-    for set_name in ["idx_train", "idx_val", "idx_test"]:
-        split_dict[set_name] = sorted(split_dict[set_name])
+    if not 'error' in split_dict:
+        for set_name in ["idx_train", "idx_val", "idx_test"]:
+             split_dict[set_name] = sorted(split_dict[set_name])
 
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)
