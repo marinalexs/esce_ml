@@ -41,14 +41,12 @@ def plot(
 
     data = []
     for _, row in df.iterrows():
-        if not os.path.exists(row.full_path):
-            print(row.full_path, "does not exist - skipping")
-            continue
         with open(row.full_path) as f:
             score = yaml.safe_load(f)
         if not score:
             print(row.full_path, "is empty - skipping")
             continue
+            
         df_ = pd.DataFrame(
             {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"]}
         )
@@ -90,11 +88,13 @@ def plot(
         margin={"l": 20, "r": 20, "t": 40, "b": 20},
     )
 
+    cnt = 0
     for i, (_, row) in enumerate(df.iterrows()):
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
             p = yaml.safe_load(f)
         if not p:
             continue
+
         for p_ in p:
             x_exp = np.logspace(np.log10(128), np.log10(max_x))
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
@@ -103,13 +103,14 @@ def plot(
                     x=x_exp,
                     y=y_exp,
                     line={
-                        "color": fig.data[i].line.color,
-                        "dash": fig.data[i].line.dash,
+                        "color": fig.data[cnt].line.color,
+                        "dash": fig.data[cnt].line.dash,
                     },
                     opacity=2 / len(p),
                     showlegend=False,
                 )
             )
+        cnt +=1
     fig.update_yaxes(rangemode="nonnegative")
 
     fig.write_image(output_filename)
