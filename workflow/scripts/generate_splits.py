@@ -183,6 +183,13 @@ def write_splitfile(
     xy_mask = np.logical_and(x_mask, y_mask)
 
     n_classes = len(np.unique(y[xy_mask]))
+    # in some cases, there will be on only controls / neutrals left after masking...
+    if n_classes <= 1:
+        with open(split_path, "w") as f:
+            json.dump({"error": "insufficient samples"}, f, cls=NpEncoder, indent=0)
+        return
+
+    
     idx_all = np.arange(len(y))
 
     stratify = bool(stratify and n_classes <= 10)

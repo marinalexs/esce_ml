@@ -7,6 +7,20 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
 import yaml
+import json
+import re
+
+loader = yaml.SafeLoader
+loader.add_implicit_resolver(
+    u'tag:yaml.org,2002:float',
+    re.compile(u'''^(?:
+     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+    |[-+]?\\.(?:inf|Inf|INF)
+    |\\.(?:nan|NaN|NAN))$''', re.X),
+    list(u'-+0123456789.'))
 
 
 def process_results(available_results):
@@ -42,7 +56,7 @@ def plot(
     data = []
     for _, row in df.iterrows():
         with open(row.full_path) as f:
-            score = yaml.safe_load(f)
+            score = yaml.load(f, Loader=loader)
         if not score:
             print(row.full_path, "is empty - skipping")
             continue
@@ -91,7 +105,8 @@ def plot(
     cnt = 0
     for i, (_, row) in enumerate(df.iterrows()):
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
-            p = yaml.safe_load(f)
+            p = yaml.load(f, Loader=loader)
+
         if not p:
             continue
 
