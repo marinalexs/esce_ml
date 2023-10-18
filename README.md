@@ -20,13 +20,16 @@ conda install -c bioconda snakemake
 
 ## Example Workflow
 
-To try the example workflow, check out the [example/](example/) directory and run the following command:
+To run an example workflow on random data, check out the [example/](example/) directory and run the following command:
 
 ```
 snakemake --cores 1 --configfile example/example_config.yaml --rerun-triggers mtime --use-conda --rerun-incomplete all
 ```
 
 Once the workflow has completed, you can view the results in the `results/example-dataset/statistics` directory and the plots in `results/example-dataset/plots`.
+
+Alternatively, try the MNIST example. This should get you meaningful results and figures (in contract to the random data example above). However, it will take a while to run. You may want to increase the number of cores used by snakemake (e.g. `--cores 4`) to speed up the process.
+
 
 ---
 
