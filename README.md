@@ -10,7 +10,7 @@ For more information, refer to the following publication:
 
 ## Installing Snakemake
 
-In order to use this workflow, you must have either Anaconda or Miniconda installed and Snakemake must be installed. To install Snakemake, run the following command:
+In order to use this workflow, you should have Anaconda/Miniconda and Snakemake installed. To install Snakemake, run the following command:
 
 ```
 conda install -c bioconda snakemake

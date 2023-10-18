@@ -21,9 +21,11 @@ loader.add_implicit_resolver(
     |[-+]?\\.(?:inf|Inf|INF)
     |\\.(?:nan|NaN|NAN))$''', re.X),
     list(u'-+0123456789.'))
+# this is a hack to make yaml load the floats correctly
 
 
 def process_results(available_results):
+    """Read available results and return them as a pandas dataframe."""
     df = pd.DataFrame(available_results, columns=["full_path"])
     df[
         [
@@ -51,6 +53,16 @@ def process_results(available_results):
 def plot(
     stats_file_list, output_filename, color_variable, linestyle_variable, title, max_x=6
 ):
+    """Plot the results of a model.
+
+    Args:
+        stats_file_list: list of paths to the results files
+        output_filename: path to save the plot
+        color_variable: variable to use for color
+        linestyle_variable: variable to use for linestyle
+        title: title of the plot
+        max_x: maximum sample size in powers of 10
+    """
     df = process_results(stats_file_list)
 
     data = []

@@ -30,7 +30,17 @@ def generate_random_split(
     seed: int = 0,
     mask: Optional[np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Generate a random split of the data."""
+    """Generate a random split of the data.
+    
+    Args:
+        y: The target variable in the shape (n_samples,).
+        n_train: The number of training samples.
+        n_val: The number of validation samples.
+        n_test: The number of test samples.
+        do_stratify: Whether to stratify the split.
+        seed: The random seed.
+        mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
+    """
     if mask is False:
         idx_originial = np.arange(len(y))
         idx = np.arange(len(y))
@@ -80,17 +90,18 @@ def generate_matched_split(
     Assumes a binary classification target variable, coded as 0 and 1, with 1 being the positive (patient) class and 0 being the negative (control) class.
     Masking allows to only consider a subset of the data for matching, i.e. for exluding participants with similar disorders from the control group.
 
-    :param y: The target variable in the shape (n_samples,).
-    :param match: The covariates to use for matching, in the shape (n_samples, n_features).
-    :param n_train: The number of training samples.
-    :param n_val: The number of validation samples.
-    :param n_test: The number of test samples.
-    :param do_stratify: Whether to stratify the split.
-    :param seed: The random seed.
-    :param mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
-    :return: The split: list of training, validation and test indices and some additional information.
-    :rtype: Dict['idx_train', 'idx_val', 'idx_test', 'samplesize', 'seed', 'stratify','average_matching_score']
-
+    Args:
+        y: The target variable in the shape (n_samples,).
+        match: The covariates to use for matching, in the shape (n_samples, n_features).
+        n_train: The number of training samples.
+        n_val: The number of validation samples.
+        n_test: The number of test samples.
+        do_stratify: Whether to stratify the split.
+        seed: The random seed.
+        mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
+    
+    Returns: The split: list of training, validation and test indices and some additional information.
+    Dict['idx_train', 'idx_val', 'idx_test', 'samplesize', 'seed', 'stratify','average_matching_score']
     """
 
     random_state = np.random.RandomState(seed)
@@ -169,6 +180,20 @@ def write_splitfile(
     seed,
     stratify=False,
 ):
+    """Generate a split file for a given dataset.
+
+    Args:
+        features_path: path to the features file
+        targets_path: path to the targets file
+        split_path: path to save the split file
+        sampling_path: path to the sampling file
+        sampling_type: type of sampling, one of ['none', 'balanced', 'matched']
+        n_train: number of training samples
+        n_val: number of validation samples
+        n_test: number of test samples
+        seed: random seed
+        stratify: whether to stratify the split
+    """
     with h5py.File(features_path, "r") as f:
         x_mask = f["mask"][:]
 

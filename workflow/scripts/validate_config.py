@@ -4,6 +4,15 @@ import yaml
 
 
 def validate_details(config, MODELS, PREDEFINED_DATASETS, RegressionModel):
+    """Validate the details of the config file.
+
+    Args:
+        config: path to the config file
+        MODELS: dictionary of models
+        PREDEFINED_DATASETS: dictionary of predefined datasets
+        RegressionModel: class of regression models (this is a hack to circumvent smakemake import issues)
+    """
+
     errors = []
 
     # check that each experiment has the expected values

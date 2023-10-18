@@ -35,6 +35,17 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ):
+    """Prepare a dataset for use in the workflow.
+
+    Reads data from csv, tsv, or npy files, does some processing, and saves result as hdf5.
+
+    Args:
+        out_path: path to save the resulting hdf5 file
+        dataset: name of the dataset
+        features_targets_covariates: whether to load features, targets or covariates
+        variant: variant of the dataset
+        custom_datasets: dictionary of custom datasets
+    """
     if (
         dataset in predefined_datasets
         and variant in predefined_datasets[dataset][features_targets_covariates]

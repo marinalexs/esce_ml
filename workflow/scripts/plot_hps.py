@@ -15,6 +15,16 @@ def plot(
     model_name,
     title,
 ):
+    """Plot the scores of a model.
+
+    Args:
+        stats_filename: path to the scores file
+        output_filename: path to save the plot
+        grid: grid of hyperparameters
+        hyperparameter_scales: scales of the hyperparameters
+        model_name: name of the model
+        title: title of the plot
+    """
     grid = grid[model_name]
     # ignore empty files (insufficient samples in dataset)
     if os.stat(stats_filename).st_size == 0 or not grid:

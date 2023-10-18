@@ -11,6 +11,7 @@ MIN_DOF = 2
 
 
 class NpEncoder(json.JSONEncoder):
+    """Encode numpy types to native python types for json serialization"""
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -22,6 +23,14 @@ class NpEncoder(json.JSONEncoder):
 
 
 def fit_curve(x, y, y_e):
+    """
+    Fit a power law curve to the data.
+    
+    Args:
+        x: x data
+        y: y data
+        y_e: y error
+    """
     result = {
         "p_mean": np.nan,
         "r2": np.nan,
@@ -65,6 +74,15 @@ def extrapolate(
     bootstrap_path: str,
     repeats: int,
 ):
+    """
+    Fit power law and bootstrap uncertainties.
+
+    Args:
+        stats_path: path to the stats input file
+        extra_path: path to save the extrapolation results
+        bootstrap_path: path to save the bootstrap results
+        repeats: number of bootstrap repetitions
+    """
     if os.stat(stats_path).st_size == 0:
         Path(extra_path).touch()
         Path(bootstrap_path).touch()
