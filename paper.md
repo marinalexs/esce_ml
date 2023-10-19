@@ -38,4 +38,8 @@ A distinguishing feature of ESCE is its capacity to use curve fitting techniques
 
 The use cases of ESCE span a range of research areas that utilize machine learning models and deal with large, complex datasets. An illustrative example of ESCE's application is found in the study "Performance reserves in brain-imaging-based phenotype prediction" [@schulz2022]. This research leveraged ESCE to investigate performace ceilings of machine learning models operating on brain imaging data.
 
+# Acknowledgements
+
+The project was funded by the DFG (414984028/CRC-1404 FONDA).
+
 # References
