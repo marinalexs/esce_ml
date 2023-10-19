@@ -28,7 +28,10 @@ snakemake --cores 1 --configfile example/example_config.yaml --rerun-triggers mt
 
 Once the workflow has completed, you can view the results in the `results/example-dataset/statistics` directory and the plots in `results/example-dataset/plots`.
 
-Alternatively, try the MNIST example. This should get you meaningful results and figures (in contract to the random data example above). However, it will take a while to run. You may want to increase the number of cores used by snakemake (e.g. `--cores 4`) to speed up the process.
+Alternatively, try the MNIST example. This should get you meaningful results and figures (in contract to the random data example above). However, it will take a while to run. You may want to increase the number of cores used by snakemake (e.g. `--cores 4`) to speed up the process. After completing the workflow, check the folder `results/mnist/plots/individual/`. You should see a figure like this:
+
+<img src="resources/mnist.png" width="250"> 
+
 
 
 ---
