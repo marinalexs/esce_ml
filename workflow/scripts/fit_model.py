@@ -28,7 +28,7 @@ class BaseModel(ABC):
     scale_targets: bool
 
     def __init__(self, model_generator: Callable[..., Any], model_name: str):
-        """Initialize class using a model that is initialized later."""
+        """Initialize class using an sklearn model class that is initialized later."""
         self.model_generator = model_generator
         self.model_name = model_name
 
@@ -156,6 +156,7 @@ from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.linear_model import Ridge, RidgeClassifier
 
 
+# here, you can add your own models
 MODELS = {
     "majority-classifier": ClassifierModel(
         lambda **args: DummyClassifier(strategy="most_frequent", **args),
@@ -183,6 +184,7 @@ from sklearn.model_selection import ParameterGrid
 
 
 def get_existing_scores(scores_path_list):
+    """Read existing scores from list of files and return them as a pandas dataframe."""
     df_list = []
     for filename in scores_path_list:
         if os.stat(filename).st_size > 0:
@@ -207,6 +209,17 @@ def fit(
     grid,
     existing_scores_path_list,
 ):
+    """Fit a model to the data and save the scores to a file.
+    
+    Args:
+        features_path: path to the features file
+        targets_path: path to the targets file
+        split_path: path to the split file
+        scores_path: path to save the scores
+        model_name: name of the model
+        grid: grid of hyperparameters
+        existing_scores_path_list: list of paths to existing scores
+    """
     split = json.load(open(split_path))
     if "error" in split:
         Path(scores_path).touch()
