@@ -12,7 +12,7 @@ experiments:
     features: ["example-features-a","example-features-b"]
     targets: ["example-targets",]
     confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
-    confound_correction_cni: ["example-covariates-of-no-interest"]
+    confound_correction_cni: ["example-covariates-of-no-interest", "none"]
     balanced: false
     models: ["ridge-reg",]
     grid: "default"

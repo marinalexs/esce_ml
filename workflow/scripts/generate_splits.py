@@ -164,7 +164,6 @@ def write_splitfile(
         confounds_mask = f["mask"][:]
 
     xy_mask = np.logical_and(x_mask, y_mask)
-    xyc_mask = np.logical_and(xy_mask, confounds_mask)
 
     n_classes = len(np.unique(y[xy_mask]))
     if n_classes <= 1:
@@ -175,6 +174,7 @@ def write_splitfile(
     stratify = bool(stratify and n_classes <= 10)
 
     if confound_correction_method == "matching":
+        xyc_mask = np.logical_and(xy_mask, confounds_mask)
         assert n_classes == 2, "Matching only works for binary classification, with 1 as the positive class."
         if sum(xyc_mask[y == 1]) > n_train // 2 + n_val // 2 + n_test // 2:
             split_dict = generate_matched_split(

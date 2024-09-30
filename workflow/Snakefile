@@ -27,9 +27,17 @@ def expand_from_config(filename):
 features_variant = lambda wildcards: "results/{dataset}/features/{features}_{confound_correction_cni}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/features/{features}_none.h5"
 targets_variant = lambda wildcards: "results/{dataset}/targets/{targets}_{confound_correction_cni}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/targets/{targets}_none.h5"
 
-result_types = [
-    "fits/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{sample_sizes}_{seeds}_{grid}.csv",
-    "statistics/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}.stats.json",
+def filter_incompatible_confound_setups(list_of_filenames):
+    return set(
+        [i if i.split("_")[2] != 'none' and i.split("_")[3] != 'none' else "_".join(i.split("_")[:2] + ["none_none"] + i.split("_")[4:]) for i in list_of_filenames]
+    )
+
+sample_complexity_results = expand_from_config(
+    "results/{dataset}/statistics/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}.stats.json"
+)
+sample_complexity_results = filter_incompatible_confound_setups(sample_complexity_results)
+
+all_plots = [
     "plots/individual/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{models}_{grid}.png",
     "plots/hps/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}.png",
     "plots/features/all-features_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{models}_{grid}.png",
@@ -37,13 +45,14 @@ result_types = [
     "plots/models/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_all-models_{grid}.png",
     "plots/cni/{features}_{targets}_{confound_correction_method}_all-cni_{balanced}_{models}_{grid}.png",
 ]
-
-all_results = [expand_from_config(f"results/{{dataset}}/{result_type}") for result_type in result_types]
+all_plots = itertools.chain(*[expand_from_config(f"results/{{dataset}}/{plot}") for plot in all_plots])
+all_plots = filter_incompatible_confound_setups(all_plots)
+all_plots = [i for i in all_plots if not ('/cni/' in i and "none_none" in i)]
 
 rule all:
     input:
         'results/config_validation.done',
-        *all_results,
+        *all_plots,
 
 
 rule check_config:
@@ -160,10 +169,6 @@ rule extrapolate:
 
 
 
-sample_complexity_results = expand_from_config(
-    "results/{dataset}/statistics/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}.stats.json"
-)
-
 rule plot_individually:
     input:
         sample_complexity_results,
@@ -254,7 +259,11 @@ rule plot_by_cni:
             "results/{dataset}/statistics/{model}/{features}_{targets}_{confound_correction_method}_*_{balanced}_{grid}.stats.json".format(
                 **wildcards
             )
-        ),
+        )+
+            ["results/{dataset}/statistics/{model}/{features}_{targets}_none_none_{balanced}_{grid}.stats.json".format(
+                **wildcards
+            )]
+        ,
         title=config['figure_titles']['cni'],
         color_variable="cni",
         linestyle_variable=None,
