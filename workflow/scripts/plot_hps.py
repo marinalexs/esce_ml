@@ -45,7 +45,7 @@ def plot(
         value_name="value"
     )
 
-    df['value'] = df['value'].clip(lower=-1)
+    df[metric] = df[metric].clip(lower=-1)
 
     # Create subplots for each hyperparameter
     charts = []
