@@ -51,10 +51,7 @@ def prepare_data(
         and variant in predefined_datasets[dataset][features_targets_covariates]
     ):
         data = predefined_datasets[dataset][features_targets_covariates][variant]()
-    elif features_targets_covariates == "covariates" and variant in [
-        "none",
-        "balanced",
-    ]:
+    elif features_targets_covariates == "covariates" and variant == 'none':
         data = np.array([])
     else:
         in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])

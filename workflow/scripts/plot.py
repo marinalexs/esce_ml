@@ -1,14 +1,14 @@
 import os
 import textwrap
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objs as go
 import yaml
 import json
 import re
+import altair as alt
 
 loader = yaml.SafeLoader
 loader.add_implicit_resolver(
@@ -32,10 +32,10 @@ def process_results(available_results):
             "dataset",
             "model",
             "features",
-            "features_cni",
             "target",
-            "targets_cni",
-            "matching",
+            "confound_correction_method",
+            "confound_correction_cni",
+            "balanced",
             "grid",
         ]
     ] = (
@@ -46,14 +46,14 @@ def process_results(available_results):
         .str.replace("/", "_")
         .str.split("_", expand=True)
     )
-    df["cni"] = df[["features_cni", "targets_cni", "matching"]].agg("-".join, axis=1)
+    df["cni"] = df[["confound_correction_method", "confound_correction_cni"]].agg("-".join, axis=1)
     return df
 
 
 def plot(
-    stats_file_list, output_filename, color_variable, linestyle_variable, title, max_x=6
+    stats_file_list: str, output_filename: str, color_variable: Optional[str], linestyle_variable: Optional[str], title:str, max_x:int=6
 ):
-    """Plot the results of a model.
+    """Plot the results of a model using Altair.
 
     Args:
         stats_file_list: list of paths to the results files
@@ -63,6 +63,7 @@ def plot(
         title: title of the plot
         max_x: maximum sample size in powers of 10
     """
+    print(stats_file_list)
     df = process_results(stats_file_list)
 
     data = []
@@ -88,34 +89,32 @@ def plot(
     else:
         Path(output_filename).touch()
         return
+    
+    data['y'] = data['y'].clip(lower=-1)
+    data['y_std'] = data['y_std'].clip(upper=1)
+    print(data)
 
-    fig = px.line(
-        data,
-        x="n",
-        y="y",
-        error_y="y_std",
-        color=color_variable,
-        line_dash=linestyle_variable,
-        log_x=True,
-        template="simple_white",
-    )
-    fig.update_layout(
-        plot_bgcolor="white",
-        legend={
-            "orientation": "h",
-            "yanchor": "top",
-            "xanchor": "center",
-            "y": -0.125,
-            "x": 0.5,
-        },
-        title_text=textwrap.fill(title, 90).replace("\n", "<br>"),
-        title_x=0.5,
-        font={"size": 10},
-        margin={"l": 20, "r": 20, "t": 40, "b": 20},
+    # Create the main chart
+    chart = alt.Chart(data).mark_line().encode(
+        x=alt.X('n:Q', scale=alt.Scale(type='log')),
+        y=alt.Y('y:Q', scale=alt.Scale(zero=True)),
+        color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4'),
+        strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable else alt.value([1, 0])
     )
 
-    cnt = 0
-    for i, (_, row) in enumerate(df.iterrows()):
+    # Add error bars
+    error_bars = alt.Chart(data).mark_errorbar(ticks=True).encode(
+        x='n:Q',
+        y='y:Q',
+        yError=alt.YError('y_std:Q'),
+        color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4')
+    )
+
+    # Combine the main chart and error bars
+    combined_chart = chart + error_bars
+
+    # Add exponential fit lines
+    for _, row in df.iterrows():
         with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
             p = yaml.load(f, Loader=loader)
 
@@ -123,24 +122,38 @@ def plot(
             continue
 
         for p_ in p:
-            x_exp = np.logspace(np.log10(128), np.log10(max_x))
+            x_exp = np.logspace(np.log10(128), np.log10(10**max_x), num=100)
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
-            fig.add_trace(
-                go.Scatter(
-                    x=x_exp,
-                    y=y_exp,
-                    line={
-                        "color": fig.data[cnt].line.color,
-                        "dash": fig.data[cnt].line.dash,
-                    },
-                    opacity=2 / len(p),
-                    showlegend=False,
-                )
-            )
-        cnt +=1
-    fig.update_yaxes(rangemode="nonnegative")
+            exp_df = pd.DataFrame({'n': x_exp, 'y': y_exp})
+            if color_variable:
+                exp_df[color_variable] = getattr(row, color_variable)
+            if linestyle_variable:
+                exp_df[linestyle_variable] = getattr(row, linestyle_variable)
 
-    fig.write_image(output_filename)
+            exp_line = alt.Chart(exp_df).mark_line(opacity=0.2).encode(
+                x='n:Q',
+                y='y:Q',
+                color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4'),
+                strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable else alt.value([1, 0])
+            )
+            combined_chart += exp_line
+
+    # Configure the chart
+    combined_chart = combined_chart.properties(
+        title=alt.Title(text=textwrap.fill(title, 90), anchor='middle'),
+        width=600,
+        height=400
+    ).configure_axis(
+        labelFontSize=10,
+        titleFontSize=12
+    ).configure_legend(
+        orient='bottom',
+        labelFontSize=10,
+        titleFontSize=12
+    )
+
+    # Save the chart
+    combined_chart.save(output_filename)
 
 
 if __name__ == "__main__":

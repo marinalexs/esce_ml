@@ -13,3 +13,4 @@ figure_titles:
 hyperparameter_scales:
 # by default linear, can be turned to log scale here
   'alpha': 'log'
+  # Add other hyperparameters and their scales

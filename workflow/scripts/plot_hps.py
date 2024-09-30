@@ -1,9 +1,9 @@
 import os
 import textwrap
 from pathlib import Path
+import altair as alt
 
 import pandas as pd
-import plotly.express as px
 import yaml
 
 
@@ -26,9 +26,11 @@ def plot(
         title: title of the plot
     """
     grid = grid[model_name]
+
+    output_filename = Path(output_filename)
     # ignore empty files (insufficient samples in dataset)
     if os.stat(stats_filename).st_size == 0 or not grid:
-        Path(output_filename).touch()
+        output_filename.touch()
         return
 
     scores = pd.read_csv(stats_filename)
@@ -37,29 +39,50 @@ def plot(
     metric = "r2_val" if "r2_val" in scores.columns else "acc_val"
 
     df = scores.melt(
-        id_vars=["n", metric], value_vars=hp_names, var_name="hyperparameter"
-    )
-    fig = px.scatter(
-        df, x="n", y="value", color=metric, facet_col="hyperparameter", log_x=True
-    )
-    fig.update_yaxes(matches=None, showticklabels=True)
-
-    fig.update_layout(
-        plot_bgcolor="white",
-        title_text=textwrap.fill(title, 90).replace("\n", "<br>"),
-        title_x=0.5,
-        font={"size": 10},
-        margin={"l": 20, "r": 20, "t": 80, "b": 20},
+        id_vars=["n", metric],
+        value_vars=hp_names,
+        var_name="hyperparameter",
+        value_name="value"
     )
 
-    for i, v in enumerate(hp_names):
-        if v in hyperparameter_scales:
-            fig.add_hline(y=min(grid[v]), line_dash="dot", col=i + 1)
-            fig.add_hline(y=max(grid[v]), line_dash="dot", col=i + 1)
-            if hyperparameter_scales[v] == "log":
-                fig.update_yaxes(type="log", col=i + 1)
+    df['value'] = df['value'].clip(lower=-1)
 
-    fig.write_image(output_filename)
+    # Create subplots for each hyperparameter
+    charts = []
+    for hp in hp_names:
+        scale_type = hyperparameter_scales.get(hp, 'linear')
+
+        base = alt.Chart(df[df['hyperparameter'] == hp]).mark_point().encode(
+            x=alt.X('n:Q', scale=alt.Scale(type='log'), title='n'),
+            y=alt.Y('value:Q', scale=alt.Scale(type=scale_type), title=hp),
+            color=alt.Color(f'{metric}:Q', title=metric),
+            tooltip=['n', 'value', metric]
+        )
+
+        # Add dotted lines for min and max values
+        min_value = min(grid[hp])
+        max_value = max(grid[hp])
+
+        hline_min = alt.Chart(pd.DataFrame({'y': [min_value]})).mark_rule(
+            strokeDash=[4, 4],
+            color='black'
+        ).encode(y='y:Q')
+
+        hline_max = alt.Chart(pd.DataFrame({'y': [max_value]})).mark_rule(
+            strokeDash=[4, 4],
+            color='black'
+        ).encode(y='y:Q')
+
+        chart = (base + hline_min + hline_max).properties(title=hp)
+        charts.append(chart)
+
+    # Concatenate charts horizontally
+    final_chart = alt.hconcat(*charts).resolve_scale(y='independent').properties(
+        title=alt.Title(text=textwrap.fill(title, 90), anchor='middle')
+    )
+
+    # Save the chart
+    final_chart.save(str(output_filename))
 
 
 

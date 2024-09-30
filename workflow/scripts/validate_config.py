@@ -38,28 +38,15 @@ def validate_details(config, MODELS, PREDEFINED_DATASETS, RegressionModel):
                     errors.append(
                         f"experiment {exp_name} feature {feature} must exist in either predefined  or custom datasets"
                     )
-            for feature_cni in exp["features_cni"]:
-                if feature_cni != "none" and feature_cni not in dataset["covariates"]:
+            for confound_correction_cni in exp["confound_correction_cni"]:
+                if confound_correction_cni != "none" and confound_correction_cni not in dataset["covariates"]:
                     errors.append(
-                        f"experiment {exp_name} feature_cni {feature_cni} must exist in either predefined  or custom datasets"
+                        f"experiment {exp_name} confound_correction_cni {confound_correction_cni} must exist in either predefined  or custom datasets"
                     )
             for target in exp["targets"]:
                 if target not in dataset["targets"]:
                     errors.append(
                         f"experiment {exp_name} target {target} must exist in either predefined  or custom datasets"
-                    )
-            for target_cni in exp["targets_cni"]:
-                if target_cni != "none" and target_cni not in dataset["covariates"]:
-                    errors.append(
-                        f"experiment {exp_name} targets_cni {target_cni} must exist in either predefined  or custom datasets"
-                    )
-            for matching in exp["matching"]:
-                if (
-                    matching not in ["none", "balanced"]
-                    and matching not in dataset["covariates"]
-                ):
-                    errors.append(
-                        f"experiment {exp_name} matching {matching} must exist in either predefined or custom datasets"
                     )
 
         # check that model exists in MODELS
@@ -84,11 +71,7 @@ def validate_details(config, MODELS, PREDEFINED_DATASETS, RegressionModel):
                     )
 
         # if target_cni is not none, then matching must be none and model must be regression
-        if exp["targets_cni"] != ["none"]:
-            if exp["matching"] != ['none']:
-                errors.append(
-                    f"experiment {exp_name} matching must be 'none' when {exp_name} targets_cni is not 'none'"
-                )
+        if exp["confound_correction_method"] in ["correct-y", "correct-both"]:
             for model in exp["models"]:
                 if not isinstance(MODELS[model], RegressionModel):
                     errors.append(

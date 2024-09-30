@@ -1,16 +1,18 @@
 """
 base_models.py
 ====================================
-
-
-
 """
 
-
+import json
+import os
+from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Literal
 
 import numpy as np
+import h5py
+import pandas as pd
+import yaml
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -19,6 +21,9 @@ from sklearn.metrics import (
     r2_score,
 )
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import ParameterGrid
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.linear_model import LinearRegression, Ridge, RidgeClassifier
 
 
 class BaseModel(ABC):
@@ -31,16 +36,28 @@ class BaseModel(ABC):
         """Initialize class using an sklearn model class that is initialized later."""
         self.model_generator = model_generator
         self.model_name = model_name
-
-    def score(self, x, y, idx_train, idx_val, idx_test, **kwargs):  # type: ignore
+        
+    def score(self, x, y, cni, idx_train, idx_val, idx_test, mode: Literal["normal", "with_cni", "only_cni"] = "normal", **kwargs):  # type: ignore
         """Provide a score for the model performance on the data."""
 
+        if mode == "normal":
+            x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
+            y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
+        elif mode == "with_cni":
+            # new x is x and cni concatenated
+            x_train = np.concatenate([x[idx_train], cni[idx_train]], axis=1)
+            x_val = np.concatenate([x[idx_val], cni[idx_val]], axis=1)
+            x_test = np.concatenate([x[idx_test], cni[idx_test]], axis=1)
+            y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
+        elif mode == "only_cni":
+            x_train, x_val, x_test = cni[idx_train], cni[idx_val], cni[idx_test]
+            y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
+        
         # generate model based on the given hyperparameters in kwargs
         model = self.model_generator(**kwargs)
 
         # scale features if scale_features is True
         x_scaler = StandardScaler() if self.scale_features else None
-        x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
         if x_scaler:
             x_train_scaled = x_scaler.fit_transform(x_train)
             x_val_scaled = x_scaler.transform(x_val)
@@ -52,7 +69,6 @@ class BaseModel(ABC):
 
         # scale targets if scale_targets is True
         y_scaler = StandardScaler() if self.scale_targets else None
-        y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
         if y_scaler:
             y_train_scaled = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
         else:
@@ -152,10 +168,6 @@ class RegressionModel(BaseModel):
         }
 
 
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.linear_model import Ridge, RidgeClassifier
-
-
 # here, you can add your own models
 MODELS = {
     "majority-classifier": ClassifierModel(
@@ -170,17 +182,6 @@ MODELS = {
     ),
     "ridge-reg": RegressionModel(lambda **args: Ridge(**args), "ridge regressor"),
 }
-
-
-import json
-import os
-from pathlib import Path
-
-import h5py
-import pandas as pd
-import yaml
-from sklearn.model_selection import ParameterGrid
-
 
 
 def get_existing_scores(scores_path_list):
@@ -208,18 +209,10 @@ def fit(
     model_name,
     grid,
     existing_scores_path_list,
+    confound_correction_method,
+    cni_path
 ):
-    """Fit a model to the data and save the scores to a file.
-    
-    Args:
-        features_path: path to the features file
-        targets_path: path to the targets file
-        split_path: path to the split file
-        scores_path: path to save the scores
-        model_name: name of the model
-        grid: grid of hyperparameters
-        existing_scores_path_list: list of paths to existing scores
-    """
+    """Fit a model to the data and save the scores to a file."""
     split = json.load(open(split_path))
     if "error" in split:
         Path(scores_path).touch()
@@ -230,6 +223,9 @@ def fit(
 
     fy = h5py.File(targets_path, "r")
     y = fy["data"]
+
+    fc = h5py.File(cni_path, "r")
+    cni = fc["data"]
 
     model = MODELS[model_name]
 
@@ -245,27 +241,29 @@ def fit(
 
         if not df_existing_scores.empty and not df_existing_scores_filtered().empty:
             score = dict(df_existing_scores_filtered().iloc[0])
-            # print("retrieved score", score)
         else:
             score = model.score(
                 x,
                 y,
+                cni,
                 idx_train=split["idx_train"],
                 idx_val=split["idx_val"],
                 idx_test=split["idx_test"],
+                mode = confound_correction_method if confound_correction_method in ['with_cni', 'only_cni'] else 'normal',
                 **params,
             )
             score.update(params)
-            score.update({"n": split["samplesize"], "s": split["seed"]})
-            # print("computed score", score)
+            score.update({
+                "n": split["samplesize"],
+                "s": split["seed"],
+            })
 
         scores.append(score)
 
     fy.close()
     fx.close()
-
+    fc.close()
     pd.DataFrame(scores).to_csv(scores_path, index=None)
-
 
 
 if __name__ == "__main__":
@@ -278,4 +276,6 @@ if __name__ == "__main__":
         snakemake.wildcards.model,
         snakemake.params.grid,
         snakemake.params.existing_scores,
+        snakemake.wildcards.confound_correction_method,
+        snakemake.input.covariates,
     )

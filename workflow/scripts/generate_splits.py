@@ -28,20 +28,10 @@ def generate_random_split(
     n_test: int = 1000,
     do_stratify: bool = False,
     seed: int = 0,
-    mask: Optional[np.ndarray] = False,
+    mask: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Generate a random split of the data.
-    
-    Args:
-        y: The target variable in the shape (n_samples,).
-        n_train: The number of training samples.
-        n_val: The number of validation samples.
-        n_test: The number of test samples.
-        do_stratify: Whether to stratify the split.
-        seed: The random seed.
-        mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
-    """
-    if mask is False:
+    """Generate a random split of the data."""
+    if mask is None:
         idx_originial = np.arange(len(y))
         idx = np.arange(len(y))
     else:
@@ -85,25 +75,7 @@ def generate_matched_split(
     seed: int = 0,
     mask: Optional[np.ndarray] = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Generate a matched split of the data.
-
-    Assumes a binary classification target variable, coded as 0 and 1, with 1 being the positive (patient) class and 0 being the negative (control) class.
-    Masking allows to only consider a subset of the data for matching, i.e. for exluding participants with similar disorders from the control group.
-
-    Args:
-        y: The target variable in the shape (n_samples,).
-        match: The covariates to use for matching, in the shape (n_samples, n_features).
-        n_train: The number of training samples.
-        n_val: The number of validation samples.
-        n_test: The number of test samples.
-        do_stratify: Whether to stratify the split.
-        seed: The random seed.
-        mask: The (optional) mask to apply to the data, e.g. for selecting only a subset of samples with a particular feature. Shape (n_samples,).
-    
-    Returns: The split: list of training, validation and test indices and some additional information.
-    Dict['idx_train', 'idx_val', 'idx_test', 'samplesize', 'seed', 'stratify','average_matching_score']
-    """
-
+    """Generate a matched split of the data."""
     random_state = np.random.RandomState(seed)
     mask = mask.copy()
     mask_orig = mask.copy()
@@ -161,9 +133,7 @@ def generate_matched_split(
     split.update({"average_matching_score": np.mean(matching_scores)})
     split[
         "samplesize"
-    ] *= (
-        2  # double the (patient group) sample size, since we have added a control group
-    )
+    ] *= 2  # double the (patient group) sample size, since we have added a control group
 
     return split
 
@@ -172,28 +142,16 @@ def write_splitfile(
     features_path,
     targets_path,
     split_path,
-    sampling_path,
-    sampling_type,
+    confounds_path,
+    confound_correction_method,
     n_train,
     n_val,
     n_test,
     seed,
     stratify=False,
+    balanced=False,
 ):
-    """Generate a split file for a given dataset.
-
-    Args:
-        features_path: path to the features file
-        targets_path: path to the targets file
-        split_path: path to save the split file
-        sampling_path: path to the sampling file
-        sampling_type: type of sampling, one of ['none', 'balanced', 'matched']
-        n_train: number of training samples
-        n_val: number of validation samples
-        n_test: number of test samples
-        seed: random seed
-        stratify: whether to stratify the split
-    """
+    """Generate a split file for a given dataset."""
     with h5py.File(features_path, "r") as f:
         x_mask = f["mask"][:]
 
@@ -201,26 +159,56 @@ def write_splitfile(
         y = f["data"][:]
         y_mask = f["mask"][:]
 
-    with h5py.File(sampling_path, "r") as f:
-        matching = f["data"][:]
-        f["mask"][:]
+    with h5py.File(confounds_path, "r") as f:
+        confounds = f["data"][:]
+        confounds_mask = f["mask"][:]
 
     xy_mask = np.logical_and(x_mask, y_mask)
+    xyc_mask = np.logical_and(xy_mask, confounds_mask)
 
     n_classes = len(np.unique(y[xy_mask]))
-    # in some cases, there will be on only controls / neutrals left after masking...
     if n_classes <= 1:
         with open(split_path, "w") as f:
             json.dump({"error": "insufficient samples"}, f, cls=NpEncoder, indent=0)
         return
 
-    
-    idx_all = np.arange(len(y))
-
     stratify = bool(stratify and n_classes <= 10)
 
-    # no special splitting procedure specified, use random split
-    if sampling_type == "none":
+    if confound_correction_method == "matching":
+        assert n_classes == 2, "Matching only works for binary classification, with 1 as the positive class."
+        if sum(xyc_mask[y == 1]) > n_train // 2 + n_val // 2 + n_test // 2:
+            split_dict = generate_matched_split(
+                y=y,
+                match=confounds,
+                n_train=n_train,
+                n_val=n_val,
+                n_test=n_test,
+                do_stratify=True,
+                mask=xyc_mask,
+                seed=seed,
+            )
+        else:
+            split_dict = {"error": "insufficient samples"}
+    else:
+        if balanced:
+            try:
+                idx_all = np.arange(len(y))
+                idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
+                    idx_all[xy_mask].reshape(-1, 1), y[xy_mask].astype(int)
+                )
+                idx_undersampled = idx_undersampled.reshape(-1)
+                xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
+            except ValueError as e:
+                error_message = f"""
+                undersampling failed, you may have too few samples in some classes.
+                are you using continuous labels by accident? 
+                CAVE: linear confound regression leads to continuous labels."
+                
+                fyi, there are {n_classes} unique classes 
+                and {len(y[xy_mask])} samples in your target file.
+                """
+                raise ValueError(error_message) from e
+
         if sum(xy_mask) >= n_train + n_val + n_test:
             split_dict = generate_random_split(
                 y=y,
@@ -234,70 +222,8 @@ def write_splitfile(
         else:
             split_dict = {"error": "insufficient samples"}
 
-    # use class-balanced split
-    elif sampling_type == "balanced":
-        try:
-            idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
-                idx_all[xy_mask].reshape(-1, 1), y[xy_mask].astype(int)
-            )
-            idx_undersampled = idx_undersampled.reshape(-1)
-            xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
-        except ValueError as e:
-            error_message = f"""
-            undersampling failed, you may have too few samples in some classes.
-            are you using continuous labels by accident? 
-            CAVE: linear confound regression leads to continuous labels."
-            
-            fyi, there are {n_classes} unique classes 
-            and {len(y[xy_mask])} samples in your target file.
-            """
-            raise ValueError(error_message) from e
-
-        if sum(xy_mask) >= n_train + n_val + n_test:
-            split_dict = generate_random_split(
-                y=y,
-                n_train=n_train,
-                n_val=n_val,
-                n_test=n_test,
-                do_stratify=True,
-                mask=xy_mask,
-                seed=seed,
-            )
-        else:
-            split_dict = {"error": "insufficient samples"}
-
-    # matched split
-    elif len(matching) == len(y):
-        assert (
-            n_classes == 2
-        ), "Matching only works for binary classification, with 1 as the positive class."
-
-        m_mask = (
-            np.isfinite(matching)
-            if len(matching.shape) == 1
-            else np.all(np.isfinite(matching), 1)
-        )
-        xy_mask = np.logical_and(xy_mask, m_mask)
-
-        if sum(xy_mask[y == 1]) > n_train // 2 + n_val // 2 + n_test // 2:
-            split_dict = generate_matched_split(
-                y=y,
-                match=matching,
-                n_train=n_train,
-                n_val=n_val,
-                n_test=n_test,
-                do_stratify=True,
-                mask=xy_mask,
-                seed=seed,
-            )
-        else:
-            split_dict = {"error": "insufficient samples"}
-
-    else:
-        raise Exception("invalid sampling file")
-
     # indices must be sorted for hdf5
-    if not 'error' in split_dict:
+    if 'error' not in split_dict:
         for set_name in ["idx_train", "idx_val", "idx_test"]:
              split_dict[set_name] = sorted(split_dict[set_name])
 
@@ -312,16 +238,16 @@ if __name__ == "__main__":
     n_val = n_test = max(n_val, snakemake.params.val_test_min) if snakemake.params.val_test_min else n_val
     assert n_train > 1 and n_val > 1 and n_test > 1
 
-
     write_splitfile(
         features_path=snakemake.input.features,
         targets_path=snakemake.input.targets,
         split_path=snakemake.output.split,
-        sampling_path=snakemake.input.matching,
-        sampling_type=snakemake.wildcards.matching,
+        confounds_path=snakemake.input.cni,
+        confound_correction_method=snakemake.wildcards.confound_correction_method,
         n_train=n_train,
         n_val=n_val,
         n_test=n_test,
         seed=int(snakemake.wildcards.seed),
         stratify=snakemake.params.stratify,
+        balanced=True if snakemake.wildcards.balanced == 'True' else False,
     )
