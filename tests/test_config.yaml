@@ -8,11 +8,20 @@ experiments:
   test_regression:
     dataset: "pytest"
     features: ["example-features-a",]
-    features_cni: ["example-covariates-of-no-interest",]
     targets: ["example-targets",]
-    targets_cni: ["example-covariates-of-no-interest",]
-    matching: ["none",]
+    confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest"]
+    balanced: false
     models: ["ridge-reg",]
+    grid: "default"
+  test_classification:
+    dataset: "pytest"
+    features: ["example-features-b",]
+    targets: ["example-targets",]
+    confound_correction_method: ["matching", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest"]
+    balanced: true
+    models: ["ridge-cls",]
     grid: "default"
 
 custom_datasets:

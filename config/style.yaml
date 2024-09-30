@@ -3,12 +3,12 @@
 extrapolate_to: 100000
 
 figure_titles:
-  individual: "{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
-  features: "all-features (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
-  targets: "{features} (cni={features_cni}) vs all-targets (cni={targets_cni}) with matching={matching} using {model}"
-  models: "{features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching}"
-  cni: "{features} vs {targets} using {model}"
-  hyperparameters: "best hyperparameters - {features} (cni={features_cni}) vs {targets} (cni={targets_cni}) with matching={matching} using {model}"
+  individual: "{features} vs {targets}; confound correction={confound_correction_method}; cni={confound_correction_cni}; {model}"
+  features: "all-features vs {targets}; confound correction={confound_correction_method}; cni={confound_correction_cni}; {model}"
+  targets: "{features} vs all-targets; confound correction={confound_correction_method}; {model}"
+  models: "{features} vs {targets}; confound correction={confound_correction_method}"
+  cni: "{features} vs {targets}; {model}; confound correction={confound_correction_method}"
+  hyperparameters: "best hyperparameters - {features} vs {targets}; confound correction={confound_correction_method}; cni={confound_correction_cni}; {model}"
 
 hyperparameter_scales:
 # by default linear, can be turned to log scale here

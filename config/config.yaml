@@ -13,10 +13,10 @@ experiments: {}
   # mnist_benchmark:
   #   dataset: "mnist"
   #   features: ["pixel",]
-  #   features_cni: ["none",]
   #   targets: ["ten-digits","odd-even"]
-  #   targets_cni: ["none",]
-  #   matching: ["none",]
+  #   confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
+  #   confound_correction_cni: ["example-covariates-of-no-interest"]
+  #   balanced: false
   #   models: ["ridge-cls",]
   #   grid: "default"
   # another_set_of_experiments:

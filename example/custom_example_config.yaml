@@ -10,19 +10,19 @@ experiments:
   example_regression:
     dataset: "example-dataset"
     features: ["example-features-a","example-features-b"]
-    features_cni: ["example-covariates-of-no-interest",]
     targets: ["example-targets",]
-    targets_cni: ["none",]
-    matching: ["none",]
+    confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest"]
+    balanced: false
     models: ["ridge-reg",]
     grid: "default"
   example_classification:
     dataset: "example-dataset"
     features: ["example-features-b",]
-    features_cni: ["none",]
     targets: ["example-targets",]
-    targets_cni: ["none",]
-    matching: ["none",]
+    confound_correction_method: ["matching", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest"]
+    balanced: true
     models: ["ridge-cls",]
     grid: "default"
 
