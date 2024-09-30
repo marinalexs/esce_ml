@@ -43,14 +43,14 @@ experiments:
         # (str) Name of dataset to use.
         features: ["pixel",]
         # (list of str) List of feature sets to use.
-        features_cni: ["none",]
-        # (list of str) List of confounder sets to remove from the features.
         targets: ["ten-digits","odd-even"]
         # (list of str) List of target variables to use.
-        targets_cni: ["none",] ]
-        # (list of str) List of confounder sets to remove from the targets.
-        matching: ["none",]
-        # (list of str) List of confounder sets to create matched cohorts.
+        confound_correction_method: ["correct-x", "correct-y", "correct-both", "matching", "with-cni", "only-cni", "none"]
+        # (list of str) List of confound correction methods.
+        confound_correction_cni: ["cni_set_1", "cni_set_2", "none"]
+        # (list of str) List of covariate-of-no-interest datasets to use for confound correction.
+        balanced: false
+        # (bool) In classification tasks, balance data via undersampling.
         models: ["ridge-cls",]
         # (list of str) List of models to evaluate.
         grid: "default"
