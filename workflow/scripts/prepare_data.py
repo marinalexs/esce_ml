@@ -6,6 +6,7 @@ import pandas as pd
 
 from sklearn.datasets import fetch_openml
 
+
 predefined_datasets = {
     "mnist": {
         "features": {
@@ -28,6 +29,7 @@ predefined_datasets = {
     }
 }
 
+
 def prepare_data(
     out_path: str,
     dataset: str,
@@ -35,57 +37,73 @@ def prepare_data(
     variant: str,
     custom_datasets: dict,
 ):
-    """Prepare a dataset for use in the workflow.
+    """
+    Prepare a dataset for use in the workflow by loading, processing, and saving it in HDF5 format.
 
-    Reads data from csv, tsv, or npy files, does some processing, and saves result as hdf5.
+    This function handles predefined datasets and custom datasets. It reads data from CSV, TSV, or NPY files,
+    performs necessary preprocessing, applies masks to filter valid samples, and saves the processed data
+    along with the mask into an HDF5 file.
 
     Args:
-        out_path: path to save the resulting hdf5 file
-        dataset: name of the dataset
-        features_targets_covariates: whether to load features, targets or covariates
-        variant: variant of the dataset
-        custom_datasets: dictionary of custom datasets
+        out_path (str): Path to save the resulting HDF5 file.
+        dataset (str): Name of the dataset to prepare.
+        features_targets_covariates (str): Type of data to load ('features', 'targets', or 'covariates').
+        variant (str): Specific variant of the dataset to load.
+        custom_datasets (dict): Dictionary containing paths to custom datasets.
     """
+    # Check if the dataset is predefined and the variant exists
     if (
         dataset in predefined_datasets
         and variant in predefined_datasets[dataset][features_targets_covariates]
     ):
+        # Load data using the predefined lambda function
         data = predefined_datasets[dataset][features_targets_covariates][variant]()
     elif features_targets_covariates == "covariates" and variant == 'none':
+        # Handle cases where no covariates are needed
         data = np.array([])
     else:
+        # Load custom datasets based on file extension
         in_path = Path(custom_datasets[dataset][features_targets_covariates][variant])
         if in_path.suffix == ".csv":
             data = pd.read_csv(in_path).values
-        if in_path.suffix == ".tsv":
+        elif in_path.suffix == ".tsv":
             data = pd.read_csv(in_path, delimiter="\t").values
-        if in_path.suffix == ".npy":
+        elif in_path.suffix == ".npy":
             data = np.load(in_path)
-
+        else:
+            raise ValueError(f"Unsupported file format: {in_path.suffix}")
+    
+    # Apply appropriate masking based on the type of data
     if features_targets_covariates == "targets":
         data = data.reshape(-1)
         mask = np.isfinite(data)
     elif features_targets_covariates == "features":
-        assert np.ndim(data) == 2
+        assert np.ndim(data) == 2, "Features data must be two-dimensional."
         mask = np.isfinite(data).all(axis=1)
-    elif features_targets_covariates == "covariates" and len(data) > 0:
+    elif features_targets_covariates == "covariates" and data.size > 0:
         if np.ndim(data) == 1:
             data = data.reshape(-1, 1)
         mask = np.isfinite(data).all(axis=1)
     else:
-        mask = np.array([])
-
+        mask = np.array([], dtype=bool)
+    
+    # Save the processed data and mask to an HDF5 file
     with h5py.File(out_path, "w") as f:
         f.create_dataset("data", data=data)
         f.create_dataset("mask", data=mask)
 
+
 if __name__ == "__main__":
+    """
+    Entry point for the script when executed as a standalone program.
+    Parses parameters from Snakemake and initiates the data preparation process.
+    """
     prepare_data(
-        snakemake.output.out,
-        snakemake.wildcards.dataset,
-        snakemake.wildcards.features_or_targets
+        out_path=snakemake.output.out,
+        dataset=snakemake.wildcards.dataset,
+        features_targets_covariates=snakemake.wildcards.features_or_targets
         if hasattr(snakemake.wildcards, "features_or_targets")
         else "covariates",
-        snakemake.wildcards.name,
-        snakemake.params.custom_datasets,
+        variant=snakemake.wildcards.name,
+        custom_datasets=snakemake.params.custom_datasets,
     )
