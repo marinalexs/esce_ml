@@ -6,8 +6,8 @@ Aggregates the scores for each hyperparameter combination and selects the best
 hyperparameter combination, grouped by sample size and seed.
 
 This script reads multiple score files, identifies the best-performing hyperparameter
-combination based on a single validation metric (either R² or accuracy), and consolidates 
-the results into a single statistics CSV file.
+combination based on validation metrics (R² or accuracy), and consolidates the results
+into a single statistics CSV file.
 
 """
 
@@ -26,9 +26,9 @@ def aggregate(
     Aggregate scores from multiple files and identify the best hyperparameter combinations.
 
     For each score file in `score_path_list`, the function identifies the hyperparameter
-    combination with the highest validation metric (either R² or accuracy) for each group 
-    defined by sample size (`n`) and seed (`s`). It then compiles these best scores into 
-    a single CSV file at `stats_path`.
+    combination with the highest validation metric (R² or accuracy) for each group defined
+    by sample size (`n`) and seed (`s`). It then compiles these best scores into a single
+    CSV file at `stats_path`.
 
     Args:
         score_path_list (List[str]): List of file paths to the input score CSV files.
@@ -52,12 +52,7 @@ def aggregate(
     df = pd.concat(df_list, axis=0, ignore_index=True)
 
     # Determine the validation metric to use (R² for regression, accuracy for classification)
-    if "r2_val" in df.columns:
-        metric = "r2_val"
-    elif "acc_val" in df.columns:
-        metric = "acc_val"
-    else:
-        raise ValueError("No valid metric (r2_val or acc_val) found in the input files.")
+    metric = "r2_val" if "r2_val" in df.columns else "acc_val"
 
     # Group the DataFrame by sample size ('n') and seed ('s')
     # For each group, identify the index of the row with the maximum validation metric
