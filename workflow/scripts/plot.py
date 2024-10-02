@@ -37,28 +37,30 @@ def process_results(available_results: list) -> pd.DataFrame:
         pd.DataFrame: DataFrame containing processed results with extracted metadata.
     """
     df = pd.DataFrame(available_results, columns=["full_path"])
+    
+    # Define expected columns
+    expected_columns = [
+        "dataset",
+        "model",
+        "features",
+        "target",
+        "confound_correction_method",
+        "confound_correction_cni",
+        "balanced",
+        "grid",
+    ]
+    
     # Extract metadata by parsing the file paths
-    df[
-        [
-            "dataset",
-            "model",
-            "features",
-            "target",
-            "confound_correction_method",
-            "confound_correction_cni",
-            "balanced",
-            "grid",
-        ]
-    ] = (
-        df["full_path"]
-        .str.replace("results/", "")
-        .str.replace("statistics/", "")
-        .str.replace(".stats.json", "")
-        .str.replace("/", "_")
-        .str.split("_", expand=True)
-    )
+    def extract_metadata(path):
+        parts = Path(path).parts[-3].split('_')
+        return pd.Series(parts + [None] * (len(expected_columns) - len(parts)), index=expected_columns)
+    
+    df[expected_columns] = df["full_path"].apply(extract_metadata)
+    
     # Combine confound correction method and CNI into a single column
-    df["cni"] = df[["confound_correction_method", "confound_correction_cni"]].agg("-".join, axis=1)
+    df["cni"] = df.apply(lambda row: f"{row['confound_correction_method']}-{row['confound_correction_cni']}" 
+                         if pd.notna(row['confound_correction_method']) and pd.notna(row['confound_correction_cni']) 
+                         else None, axis=1)
     return df
 
 
@@ -98,16 +100,16 @@ def plot(
         df_ = pd.DataFrame(
             {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"]}
         )
-        df_["model"] = row.model
-        df_["features"] = row.features
-        df_["target"] = row.target
-        df_["cni"] = row.cni
+        for col in ['model', 'features', 'target', 'cni', 'dataset']:
+            if col in row.index:
+                df_[col] = row[col]
         data.append(df_)
 
     # Combine all individual DataFrames into one
     if len(data) > 0:
         data = pd.concat(data, axis=0, ignore_index=True)
-        data = data.sort_values(color_variable)
+        if color_variable and color_variable in data.columns:
+            data = data.sort_values(color_variable)
     else:
         # Create an empty file if there is no data to plot
         Path(output_filename).touch()
@@ -122,8 +124,8 @@ def plot(
     chart = alt.Chart(data).mark_line().encode(
         x=alt.X('n:Q', scale=alt.Scale(type='log')),
         y=alt.Y('y:Q', scale=alt.Scale(zero=True)),
-        color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4'),
-        strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable else alt.value([1, 0])
+        color=alt.Color(f'{color_variable}:N') if color_variable and color_variable in data.columns else alt.value('#1f77b4'),
+        strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable and linestyle_variable in data.columns else alt.value([1, 0])
     )
 
     # Add error bars representing the standard deviation
@@ -131,7 +133,7 @@ def plot(
         x='n:Q',
         y='y:Q',
         yError=alt.YError('y_std:Q'),
-        color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4')
+        color=alt.Color(f'{color_variable}:N') if color_variable and color_variable in data.columns else alt.value('#1f77b4')
     )
 
     # Combine the main chart with error bars
@@ -139,7 +141,12 @@ def plot(
 
     # Add exponential fit lines from bootstrap data
     for _, row in df.iterrows():
-        with open(row.full_path.replace("stats.json", "bootstrap.json")) as f:
+        bootstrap_file = row.full_path.replace("stats.json", "bootstrap.json")
+        if not os.path.exists(bootstrap_file):
+            print(f"Bootstrap file not found: {bootstrap_file}")
+            continue
+        
+        with open(bootstrap_file) as f:
             p = yaml.load(f, Loader=loader)
 
         if not p:
@@ -152,17 +159,17 @@ def plot(
             y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
             exp_df = pd.DataFrame({'n': x_exp, 'y': y_exp})
             # Annotate with color and linestyle variables if provided
-            if color_variable:
-                exp_df[color_variable] = getattr(row, color_variable)
-            if linestyle_variable:
-                exp_df[linestyle_variable] = getattr(row, linestyle_variable)
+            if color_variable and color_variable in row.index:
+                exp_df[color_variable] = row[color_variable]
+            if linestyle_variable and linestyle_variable in row.index:
+                exp_df[linestyle_variable] = row[linestyle_variable]
 
             # Create the exponential fit line with reduced opacity
             exp_line = alt.Chart(exp_df).mark_line(opacity=0.2).encode(
                 x='n:Q',
                 y='y:Q',
-                color=alt.Color(f'{color_variable}:N') if color_variable else alt.value('#1f77b4'),
-                strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable else alt.value([1, 0])
+                color=alt.Color(f'{color_variable}:N') if color_variable and color_variable in exp_df.columns else alt.value('#1f77b4'),
+                strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable and linestyle_variable in exp_df.columns else alt.value([1, 0])
             )
             combined_chart += exp_line
 

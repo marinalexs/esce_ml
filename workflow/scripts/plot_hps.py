@@ -38,10 +38,18 @@ def plot(
     # Load the scores into a DataFrame
     scores = pd.read_csv(stats_filename)
 
+    # Check if the DataFrame is empty
+    if scores.empty:
+        output_filename.touch()
+        return
+
     # List of hyperparameters to plot
     hp_names = list(grid.keys())
     # Determine the metric to use based on available columns
-    metric = "r2_val" if "r2_val" in scores.columns else "acc_val"
+    metric = "r2_val" if "r2_val" in scores.columns else "acc_val" if "acc_val" in scores.columns else None
+
+    if metric is None:
+        raise ValueError("Neither 'r2_val' nor 'acc_val' found in the DataFrame")
 
     # Reshape the DataFrame for plotting
     df = scores.melt(
