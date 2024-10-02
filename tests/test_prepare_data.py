@@ -2,8 +2,9 @@ import h5py
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
-from workflow.scripts.prepare_data import prepare_data
+from workflow.scripts.prepare_data import prepare_data, predefined_datasets
 
 TEST_CASES = [
     ("tsv", "targets"),
