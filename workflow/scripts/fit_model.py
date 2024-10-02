@@ -373,8 +373,13 @@ def fit(
 
     scores = []
     with h5py.File(features_path, "r") as fx, h5py.File(targets_path, "r") as fy, h5py.File(cni_path, "r") as fc:
-        x, y, cni = fx["data"], fy["data"], fc["data"]
-        y = y[:, np.newaxis] if len(y.shape) == 1 else y
+        x, cni = fx["data"], fc["data"]
+        
+        # Load target data
+        y = fy["data"][:]
+        
+        # Ensure y is 2-dimensional
+        y = y.reshape(-1, 1) if y.ndim == 1 else y
 
         # Iterate over all combinations of hyperparameters
         for params in ParameterGrid(grid[model_name]):
