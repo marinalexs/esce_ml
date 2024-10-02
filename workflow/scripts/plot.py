@@ -9,6 +9,7 @@ import yaml
 import json
 import re
 import altair as alt
+import traceback
 
 # Configure YAML loader to correctly parse floating-point numbers
 loader = yaml.SafeLoader
@@ -115,10 +116,14 @@ def plot(
         Path(output_filename).touch()
         return
     
-    # Clip y-values to avoid extreme outliers in the plot
-    data['y'] = data['y'].clip(lower=-1)
+    # Convert 'y_std' column to numeric, replacing 'NaN' strings with actual NaN values
+    data['y_std'] = pd.to_numeric(data['y_std'], errors='coerce')
+
+    # Now clip the numeric values
     data['y_std'] = data['y_std'].clip(upper=1)
-    print(data)
+
+    # Replace NaN values in y_std with 0
+    data['y_std'] = data['y_std'].fillna(0)
 
     # Create the main line chart
     chart = alt.Chart(data).mark_line().encode(
@@ -127,6 +132,7 @@ def plot(
         color=alt.Color(f'{color_variable}:N') if color_variable and color_variable in data.columns else alt.value('#1f77b4'),
         strokeDash=alt.StrokeDash(f'{linestyle_variable}:N') if linestyle_variable and linestyle_variable in data.columns else alt.value([1, 0])
     )
+
 
     # Add error bars representing the standard deviation
     error_bars = alt.Chart(data).mark_errorbar(ticks=True).encode(
@@ -142,6 +148,7 @@ def plot(
     # Add exponential fit lines from bootstrap data
     for _, row in df.iterrows():
         bootstrap_file = row.full_path.replace("stats.json", "bootstrap.json")
+        print(bootstrap_file)
         if not os.path.exists(bootstrap_file):
             print(f"Bootstrap file not found: {bootstrap_file}")
             continue
@@ -153,10 +160,20 @@ def plot(
             continue
 
         for p_ in p:
-            # Generate x-values for the exponential fit
-            x_exp = np.logspace(np.log10(128), np.log10(10**max_x), num=100)
-            # Compute y-values based on the fitted power law
-            y_exp = p_[0] * np.power(x_exp, -p_[1]) + p_[2]
+            # Add debugging print statements
+            print(f"p_: {p_}")
+            print(f"Types: {[type(item) for item in p_]}")
+            
+            try:
+                # Generate x-values for the exponential fit
+                x_exp = np.logspace(np.log10(128), np.log10(10**max_x), num=100)
+                # Compute y-values based on the fitted power law
+                y_exp = float(p_[0]) * np.power(x_exp, -float(p_[1])) + float(p_[2])
+            except Exception as e:
+                print(f"Error occurred: {e}")
+                print(f"Traceback: {traceback.format_exc()}")
+                continue  # Skip this iteration if an error occurs
+            
             exp_df = pd.DataFrame({'n': x_exp, 'y': y_exp})
             # Annotate with color and linestyle variables if provided
             if color_variable and color_variable in row.index:

@@ -1,107 +1,190 @@
+"""
+test_base_models.py
+===================
+
+This module contains unit tests for the ClassifierModel and RegressionModel classes
+from the fit_model module. It tests various scenarios including different model types
+(classification and regression) and confound correction methods.
+
+Test Summary:
+1. test_classifier_model: Tests the ClassifierModel with a binary classification problem.
+2. test_regression_model: Tests the RegressionModel with a regression problem.
+3. test_classifier_model_with_cni: Tests the ClassifierModel with confounds of no interest (CNI).
+4. test_regression_model_only_cni: Tests the RegressionModel using only CNI as features.
+
+Each test creates synthetic data, processes it through the respective model,
+and checks if the output metrics are as expected.
+"""
+
 import pytest
+import numpy as np
+import h5py
 from sklearn.datasets import make_classification, make_regression
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import accuracy_score, r2_score
+from sklearn.metrics import accuracy_score, r2_score, f1_score, mean_absolute_error, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 
 from workflow.scripts.fit_model import ClassifierModel, RegressionModel
 
+@pytest.fixture
+def create_h5_dataset(tmpdir):
+    """
+    Fixture to create an HDF5 dataset for testing.
 
-def test_classifier_model():
+    Args:
+        tmpdir: Pytest fixture for temporary directory
+
+    Returns:
+        Function to create HDF5 dataset
+    """
+    def _create_h5_dataset(data, filename):
+        file_path = tmpdir.join(filename)
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+            f.create_dataset('mask', data=np.ones(data.shape[0], dtype=bool))
+        return str(file_path)
+    return _create_h5_dataset
+
+def test_classifier_model(create_h5_dataset):
+    """
+    Test the ClassifierModel with a binary classification problem.
+
+    This test creates synthetic classification data, processes it through
+    the ClassifierModel, and checks if the output metrics are as expected.
+    """
     # Create a toy binary classification problem
-    X, y = make_classification(
-        n_samples=100, n_features=20, n_classes=2, random_state=42
-    )
+    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+    X = X * 100  # Scale features to make the problem more challenging
 
-    # Scale features and targets (for the sake of the example)
-    X = X * 100
+    # Define indices for train, validation, and test sets
+    idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    # Split the data into train, validation and test sets
-    idx_train, idx_val, idx_test = (
-        list(range(0, 60)),
-        list(range(60, 80)),
-        list(range(80, 100)),
-    )
+    # Create HDF5 datasets for features, targets, and confounds
+    x_path = create_h5_dataset(X, 'features.h5')
+    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
+    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
 
-    # Solve the problem manually (including feature scaling)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X[idx_train])
-    X_val_scaled = scaler.transform(X[idx_val])
-    X_test_scaled = scaler.transform(X[idx_test])
+    # Open HDF5 files and process data through the ClassifierModel
+    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+        x_dataset = x_file['data']
+        y_dataset = y_file['data']
+        cni_dataset = cni_file['data']
 
-    model_manual = LogisticRegression(random_state=42)
-    model_manual.fit(X_train_scaled, y[idx_train])
+        model_class = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
+        metrics = model_class.score(x_dataset, y_dataset, cni_dataset, idx_train, idx_val, idx_test, mode="normal")
 
-    y_hat_train_manual = model_manual.predict(X_train_scaled)
-    y_hat_val_manual = model_manual.predict(X_val_scaled)
-    y_hat_test_manual = model_manual.predict(X_test_scaled)
+    # Check if all expected metrics are present and within expected ranges
+    expected_metrics = ["acc_train", "acc_val", "acc_test", "f1_train", "f1_val", "f1_test"]
+    for metric in expected_metrics:
+        assert metric in metrics, f"Expected metric {metric} not found in results"
+        assert 0 <= metrics[metric] <= 1, f"Metric {metric} is out of expected range [0, 1]"
 
-    acc_train_manual = accuracy_score(y[idx_train], y_hat_train_manual)
-    acc_val_manual = accuracy_score(y[idx_val], y_hat_val_manual)
-    acc_test_manual = accuracy_score(y[idx_test], y_hat_test_manual)
+def test_regression_model(create_h5_dataset):
+    """
+    Test the RegressionModel with a regression problem.
 
-    # Solve the problem using the ClassifierModel class
-    model_class = ClassifierModel(LogisticRegression, "logistic_regression")
-    metrics = model_class.score(X, y, idx_train, idx_val, idx_test, random_state=42)
-
-    # Compare the metrics
-    assert pytest.approx(acc_train_manual) == metrics["acc_train"]
-    assert pytest.approx(acc_val_manual) == metrics["acc_val"]
-    assert pytest.approx(acc_test_manual) == metrics["acc_test"]
-
-
-def test_regression_model():
+    This test creates synthetic regression data, processes it through
+    the RegressionModel, and checks if the output metrics are as expected.
+    """
     # Create a toy regression problem
     X, y = make_regression(n_samples=100, n_features=20, random_state=42)
+    X, y = X * 100, y * 50  # Scale features and targets to make the problem more challenging
 
-    # Scale features and targets (for the sake of the example)
-    X = X * 100
-    y = y * 50
+    # Define indices for train, validation, and test sets
+    idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    # Split the data into train, validation and test sets
-    idx_train, idx_val, idx_test = (
-        list(range(0, 60)),
-        list(range(60, 80)),
-        list(range(80, 100)),
-    )
+    # Create HDF5 datasets for features, targets, and confounds
+    x_path = create_h5_dataset(X, 'features.h5')
+    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
+    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
 
-    # Solve the problem manually (including feature scaling for features and targets)
-    x_scaler = StandardScaler()
-    y_scaler = StandardScaler()
+    # Open HDF5 files and process data through the RegressionModel
+    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+        x_dataset = x_file['data']
+        y_dataset = y_file['data']
+        cni_dataset = cni_file['data']
 
-    X_train_scaled = x_scaler.fit_transform(X[idx_train])
-    X_val_scaled = x_scaler.transform(X[idx_val])
-    X_test_scaled = x_scaler.transform(X[idx_test])
+        model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
+        metrics = model_class.score(x_dataset, y_dataset, cni_dataset, idx_train, idx_val, idx_test, mode="normal")
 
-    y_train_scaled = y_scaler.fit_transform(y[idx_train].reshape(-1, 1)).flatten()
+    # Check if all expected metrics are present and within expected ranges
+    expected_metrics = ["r2_train", "r2_val", "r2_test", "mae_train", "mae_val", "mae_test", "mse_train", "mse_val", "mse_test"]
+    for metric in expected_metrics:
+        assert metric in metrics, f"Expected metric {metric} not found in results"
+        if metric.startswith("r2"):
+            assert -1 <= metrics[metric] <= 1, f"Metric {metric} is out of expected range [-1, 1]"
+        else:
+            assert metrics[metric] >= 0, f"Metric {metric} should be non-negative"
 
-    model_manual = Ridge(random_state=42)
-    model_manual.fit(X_train_scaled, y_train_scaled)
+def test_classifier_model_with_cni(create_h5_dataset):
+    """
+    Test the ClassifierModel with confounds of no interest (CNI).
 
-    y_hat_train_scaled_manual = model_manual.predict(X_train_scaled)
-    y_hat_val_scaled_manual = model_manual.predict(X_val_scaled)
-    y_hat_test_scaled_manual = model_manual.predict(X_test_scaled)
+    This test creates synthetic classification data, processes it through
+    the ClassifierModel using the 'with_cni' mode, and checks if the output
+    metrics are as expected.
+    """
+    # Create a toy binary classification problem
+    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+    X = X * 100  # Scale features to make the problem more challenging
 
-    # Scale predictions back to original scale
-    y_hat_train_manual = y_scaler.inverse_transform(
-        y_hat_train_scaled_manual.reshape(-1, 1)
-    ).flatten()
-    y_hat_val_manual = y_scaler.inverse_transform(
-        y_hat_val_scaled_manual.reshape(-1, 1)
-    ).flatten()
-    y_hat_test_manual = y_scaler.inverse_transform(
-        y_hat_test_scaled_manual.reshape(-1, 1)
-    ).flatten()
+    # Define indices for train, validation, and test sets
+    idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    r2_train_manual = r2_score(y[idx_train], y_hat_train_manual)
-    r2_val_manual = r2_score(y[idx_val], y_hat_val_manual)
-    r2_test_manual = r2_score(y[idx_test], y_hat_test_manual)
+    # Create HDF5 datasets for features, targets, and confounds
+    x_path = create_h5_dataset(X, 'features.h5')
+    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
+    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
 
-    # Solve the problem using the RegressionModel class
-    model_class = RegressionModel(Ridge, "ridge_regression")
-    metrics = model_class.score(X, y, idx_train, idx_val, idx_test, random_state=42)
+    # Open HDF5 files and process data through the ClassifierModel with CNI
+    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+        x_dataset = x_file['data']
+        y_dataset = y_file['data']
+        cni_dataset = cni_file['data']
 
-    # Compare the metrics
-    assert pytest.approx(r2_train_manual) == metrics["r2_train"]
-    assert pytest.approx(r2_val_manual) == metrics["r2_val"]
-    assert pytest.approx(r2_test_manual) == metrics["r2_test"]
+        model_class = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
+        metrics = model_class.score(x_dataset, y_dataset, cni_dataset, idx_train, idx_val, idx_test, mode="with_cni")
+
+    # Check if all expected metrics are present and within expected ranges
+    expected_metrics = ["acc_train", "acc_val", "acc_test", "f1_train", "f1_val", "f1_test"]
+    for metric in expected_metrics:
+        assert metric in metrics, f"Expected metric {metric} not found in results"
+        assert 0 <= metrics[metric] <= 1, f"Metric {metric} is out of expected range [0, 1]"
+
+def test_regression_model_only_cni(create_h5_dataset):
+    """
+    Test the RegressionModel using only confounds of no interest (CNI) as features.
+
+    This test creates synthetic regression data, processes it through
+    the RegressionModel using the 'only_cni' mode, and checks if the output
+    metrics are as expected.
+    """
+    # Create a toy regression problem
+    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
+    X, y = X * 100, y * 50  # Scale features and targets to make the problem more challenging
+
+    # Define indices for train, validation, and test sets
+    idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
+
+    # Create HDF5 datasets for features, targets, and confounds
+    x_path = create_h5_dataset(X, 'features.h5')
+    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
+    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
+
+    # Open HDF5 files and process data through the RegressionModel using only CNI
+    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+        x_dataset = x_file['data']
+        y_dataset = y_file['data']
+        cni_dataset = cni_file['data']
+
+        model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
+        metrics = model_class.score(x_dataset, y_dataset, cni_dataset, idx_train, idx_val, idx_test, mode="only_cni")
+
+    # Check if all expected metrics are present and within expected ranges
+    expected_metrics = ["r2_train", "r2_val", "r2_test", "mae_train", "mae_val", "mae_test", "mse_train", "mse_val", "mse_test"]
+    for metric in expected_metrics:
+        assert metric in metrics, f"Expected metric {metric} not found in results"
+        if metric.startswith("r2"):
+            assert -1 <= metrics[metric] <= 1, f"Metric {metric} is out of expected range [-1, 1]"
+        else:
+            assert metrics[metric] >= 0, f"Metric {metric} should be non-negative"

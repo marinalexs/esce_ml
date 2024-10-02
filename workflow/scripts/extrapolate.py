@@ -212,7 +212,7 @@ def extrapolate(
                 "p_bootstrap_025": [np.nan] * 3,
             }
         )
-        p_bootstrap = None
+        p_bootstrap = []
 
     # Add bootstrap mean and standard deviation to the result
     y_bootstrap_array = np.array(y_bootstrap)
