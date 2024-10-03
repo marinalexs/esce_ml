@@ -8,9 +8,10 @@ implementations, and functions to fit models and record their performance metric
 
 import json
 import os
+import logging
 from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Literal, Union
+from typing import Any, Callable, Dict, List, Literal, Union, Optional, Tuple
 
 import numpy as np
 import h5py
@@ -26,6 +27,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.linear_model import Ridge, RidgeClassifier
+from sklearn.base import BaseEstimator
+
+# Set up logging
+log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
+logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class BaseModel(ABC):
@@ -39,16 +45,30 @@ class BaseModel(ABC):
     scale_features: bool
     scale_targets: bool
 
-    def __init__(self, model_generator: Callable[..., Any], model_name: str):
+    def __init__(self, model_generator: Callable[..., BaseEstimator], model_name: str):
         """
         Initialize the BaseModel with a model generator and name.
 
         Args:
-            model_generator (Callable[..., Any]): A callable that generates the model instance.
+            model_generator (Callable[..., BaseEstimator]): A callable that generates the model instance.
             model_name (str): Descriptive name of the model.
         """
-        self.model_generator = model_generator
-        self.model_name = model_name
+        self.model_generator: Callable[..., BaseEstimator] = model_generator
+        self.model_name: str = model_name
+
+    def _check_data_validity(self, *arrays: np.ndarray) -> None:
+        """
+        Check for NaN or infinite values in the input arrays.
+
+        Args:
+            *arrays: Variable number of numpy arrays to check.
+
+        Raises:
+            ValueError: If any NaN or infinite values are found.
+        """
+        for arr in arrays:
+            if np.any(np.isnan(arr)) or np.any(np.isinf(arr)):
+                raise ValueError("Input data contains NaN or infinite values.")
 
     def score(
         self,
@@ -82,6 +102,9 @@ class BaseModel(ABC):
             x, y, cni, idx_train, idx_val, idx_test, mode
         )
 
+        # Check for NaN or infinite values
+        self._check_data_validity(x_train, x_val, x_test, y_train, y_val, y_test)
+
         # Initialize and fit the model
         model = self.model_generator(**kwargs)
         x_train_scaled, x_val_scaled, x_test_scaled = self._scale_features(x_train, x_val, x_test)
@@ -106,7 +129,7 @@ class BaseModel(ABC):
         idx_val: List[int],
         idx_test: List[int],
         mode: Literal["normal", "with_cni", "only_cni"],
-    ) -> tuple:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Select features and targets based on the specified mode.
 
@@ -130,6 +153,8 @@ class BaseModel(ABC):
             x_test = np.concatenate([x[idx_test], cni[idx_test]], axis=1)
         elif mode == "only_cni":
             x_train, x_val, x_test = cni[idx_train], cni[idx_val], cni[idx_test]
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
         
         y_train, y_val, y_test = y[idx_train], y[idx_val], y[idx_test]
         return x_train, x_val, x_test, y_train, y_val, y_test
@@ -330,7 +355,7 @@ def get_existing_scores(scores_path_list: List[str]) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Concatenated DataFrame of all existing scores.
     """
-    df_list = [pd.read_csv(f) for f in scores_path_list if os.path.getsize(f) > 0]
+    df_list: List[pd.DataFrame] = [pd.read_csv(f) for f in scores_path_list if os.path.getsize(f) > 0]
     return pd.concat(df_list, axis=0, ignore_index=True) if df_list else pd.DataFrame()
 
 
@@ -344,7 +369,7 @@ def fit(
     existing_scores_path_list: List[str],
     confound_correction_method: str,
     cni_path: str,
-) -> None:
+) -> pd.DataFrame:
     """
     Fit a specified model to the data and record its performance metrics.
 
@@ -361,17 +386,29 @@ def fit(
         confound_correction_method (str): Method for confound correction.
         cni_path (str): Path to the confounding variables (CNI) HDF5 file.
     """
+    logging.info(f"Starting model fitting for {model_name}")
+
     # Load the data split information
     with open(split_path, 'r') as f:
         split = json.load(f)
     if "error" in split:
+        logging.warning(f"Error found in split file: {split['error']}")
         Path(scores_path).touch()
         return
 
-    model = MODELS[model_name]
-    df_existing_scores = get_existing_scores(existing_scores_path_list)
+    # Check if the model is valid
+    if model_name not in MODELS:
+        error_msg = f"Invalid model type: {model_name}"
+        logging.error(error_msg)
+        raise ValueError(error_msg)
 
-    scores = []
+    model = MODELS[model_name]
+    logging.info(f"Using model: {model.model_name}")
+
+    df_existing_scores = get_existing_scores(existing_scores_path_list)
+    logging.debug(f"Loaded {len(df_existing_scores)} existing scores")
+
+    scores: List[Dict[str, Any]] = []
     with h5py.File(features_path, "r") as fx, h5py.File(targets_path, "r") as fy, h5py.File(cni_path, "r") as fc:
         x, cni = fx["data"], fc["data"]
         
@@ -381,18 +418,26 @@ def fit(
         # Ensure y is 2-dimensional
         y = y.reshape(-1, 1) if y.ndim == 1 else y
 
+        # Check for insufficient samples
+        if len(split["idx_train"]) < 2 or len(split["idx_val"]) < 2 or len(split["idx_test"]) < 2:
+            logging.warning("Insufficient samples for train/val/test split")
+            Path(scores_path).touch()
+            return
+
         # Iterate over all combinations of hyperparameters
         for params in ParameterGrid(grid[model_name]):
+            logging.debug(f"Evaluating hyperparameters: {params}")
+            
             # Check if we already have scores for this parameter combination
             df_existing_scores_filtered = df_existing_scores.loc[
                 (df_existing_scores[list(params)] == pd.Series(params)).all(axis=1)
             ] if not df_existing_scores.empty else pd.DataFrame()
 
             if not df_existing_scores_filtered.empty:
-                # If we have existing scores, use them
+                logging.info("Using existing scores for current parameter combination")
                 score = dict(df_existing_scores_filtered.iloc[0])
             else:
-                # Otherwise, compute new scores
+                logging.info("Computing new scores for current parameter combination")
                 score = model.score(
                     x, y, cni,
                     idx_train=split["idx_train"],
@@ -407,13 +452,18 @@ def fit(
             scores.append(score)
 
     # Save all scores to a CSV file
-    pd.DataFrame(scores).to_csv(scores_path, index=None)
+    df_scores = pd.DataFrame(scores)
+    df_scores.to_csv(scores_path, index=None)
+    logging.info(f"Saved scores to {scores_path}")
+    return df_scores
 
 
 if __name__ == "__main__":
+    logging.info("Starting fit_model.py script")
+    
     assert snakemake.wildcards.model in MODELS, f"Model '{snakemake.wildcards.model}' not found in predefined MODELS."
 
-    fit(
+    result_df = fit(
         features_path=snakemake.input.features,
         targets_path=snakemake.input.targets,
         split_path=snakemake.input.split,
@@ -424,3 +474,5 @@ if __name__ == "__main__":
         confound_correction_method=snakemake.wildcards.confound_correction_method,
         cni_path=snakemake.input.covariates,
     )
+    
+    logging.info("Completed fit_model.py script")
