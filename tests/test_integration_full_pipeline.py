@@ -31,6 +31,7 @@ from workflow.scripts.aggregate import aggregate
 from workflow.scripts.extrapolate import extrapolate
 from workflow.scripts.plot import plot
 from workflow.scripts.plot_hps import plot as plot_hps
+from workflow.scripts.generate_splits import write_splitfile
 
 def create_debug_tmpdir():
     """
@@ -85,7 +86,7 @@ def test_full_pipeline_classification():
     tmpdir = create_debug_tmpdir()
     try:
         # Step 1: Generate synthetic data
-        features_csv, targets_csv, covariates_csv = create_synthetic_data(tmpdir, n_samples=1000, binary=True)
+        features_csv, targets_csv, covariates_csv = create_synthetic_data(tmpdir, n_samples=5000, binary=True)
         
         # Step 2: Convert CSVs to HDF5
         features_h5 = os.path.join(tmpdir, 'features.h5')
@@ -99,31 +100,38 @@ def test_full_pipeline_classification():
         prepare_data(covariates_h5, 'pytest_dataset', 'covariates', 'normal', 
                     {'pytest_dataset': {'covariates': {'normal': covariates_csv}}})
 
-        # Step 3: Generate data splits for multiple sample sizes
+        # Step 3: Generate data splits using generate_splits.py
         sample_sizes = [100, 300, 600, 1000]
+        confound_correction_methods = ['none', 'correct-x', 'matching']
         split_paths = []
         
         for size in sample_sizes:
-            split_path = os.path.join(tmpdir, f'split_{size}.json')
-            with open(split_path, 'w') as f:
-                split = {
-                    "idx_train": list(range(int(size * 0.6))),
-                    "idx_val": list(range(int(size * 0.6), int(size * 0.8))),
-                    "idx_test": list(range(int(size * 0.8), size)),
-                    "samplesize": size,
-                    "seed": 42
-                }
-                json.dump(split, f)
-            split_paths.append(split_path)
+            for method in confound_correction_methods:
+                split_path = os.path.join(tmpdir, f'split_{size}_{method}.json')
+                write_splitfile(
+                    features_path=features_h5,
+                    targets_path=targets_h5,
+                    split_path=split_path,
+                    confounds_path=covariates_h5,
+                    confound_correction_method=method,
+                    n_train=size,
+                    n_val=min(100, size // 5),
+                    n_test=min(100, size // 5),
+                    seed=42,
+                    stratify=True,
+                    balanced=False
+                )
+                split_paths.append(split_path)
 
         # Step 4: Define model and hyperparameters
         model_name = "ridge-cls"
         grid = {"ridge-cls": {"alpha": [0.1, 1.0, 10.0]}}
 
-        # Step 5: Run the fit function for each sample size
+        # Step 5: Run the fit function for each sample size and confound correction method
         scores_paths = []
         for split_path in split_paths:
-            scores_path = os.path.join(tmpdir, f'scores_{os.path.basename(split_path)}.csv')
+            method = os.path.basename(split_path).split('_')[-1].split('.')[0]
+            scores_path = os.path.join(tmpdir, f'scores_{os.path.basename(split_path)}')
             fit(
                 features_path=features_h5,
                 targets_path=targets_h5,
@@ -132,7 +140,7 @@ def test_full_pipeline_classification():
                 model_name=model_name,
                 grid=grid,
                 existing_scores_path_list=[],
-                confound_correction_method='normal',
+                confound_correction_method=method,
                 cni_path=covariates_h5
             )
             scores_paths.append(scores_path)
@@ -208,7 +216,7 @@ def test_full_pipeline_regression():
     tmpdir = create_debug_tmpdir()
     try:
         # Step 1: Generate synthetic data
-        features_csv, targets_csv, covariates_csv = create_synthetic_data(tmpdir, n_samples=1000, binary=False)
+        features_csv, targets_csv, covariates_csv = create_synthetic_data(tmpdir, n_samples=5000, binary=False)
         
         # Step 2: Convert CSVs to HDF5
         features_h5 = os.path.join(tmpdir, 'features.h5')
@@ -222,31 +230,38 @@ def test_full_pipeline_regression():
         prepare_data(covariates_h5, 'pytest_dataset', 'covariates', 'normal', 
                     {'pytest_dataset': {'covariates': {'normal': covariates_csv}}})
 
-        # Step 3: Generate data splits for multiple sample sizes
+        # Step 3: Generate data splits using generate_splits.py
         sample_sizes = [100, 300, 600, 1000]
+        confound_correction_methods = ['none', 'correct-x','correct-y', 'correct-both']
         split_paths = []
         
         for size in sample_sizes:
-            split_path = os.path.join(tmpdir, f'split_{size}.json')
-            with open(split_path, 'w') as f:
-                split = {
-                    "idx_train": list(range(int(size * 0.6))),
-                    "idx_val": list(range(int(size * 0.6), int(size * 0.8))),
-                    "idx_test": list(range(int(size * 0.8), size)),
-                    "samplesize": size,
-                    "seed": 42
-                }
-                json.dump(split, f)
-            split_paths.append(split_path)
+            for method in confound_correction_methods:
+                split_path = os.path.join(tmpdir, f'split_{size}_{method}.json')
+                write_splitfile(
+                    features_path=features_h5,
+                    targets_path=targets_h5,
+                    split_path=split_path,
+                    confounds_path=covariates_h5,
+                    confound_correction_method=method,
+                    n_train=size,
+                    n_val=min(100, size // 5),
+                    n_test=min(100, size // 5),
+                    seed=42,
+                    stratify=False,  # Stratify is False for regression
+                    balanced=False
+                )
+                split_paths.append(split_path)
 
         # Step 4: Define model and hyperparameters
         model_name = "ridge-reg"
         grid = {"ridge-reg": {"alpha": [0.1, 1.0, 10.0]}}
 
-        # Step 5: Run the fit function for each sample size
+        # Step 5: Run the fit function for each sample size and confound correction method
         scores_paths = []
         for split_path in split_paths:
-            scores_path = os.path.join(tmpdir, f'scores_{os.path.basename(split_path)}.csv')
+            method = os.path.basename(split_path).split('_')[-1].split('.')[0]
+            scores_path = os.path.join(tmpdir, f'scores_{os.path.basename(split_path)}')
             fit(
                 features_path=features_h5,
                 targets_path=targets_h5,
@@ -255,7 +270,7 @@ def test_full_pipeline_regression():
                 model_name=model_name,
                 grid=grid,
                 existing_scores_path_list=[],
-                confound_correction_method='normal',
+                confound_correction_method=method,
                 cni_path=covariates_h5
             )
             scores_paths.append(scores_path)
