@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "esce"
-version = "0.2.0"
+version = "0.3.0"
 description = "Tools for eastimating and extrapolating learning curves."
 authors = ["Marc-Andre Schulz <marc-andre.schulz@charite.de>"]
 license = "GPLv3" 
@@ -19,8 +19,7 @@ imbalanced-learn = "^0.11"
 pyyaml = "^6.0"
 snakemake = "^7.30"
 h5py = "^3.9.0"
-altair = "^5.0"
-vl-convert-python = "^1.6.0"
+altair =  {extras = ["all"], version = "^5.0"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
