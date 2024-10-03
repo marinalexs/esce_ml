@@ -12,6 +12,9 @@ from imblearn.under_sampling import RandomUnderSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+# Constants
+MIN_SAMPLES_PER_SET = 10
+MAX_CLASSES_FOR_STRATIFICATION = 10
 
 class NpEncoder(json.JSONEncoder):
     """Custom JSON encoder for NumPy data types."""
@@ -25,7 +28,6 @@ class NpEncoder(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         return super().default(obj)
-
 
 def generate_random_split(
     y: np.ndarray,
@@ -42,11 +44,11 @@ def generate_random_split(
     Args:
         y (np.ndarray): Target labels.
         n_train (int): Number of training samples.
-        n_val (int, optional): Number of validation samples. Defaults to 1000.
-        n_test (int, optional): Number of test samples. Defaults to 1000.
-        do_stratify (bool, optional): Whether to perform stratified splitting. Defaults to False.
-        seed (int, optional): Random seed for reproducibility. Defaults to 0.
-        mask (Optional[np.ndarray], optional): Boolean mask to select a subset of data. Defaults to None.
+        n_val (int): Number of validation samples.
+        n_test (int): Number of test samples.
+        do_stratify (bool): Whether to perform stratified splitting.
+        seed (int): Random seed for reproducibility.
+        mask (Optional[np.ndarray]): Boolean mask to select a subset of data.
 
     Returns:
         dict: Dictionary containing indices for train, validation, and test sets along with metadata.
@@ -58,6 +60,10 @@ def generate_random_split(
         idx_original = np.arange(len(y))[mask]
         idx = np.arange(len(y[mask]))
         y = y[mask]
+
+    n_classes = len(np.unique(y))
+    if n_classes > MAX_CLASSES_FOR_STRATIFICATION:
+        do_stratify = False
 
     stratify = y if do_stratify else None
 
@@ -79,16 +85,15 @@ def generate_random_split(
     )
 
     split = {
-        "idx_train": idx_original[idx_train].tolist(),  # Convert to list
-        "idx_val": idx_original[idx_val].tolist(),      # Convert to list
-        "idx_test": idx_original[idx_test].tolist(),    # Convert to list
+        "idx_train": idx_original[idx_train].tolist(),
+        "idx_val": idx_original[idx_val].tolist(),
+        "idx_test": idx_original[idx_test].tolist(),
         "samplesize": n_train,
         "seed": seed,
         "stratify": do_stratify,
     }
 
     return split
-
 
 def generate_matched_split(
     y: np.ndarray,
@@ -98,7 +103,7 @@ def generate_matched_split(
     n_test: int = 1000,
     do_stratify: bool = False,
     seed: int = 0,
-    mask: Optional[np.ndarray] = False,
+    mask: Optional[np.ndarray] = None,
 ) -> Dict[str, Union[List[int], int, bool, float]]:
     """
     Generate a matched train/validation/test split of the data based on confounding variables.
@@ -107,17 +112,17 @@ def generate_matched_split(
         y (np.ndarray): Target labels.
         match (np.ndarray): Confounding variables for matching.
         n_train (int): Number of training samples.
-        n_val (int, optional): Number of validation samples. Defaults to 1000.
-        n_test (int, optional): Number of test samples. Defaults to 1000.
-        do_stratify (bool, optional): Whether to perform stratified splitting. Defaults to False.
-        seed (int, optional): Random seed for reproducibility. Defaults to 0.
-        mask (Optional[np.ndarray], optional): Boolean mask to select a subset of data. Defaults to False.
+        n_val (int): Number of validation samples.
+        n_test (int): Number of test samples.
+        do_stratify (bool): Whether to perform stratified splitting.
+        seed (int): Random seed for reproducibility.
+        mask (Optional[np.ndarray]): Boolean mask to select a subset of data.
 
     Returns:
         dict: Dictionary containing indices for train, validation, and test sets along with metadata.
     """
     random_state = np.random.RandomState(seed)
-    mask = mask.copy()
+    mask = mask.copy() if mask is not None else np.ones(len(y), dtype=bool)
     mask_orig = mask.copy()
 
     # Generate initial random split for positive class
@@ -144,8 +149,7 @@ def generate_matched_split(
         control_group = []  # Control group for each split set
         for idx in split[idx_set]:
             idx_pool = idx_all[mask]  # Pool of potential controls
-            scores = (match[idx_pool] - match[idx]) ** 2  # Compute squared differences
-            scores = np.sum(scores, axis=1)  # Sum across features to get distance
+            scores = np.sum((match[idx_pool] - match[idx]) ** 2, axis=1)  # Compute squared differences
 
             # Shuffle to handle ties randomly
             shuffled = random_state.permutation(np.column_stack((scores, idx_pool)))
@@ -163,20 +167,18 @@ def generate_matched_split(
         # Combine patient and control indices
         split[idx_set] = np.hstack((split[idx_set], control_group))
 
-    # Update split dictionary with average matching score and adjusted sample size
+    # Update split dictionary
     split = {
-        "idx_train": split["idx_train"].tolist(),  # Convert to list
-        "idx_val": split["idx_val"].tolist(),      # Convert to list
-        "idx_test": split["idx_test"].tolist(),    # Convert to list
-        "samplesize": split["samplesize"],
+        "idx_train": split["idx_train"].tolist(),
+        "idx_val": split["idx_val"].tolist(),
+        "idx_test": split["idx_test"].tolist(),
+        "samplesize": split["samplesize"] * 2,  # Account for both patient and control groups
         "seed": split["seed"],
         "stratify": split["stratify"],
-        "average_matching_score": np.mean(matching_scores),
+        "average_matching_score": float(np.mean(matching_scores)),
     }
-    split["samplesize"] *= 2  # Account for both patient and control groups
 
     return split
-
 
 def write_splitfile(
     features_path: str,
@@ -204,11 +206,11 @@ def write_splitfile(
         n_val (int): Number of validation samples.
         n_test (int): Number of test samples.
         seed (int): Random seed for reproducibility.
-        stratify (bool, optional): Whether to use stratified splitting. Defaults to False.
-        balanced (bool, optional): Whether to balance classes. Defaults to False.
+        stratify (bool): Whether to use stratified splitting.
+        balanced (bool): Whether to balance classes.
     """
     # Validate confound correction method
-    valid_methods = ["correct-x", "correct-y", "correct-both", "none", "matching"]
+    valid_methods = ["correct-x", "correct-y", "correct-both", "with_cni", "only_cni", "matching", "none"]
     if confound_correction_method not in valid_methods:
         raise ValueError(f"Invalid confound correction method: {confound_correction_method}. "
                          f"Valid methods are: {', '.join(valid_methods)}")
@@ -227,83 +229,94 @@ def write_splitfile(
 
     # Combine masks to identify valid samples
     xy_mask = np.logical_and(x_mask, y_mask)
+    if confound_correction_method != "none":
+        xy_mask = np.logical_and(xy_mask, confounds_mask)
 
     # Check number of unique classes
     n_classes = len(np.unique(y[xy_mask]))
     if n_classes <= 1:
-        # Insufficient classes for splitting
+        with open(split_path, "w") as f:
+            json.dump({"error": "only a single class in target"}, f, cls=NpEncoder, indent=0)
+        return
+
+    # Determine if it's a regression task
+    is_regression = confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] or n_classes > MAX_CLASSES_FOR_STRATIFICATION
+
+    if is_regression:
+        print("Warning: Stratification and balancing are disabled for regression tasks.")
+        stratify = False
+        balanced = False
+
+    if balanced:
+        # Apply random undersampling to balance classes
+        try:
+            idx_all = np.arange(len(y))
+            idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
+                idx_all[xy_mask].reshape(-1, 1), y[xy_mask].astype(int)
+            )
+            idx_undersampled = idx_undersampled.reshape(-1)
+            xy_mask[np.setdiff1d(idx_all, idx_undersampled)] = False
+        except ValueError as e:
+            error_message = f"""
+            Undersampling failed: {str(e)}
+            Possible reasons:
+            - Too few samples in some classes.
+            - Continuous labels may have been used unintentionally.
+            Note: There are {n_classes} unique classes and {len(y[xy_mask])} samples in the target file.
+            """
+            raise ValueError(error_message) from e
+
+    # Check if sufficient samples are available for splitting
+    if sum(xy_mask) < n_train + n_val + n_test or n_val < MIN_SAMPLES_PER_SET or n_test < MIN_SAMPLES_PER_SET:
         with open(split_path, "w") as f:
             json.dump({"error": "insufficient samples"}, f, cls=NpEncoder, indent=0)
         return
 
-    # Determine if stratification is feasible
-    stratify = bool(stratify and n_classes <= 10)
-
     if confound_correction_method == "matching":
         # Perform matching-based split for binary classification
-        xyc_mask = np.logical_and(xy_mask, confounds_mask)
-        assert n_classes == 2, "Matching requires binary classification with class '1' as positive."
+        if n_classes != 2:
+            with open(split_path, "w") as f:
+                json.dump({"error": "matching requires binary classification"}, f, cls=NpEncoder, indent=0)
+            return
 
         required_samples = n_train // 2 + n_val // 2 + n_test // 2
-        if sum(xyc_mask[y == 1]) > required_samples:
+        if sum(xy_mask[y == 1]) >= required_samples:
             split_dict = generate_matched_split(
                 y=y,
                 match=confounds,
                 n_train=n_train,
                 n_val=n_val,
                 n_test=n_test,
-                do_stratify=True,
-                mask=xyc_mask,
-                seed=seed,
-            )
-        else:
-            # Not enough positive samples for matching
-            split_dict = {"error": "insufficient samples"}
-    else:
-        if balanced:
-            # Apply random undersampling to balance classes
-            try:
-                idx_all = np.arange(len(y))
-                idx_undersampled, _ = RandomUnderSampler(random_state=seed).fit_resample(
-                    idx_all[xy_mask].reshape(-1, 1), y[xy_mask].astype(int)
-                )
-                idx_undersampled = idx_undersampled.reshape(-1)
-                xy_mask[[i for i in idx_all if i not in idx_undersampled]] = False
-            except ValueError as e:
-                # Handle cases with too few samples after undersampling
-                error_message = f"""
-                Undersampling failed: {str(e)}
-                Possible reasons:
-                - Too few samples in some classes.
-                - Continuous labels may have been used unintentionally.
-                Note: There are {n_classes} unique classes and {len(y[xy_mask])} samples in the target file.
-                """
-                raise ValueError(error_message) from e
-
-        # Check if sufficient samples are available for splitting
-        if sum(xy_mask) >= n_train + n_val + n_test:
-            split_dict = generate_random_split(
-                y=y,
-                n_train=n_train,
-                n_val=n_val,
-                n_test=n_test,
-                do_stratify=stratify,
+                do_stratify=True,  # Always use stratification for matching
                 mask=xy_mask,
                 seed=seed,
             )
         else:
-            # Not enough samples for the desired split
-            split_dict = {"error": "insufficient samples"}
+            with open(split_path, "w") as f:
+                json.dump({"error": "insufficient samples for matching"}, f, cls=NpEncoder, indent=0)
+            return
+    else:
+        split_dict = generate_random_split(
+            y=y,
+            n_train=n_train,
+            n_val=n_val,
+            n_test=n_test,
+            do_stratify=stratify,
+            mask=xy_mask,
+            seed=seed,
+        )
 
     # Ensure indices are sorted for HDF5 compatibility
-    if 'error' not in split_dict:
-        for set_name in ["idx_train", "idx_val", "idx_test"]:
-            split_dict[set_name] = sorted(split_dict[set_name])
+    for set_name in ["idx_train", "idx_val", "idx_test"]:
+        split_dict[set_name] = sorted(split_dict[set_name])
+
+    # Before writing the split information to a JSON file, update the stratify value
+    split_dict["stratify"] = stratify
+    split_dict["balanced"] = balanced
 
     # Write the split information to a JSON file
     with open(split_path, "w") as f:
         json.dump(split_dict, f, cls=NpEncoder, indent=0)
-
 
 if __name__ == "__main__":
     # Parse parameters from Snakemake wildcards and params
