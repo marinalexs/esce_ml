@@ -1,9 +1,17 @@
 """
 test_fit.py
-====================================
+===========
+
 This module contains unit tests for the fit function in the fit_model module.
 It tests various scenarios including different confound correction methods
 and model types (classification and regression).
+
+Test Summary:
+1. test_fit: Parameterized test for different confound correction methods and model types.
+2. test_fit_with_existing_scores: Tests the fit function when some scores already exist.
+
+These tests create synthetic datasets, set up the necessary file structure,
+run the fit function, and verify the output for correctness.
 """
 
 import json
@@ -27,9 +35,9 @@ def test_fit(tmpdir: str, confound_correction_method: str, model_type: str) -> N
     runs the fit function, and checks the output for correctness.
 
     Args:
-        tmpdir (str): Pytest fixture for temporary directory
-        confound_correction_method (str): Method for confound correction
-        model_type (str): Type of model to test (classification or regression)
+        tmpdir (str): Pytest fixture for temporary directory.
+        confound_correction_method (str): Method for confound correction.
+        model_type (str): Type of model to test (classification or regression).
     """
     # Create toy problems
     if model_type == "classification":
@@ -145,7 +153,7 @@ def test_fit_with_existing_scores(tmpdir: str) -> None:
     and only computes new scores for parameter combinations not already present.
 
     Args:
-        tmpdir (str): Pytest fixture for temporary directory
+        tmpdir (str): Pytest fixture for temporary directory.
     """
     # Setup data
     X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)

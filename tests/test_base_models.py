@@ -32,10 +32,10 @@ def create_h5_dataset(tmpdir):
     Fixture to create an HDF5 dataset for testing.
 
     Args:
-        tmpdir: Pytest fixture for temporary directory
+        tmpdir: Pytest fixture for temporary directory.
 
     Returns:
-        Function to create HDF5 dataset
+        function: A function to create HDF5 datasets.
     """
     def _create_h5_dataset(data, filename):
         file_path = tmpdir.join(filename)
@@ -51,6 +51,9 @@ def test_classifier_model(create_h5_dataset):
 
     This test creates synthetic classification data, processes it through
     the ClassifierModel, and checks if the output metrics are as expected.
+
+    Args:
+        create_h5_dataset (function): Fixture to create HDF5 datasets.
     """
     # Create a toy binary classification problem
     X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
@@ -85,6 +88,9 @@ def test_regression_model(create_h5_dataset):
 
     This test creates synthetic regression data, processes it through
     the RegressionModel, and checks if the output metrics are as expected.
+
+    Args:
+        create_h5_dataset (function): Fixture to create HDF5 datasets.
     """
     # Create a toy regression problem
     X, y = make_regression(n_samples=100, n_features=20, random_state=42)
@@ -123,6 +129,9 @@ def test_classifier_model_with_cni(create_h5_dataset):
     This test creates synthetic classification data, processes it through
     the ClassifierModel using the 'with_cni' mode, and checks if the output
     metrics are as expected.
+
+    Args:
+        create_h5_dataset (function): Fixture to create HDF5 datasets.
     """
     # Create a toy binary classification problem
     X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
@@ -158,6 +167,9 @@ def test_regression_model_only_cni(create_h5_dataset):
     This test creates synthetic regression data, processes it through
     the RegressionModel using the 'only_cni' mode, and checks if the output
     metrics are as expected.
+
+    Args:
+        create_h5_dataset (function): Fixture to create HDF5 datasets.
     """
     # Create a toy regression problem
     X, y = make_regression(n_samples=100, n_features=20, random_state=42)

@@ -32,7 +32,10 @@ def test_mnist_features(tmpdir):
     in the expected format.
 
     Args:
-        tmpdir: Pytest fixture for temporary directory
+        tmpdir: Pytest fixture for temporary directory.
+
+    Raises:
+        AssertionError: If the output data shape doesn't match the expected shape.
     """
     out_path = str(tmpdir / "test.h5")
     dataset = "mnist"
@@ -62,7 +65,10 @@ def test_mnist_targets(tmpdir):
     in the expected format.
 
     Args:
-        tmpdir: Pytest fixture for temporary directory
+        tmpdir: Pytest fixture for temporary directory.
+
+    Raises:
+        AssertionError: If the output data shape, data type, or target values don't match the expected values.
     """
     out_path = str(tmpdir / "test.h5")
     dataset = "mnist"

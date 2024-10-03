@@ -6,6 +6,11 @@ This module contains unit tests for the aggregate function in the aggregate.py s
 It tests the functionality of aggregating scores from multiple files and selecting
 the best hyperparameter combinations.
 
+The tests cover the following scenarios:
+1. Aggregating R² metric scores
+2. Handling empty input files
+3. Aggregating accuracy metric scores
+
 """
 
 import pandas as pd
@@ -63,18 +68,18 @@ def test_aggregate_r2(sample_data_r2):
     stats = pd.read_csv(stats_path)
 
     # Check if the expected columns are present
-    assert set(stats.columns) == {"n", "s", "r2_val", "other_param"}
+    assert set(stats.columns) == {"n", "s", "r2_val", "other_param"}, "Unexpected columns in the output"
 
     # Check if the number of rows is correct (one for each unique n-s combination)
-    assert len(stats) == 2
+    assert len(stats) == 2, "Incorrect number of rows in the output"
 
     # Check if the best R² values were selected for each n-s combination
-    assert stats.loc[stats["n"] == 100, "r2_val"].values[0] == 0.8
-    assert stats.loc[stats["n"] == 200, "r2_val"].values[0] == 0.9
+    assert stats.loc[stats["n"] == 100, "r2_val"].values[0] == 0.8, "Incorrect R² value selected for n=100"
+    assert stats.loc[stats["n"] == 200, "r2_val"].values[0] == 0.9, "Incorrect R² value selected for n=200"
 
     # Check if the corresponding other_param values were correctly selected
-    assert stats.loc[stats["n"] == 100, "other_param"].values[0] == "a"
-    assert stats.loc[stats["n"] == 200, "other_param"].values[0] == "b"
+    assert stats.loc[stats["n"] == 100, "other_param"].values[0] == "a", "Incorrect other_param value selected for n=100"
+    assert stats.loc[stats["n"] == 200, "other_param"].values[0] == "b", "Incorrect other_param value selected for n=200"
 
 
 def test_aggregate_empty_files(tmpdir):
@@ -100,8 +105,8 @@ def test_aggregate_empty_files(tmpdir):
     aggregate(score_path_list, stats_path)
 
     # Check if the output file is created but empty
-    assert Path(stats_path).exists()
-    assert Path(stats_path).stat().st_size == 0
+    assert Path(stats_path).exists(), "Output file was not created"
+    assert Path(stats_path).stat().st_size == 0, "Output file is not empty"
 
 
 def test_aggregate_accuracy(tmpdir):
@@ -136,9 +141,9 @@ def test_aggregate_accuracy(tmpdir):
     stats = pd.read_csv(stats_path)
 
     # Check if the function correctly used acc_val as the metric
-    assert "acc_val" in stats.columns
-    assert "r2_val" not in stats.columns
+    assert "acc_val" in stats.columns, "acc_val column is missing in the output"
+    assert "r2_val" not in stats.columns, "r2_val column should not be present in the output"
 
     # Check if the best accuracy values were selected
-    assert stats.loc[stats["n"] == 100, "acc_val"].values[0] == 0.75
-    assert stats.loc[stats["n"] == 200, "acc_val"].values[0] == 0.85
+    assert stats.loc[stats["n"] == 100, "acc_val"].values[0] == 0.75, "Incorrect accuracy value selected for n=100"
+    assert stats.loc[stats["n"] == 200, "acc_val"].values[0] == 0.85, "Incorrect accuracy value selected for n=200"

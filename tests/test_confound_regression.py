@@ -1,3 +1,19 @@
+"""
+test_confound_regression.py
+===========================
+
+This module contains unit tests for the confound_regression function from the
+confound_regression module. It tests various scenarios including different
+data shapes, missing values, and error handling.
+
+Test Summary:
+1. test_confound_regression: Tests the confound_regression function with various input scenarios.
+2. test_confound_regression_error_handling: Tests error handling for mismatched data and confounds.
+
+The tests use parametrization to cover multiple scenarios and check if the
+confound regression is performed correctly under different conditions.
+"""
+
 import h5py
 import numpy as np
 import pytest
@@ -8,7 +24,18 @@ from workflow.scripts.confound_regression import confound_regression
 
 
 def create_h5_file(tmpdir: str, filename: str, data: NDArray, mask: NDArray) -> str:
-    """Helper function to create an H5 file with data and mask."""
+    """
+    Helper function to create an H5 file with data and mask.
+
+    Args:
+        tmpdir (str): Temporary directory path.
+        filename (str): Name of the file to be created.
+        data (NDArray): Data to be stored in the file.
+        mask (NDArray): Mask to be stored in the file.
+
+    Returns:
+        str: Path to the created H5 file.
+    """
     file_path = str(tmpdir / filename)
     with h5py.File(file_path, "w") as f:
         f.create_dataset("data", data=data)
@@ -64,13 +91,16 @@ def test_confound_regression(
     """
     Test the confound_regression function with various input scenarios.
 
+    This test creates input files with different data shapes and masks,
+    runs the confound regression, and checks if the output is as expected.
+
     Args:
-        tmpdir: Temporary directory for creating test files
-        data: Input data array
-        confounds: Input confounds array
-        expected: Expected output after confound regression
-        data_mask: Mask for input data
-        confounds_mask: Mask for confounds data
+        tmpdir (str): Temporary directory for creating test files.
+        data (NDArray): Input data array.
+        confounds (NDArray): Input confounds array.
+        expected (NDArray): Expected output after confound regression.
+        data_mask (NDArray): Mask for input data.
+        confounds_mask (NDArray): Mask for confounds data.
     """
     # Create input files
     data_path = create_h5_file(tmpdir, "data.h5", data, data_mask)
@@ -86,18 +116,28 @@ def test_confound_regression(
         corrected_mask = f["mask"][:]
 
     # Check output shape
-    assert corrected_data.shape == expected.shape
+    assert corrected_data.shape == expected.shape, "Output shape does not match expected shape"
 
     # Check if the corrected data is as expected
-    np.testing.assert_allclose(corrected_data, expected, rtol=1e-5, atol=1e-8)
+    np.testing.assert_allclose(corrected_data, expected, rtol=1e-5, atol=1e-8, 
+                               err_msg="Corrected data does not match expected values")
 
     # Check if the mask is correct
     expected_mask = np.logical_and(data_mask, confounds_mask)
-    np.testing.assert_array_equal(corrected_mask, expected_mask)
+    np.testing.assert_array_equal(corrected_mask, expected_mask, 
+                                  err_msg="Corrected mask does not match expected mask")
 
 
 def test_confound_regression_error_handling(tmpdir: str) -> None:
-    """Test error handling in confound_regression function."""
+    """
+    Test error handling in confound_regression function.
+
+    This test checks if an AssertionError is raised when the data and
+    confounds have mismatched shapes.
+
+    Args:
+        tmpdir (str): Temporary directory for creating test files.
+    """
     # Create mismatched data and confounds
     data = np.array([1, 2, 3, 4, 5])
     confounds = np.array([0.1, 0.2, 0.3, 0.4])  # One less element than data

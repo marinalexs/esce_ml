@@ -1,3 +1,25 @@
+"""
+test_extrapolate.py
+===================
+
+This module contains unit tests for the extrapolate function and related utilities
+in the extrapolate module. It tests various scenarios including normal operation,
+edge cases, and error handling.
+
+Test Summary:
+1. test_extrapolate: Tests the main extrapolate function with sample data.
+2. test_extrapolate_empty_input: Tests handling of empty input files.
+3. test_extrapolate_insufficient_data: Tests behavior with insufficient data for curve fitting.
+4. test_extrapolate_no_r2_test: Tests fallback to accuracy metric when R² is not available.
+5. test_power_law_model: Tests the power law model function.
+6. test_fit_curve: Tests the curve fitting function with known data.
+7. test_fit_curve_failure: Tests handling of curve fitting failures.
+8. test_fit_curve_exception: Tests exception handling in curve fitting.
+9. test_extrapolate_bootstrap_failure: Tests handling of frequent bootstrap failures.
+
+The tests use pytest fixtures and mocking to create controlled test environments.
+"""
+
 import json
 import numpy as np
 import pandas as pd
@@ -79,7 +101,12 @@ def test_extrapolate(tmpdir, stats_df):
     print("All checks passed successfully.")
 
 def test_extrapolate_empty_input(tmpdir):
-    """Test extrapolate function with an empty input file."""
+    """
+    Test extrapolate function with an empty input file.
+    
+    Args:
+        tmpdir: Pytest fixture for creating a temporary directory.
+    """
     stats_path = Path(tmpdir) / "empty_stats.csv"
     extra_path = Path(tmpdir) / "empty_extra.json"
     bootstrap_path = Path(tmpdir) / "empty_bootstrap.json"
@@ -95,7 +122,12 @@ def test_extrapolate_empty_input(tmpdir):
     assert bootstrap_path.stat().st_size == 0, "Bootstrap file should be empty"
 
 def test_extrapolate_insufficient_data(tmpdir):
-    """Test extrapolate function with insufficient data for curve fitting."""
+    """
+    Test extrapolate function with insufficient data for curve fitting.
+    
+    Args:
+        tmpdir: Pytest fixture for creating a temporary directory.
+    """
     stats_df = pd.DataFrame({
         "n": [10, 20],
         "s": [1, 1],
@@ -118,7 +150,12 @@ def test_extrapolate_insufficient_data(tmpdir):
     assert np.isnan(result["r2"]), "R² should be NaN for insufficient data"
 
 def test_extrapolate_no_r2_test(tmpdir):
-    """Test extrapolate function when r2_test is not present in the input."""
+    """
+    Test extrapolate function when r2_test is not present in the input.
+    
+    Args:
+        tmpdir: Pytest fixture for creating a temporary directory.
+    """
     stats_df = pd.DataFrame({
         "n": [10, 20, 30],
         "s": [1, 1, 1],
@@ -176,7 +213,12 @@ def test_fit_curve_failure():
 
 @patch('workflow.scripts.extrapolate.scipy.optimize.curve_fit')
 def test_fit_curve_exception(mock_curve_fit):
-    """Test the fit_curve function when an exception is raised."""
+    """
+    Test the fit_curve function when an exception is raised.
+    
+    Args:
+        mock_curve_fit: Mocked curve_fit function.
+    """
     mock_curve_fit.side_effect = RuntimeError("Curve fitting failed")
     
     x = np.array([10, 20, 30, 40, 50])
@@ -189,7 +231,13 @@ def test_fit_curve_exception(mock_curve_fit):
     assert np.isnan(result["r2"]), "R² should be NaN when an exception is raised"
 
 def test_extrapolate_bootstrap_failure(tmpdir, stats_df):
-    """Test extrapolate function when bootstrap fails frequently."""
+    """
+    Test extrapolate function when bootstrap fails frequently.
+    
+    Args:
+        tmpdir: Pytest fixture for creating a temporary directory.
+        stats_df: Pytest fixture providing a sample DataFrame.
+    """
     stats_path = Path(tmpdir) / "stats.csv"
     extra_path = Path(tmpdir) / "extra.json"
     bootstrap_path = Path(tmpdir) / "bootstrap.json"

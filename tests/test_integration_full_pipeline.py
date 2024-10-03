@@ -1,3 +1,19 @@
+"""
+test_integration_full_pipeline.py
+=================================
+
+This module contains integration tests for the full ESCE pipeline, including data preparation,
+model fitting, aggregation, extrapolation, and visualization for both classification and
+regression tasks.
+
+Test Summary:
+1. test_full_pipeline_classification: Tests the full pipeline for a classification task.
+2. test_full_pipeline_regression: Tests the full pipeline for a regression task.
+
+These tests verify that all components of the pipeline work together seamlessly
+for various sample sizes and model types.
+"""
+
 import tempfile
 import os
 import json
@@ -16,7 +32,6 @@ from workflow.scripts.extrapolate import extrapolate
 from workflow.scripts.plot import plot
 from workflow.scripts.plot_hps import plot as plot_hps
 
-# Add this function at the beginning of the file
 def create_debug_tmpdir():
     """
     Create a temporary directory for debugging within the tests folder.
@@ -28,7 +43,7 @@ def create_debug_tmpdir():
     os.makedirs(debug_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     tmp_dir = os.path.join(debug_dir, f'test_run_{timestamp}')
-    os.makedirs(tmp_dir, exist_ok=True)  # Add exist_ok=True to prevent FileExistsError
+    os.makedirs(tmp_dir, exist_ok=True)
     return tmp_dir
 
 def create_synthetic_data(tmpdir, n_samples=1000, n_features=10, binary=True):
@@ -39,10 +54,10 @@ def create_synthetic_data(tmpdir, n_samples=1000, n_features=10, binary=True):
         tmpdir (str): Temporary directory path.
         n_samples (int): Number of samples.
         n_features (int): Number of features.
-        binary (bool): Whether to generate binary targets.
+        binary (bool): Whether to generate binary targets for classification.
 
     Returns:
-        Tuple[str, str, str]: Paths to features, targets, and covariates HDF5 files.
+        Tuple[str, str, str]: Paths to features, targets, and covariates CSV files.
     """
     features = pd.DataFrame(np.random.rand(n_samples, n_features), 
                             columns=[f'feature_{i}' for i in range(n_features)])
@@ -65,7 +80,7 @@ def test_full_pipeline_classification():
     
     This test verifies that data preparation, model fitting, evaluation,
     aggregation, extrapolation, plotting, and hyperparameter visualization work together without issues
-    for various sample sizes.
+    for various sample sizes in a classification task.
     """
     tmpdir = create_debug_tmpdir()
     try:

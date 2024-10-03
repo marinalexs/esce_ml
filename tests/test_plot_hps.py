@@ -1,3 +1,21 @@
+"""
+test_plot_hps.py
+================
+
+This module contains unit tests for the plot function in the plot_hps module
+of the ESCE workflow. It tests various scenarios for hyperparameter plotting.
+
+Test Summary:
+1. test_plot_hps: Tests the basic functionality of plotting hyperparameters.
+2. test_plot_hps_single_hyperparameter: Tests plotting with a single hyperparameter.
+3. test_plot_hps_no_data: Tests behavior when no data is provided.
+4. test_plot_hps_invalid_input: Tests error handling for invalid input.
+5. test_plot_hps_different_metrics: Tests plotting with different performance metrics.
+
+These tests ensure that the hyperparameter plotting functionality works correctly
+under various conditions and handles edge cases appropriately.
+"""
+
 import pandas as pd
 import pytest
 import numpy as np
@@ -9,7 +27,17 @@ import altair as alt
 from workflow.scripts.plot_hps import plot
 
 def generate_sample_data(path, n_samples=5, n_hyperparameters=2):
-    """Generate synthetic data for testing."""
+    """
+    Generate synthetic data for testing.
+
+    Args:
+        path (Path): Directory path to store the generated data.
+        n_samples (int): Number of samples to generate.
+        n_hyperparameters (int): Number of hyperparameters to generate.
+
+    Returns:
+        str: Path to the generated stats file.
+    """
     data = []
     hyperparameters = ['alpha', 'beta'][:n_hyperparameters]
     
@@ -32,13 +60,22 @@ def generate_sample_data(path, n_samples=5, n_hyperparameters=2):
 
 @pytest.fixture
 def sample_grid():
+    """Fixture for sample hyperparameter grid."""
     return {'alpha': [0.1, 0.5, 1.0], 'beta': [0.01, 0.1, 1.0]}
 
 @pytest.fixture
 def sample_hyperparameter_scales():
+    """Fixture for sample hyperparameter scales."""
     return {'alpha': 'log', 'beta': 'linear'}
 
 def test_plot_hps(sample_grid, sample_hyperparameter_scales):
+    """
+    Test the basic functionality of plotting hyperparameters.
+
+    Args:
+        sample_grid (dict): Sample hyperparameter grid.
+        sample_hyperparameter_scales (dict): Sample hyperparameter scales.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         stats_file = generate_sample_data(tmpdir_path)
@@ -65,6 +102,13 @@ def test_plot_hps(sample_grid, sample_hyperparameter_scales):
             assert 'r2_val' in content or 'acc_val' in content, "Neither R2 nor Accuracy metric found in the output file"
 
 def test_plot_hps_single_hyperparameter(sample_grid, sample_hyperparameter_scales):
+    """
+    Test plotting with a single hyperparameter.
+
+    Args:
+        sample_grid (dict): Sample hyperparameter grid.
+        sample_hyperparameter_scales (dict): Sample hyperparameter scales.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         stats_file = generate_sample_data(tmpdir_path, n_hyperparameters=1)
@@ -89,6 +133,13 @@ def test_plot_hps_single_hyperparameter(sample_grid, sample_hyperparameter_scale
             assert 'r2_val' in content or 'acc_val' in content, "Neither R2 nor Accuracy metric found in the output file"
 
 def test_plot_hps_no_data(sample_grid, sample_hyperparameter_scales):
+    """
+    Test behavior when no data is provided.
+
+    Args:
+        sample_grid (dict): Sample hyperparameter grid.
+        sample_hyperparameter_scales (dict): Sample hyperparameter scales.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         empty_stats_file = tmpdir_path / "empty_stats.csv"
@@ -109,6 +160,13 @@ def test_plot_hps_no_data(sample_grid, sample_hyperparameter_scales):
         assert output_file.stat().st_size == 0, "Output file should be empty"
 
 def test_plot_hps_invalid_input(sample_grid, sample_hyperparameter_scales):
+    """
+    Test error handling for invalid input.
+
+    Args:
+        sample_grid (dict): Sample hyperparameter grid.
+        sample_hyperparameter_scales (dict): Sample hyperparameter scales.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         non_existent_file = tmpdir_path / "non_existent.csv"
@@ -125,6 +183,13 @@ def test_plot_hps_invalid_input(sample_grid, sample_hyperparameter_scales):
             )
 
 def test_plot_hps_different_metrics(sample_grid, sample_hyperparameter_scales):
+    """
+    Test plotting with different performance metrics.
+
+    Args:
+        sample_grid (dict): Sample hyperparameter grid.
+        sample_hyperparameter_scales (dict): Sample hyperparameter scales.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         

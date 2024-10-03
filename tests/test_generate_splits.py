@@ -1,5 +1,10 @@
 """
-This module contains tests for the generate_splits functionality.
+test_generate_splits.py
+=======================
+
+This module contains tests for the generate_splits functionality in the ESCE workflow.
+It verifies the correct behavior of random and matched split generation, as well as
+the write_splitfile function under various conditions.
 
 Test Summary:
 1. test_generate_random_split: Tests random split generation with and without stratification.
@@ -7,6 +12,9 @@ Test Summary:
 3. test_write_splitfile_variations: Tests write_splitfile function with various parameters.
 4. test_write_splitfile_insufficient_samples: Tests handling of insufficient samples.
 5. test_write_splitfile_invalid_confound_method: Tests handling of invalid confound correction method.
+
+These tests ensure that the data splitting functionality works correctly under different
+scenarios and with various input parameters.
 """
 
 import json
@@ -58,19 +66,19 @@ def test_generate_random_split(sample_data, do_stratify):
 
     # Assert the structure and basic properties of the split
     assert set(split.keys()) == {"idx_train", "idx_val", "idx_test", "samplesize", "seed", "stratify"}
-    assert len(split["idx_train"]) == 60
-    assert len(split["idx_val"]) == 20
-    assert len(split["idx_test"]) == 20
-    assert split["samplesize"] == 60
-    assert split["seed"] == 0
-    assert split["stratify"] == do_stratify
+    assert len(split["idx_train"]) == 60, "Incorrect number of training samples"
+    assert len(split["idx_val"]) == 20, "Incorrect number of validation samples"
+    assert len(split["idx_test"]) == 20, "Incorrect number of test samples"
+    assert split["samplesize"] == 60, "Incorrect sample size"
+    assert split["seed"] == 0, "Incorrect seed value"
+    assert split["stratify"] == do_stratify, "Incorrect stratify value"
     
     # Check for no overlap between sets
-    assert len(set(split["idx_train"]) & set(split["idx_val"]) & set(split["idx_test"])) == 0
+    assert len(set(split["idx_train"]) & set(split["idx_val"]) & set(split["idx_test"])) == 0, "Overlap found between train, validation, and test sets"
     
     # Ensure all indices are valid
     all_indices = split["idx_train"] + split["idx_val"] + split["idx_test"]
-    assert all(0 <= idx < len(y) for idx in all_indices)
+    assert all(0 <= idx < len(y) for idx in all_indices), "Invalid indices found in the split"
 
     if do_stratify:
         # Check if stratification is maintained
@@ -78,14 +86,14 @@ def test_generate_random_split(sample_data, do_stratify):
         val_classes, val_counts = np.unique(y[split["idx_val"]], return_counts=True)
         test_classes, test_counts = np.unique(y[split["idx_test"]], return_counts=True)
         
-        assert np.array_equal(train_classes, val_classes)
-        assert np.array_equal(train_classes, test_classes)
+        assert np.array_equal(train_classes, val_classes), "Classes in train and validation sets do not match"
+        assert np.array_equal(train_classes, test_classes), "Classes in train and test sets do not match"
         assert np.allclose(train_counts / len(split["idx_train"]), 
                            val_counts / len(split["idx_val"]), 
-                           rtol=0.1)
+                           rtol=0.1), "Class proportions in train and validation sets do not match"
         assert np.allclose(train_counts / len(split["idx_train"]), 
                            test_counts / len(split["idx_test"]), 
-                           rtol=0.1)
+                           rtol=0.1), "Class proportions in train and test sets do not match"
 
 @pytest.mark.parametrize("do_stratify", [True, False])
 def test_generate_matched_split(sample_data, do_stratify):
@@ -110,23 +118,23 @@ def test_generate_matched_split(sample_data, do_stratify):
 
     # Assert the structure and basic properties of the split
     assert set(split.keys()) == {"idx_train", "idx_val", "idx_test", "samplesize", "seed", "stratify", "average_matching_score"}
-    assert len(split["idx_train"]) == 60
-    assert len(split["idx_val"]) == 20
-    assert len(split["idx_test"]) == 20
-    assert split["samplesize"] == 60
-    assert split["seed"] == 0
-    assert split["stratify"] == do_stratify
+    assert len(split["idx_train"]) == 60, "Incorrect number of training samples"
+    assert len(split["idx_val"]) == 20, "Incorrect number of validation samples"
+    assert len(split["idx_test"]) == 20, "Incorrect number of test samples"
+    assert split["samplesize"] == 60, "Incorrect sample size"
+    assert split["seed"] == 0, "Incorrect seed value"
+    assert split["stratify"] == do_stratify, "Incorrect stratify value"
     
     # Check for no overlap between sets
-    assert len(set(split["idx_train"]) & set(split["idx_val"]) & set(split["idx_test"])) == 0
+    assert len(set(split["idx_train"]) & set(split["idx_val"]) & set(split["idx_test"])) == 0, "Overlap found between train, validation, and test sets"
     
     # Check the average matching score
-    assert isinstance(split["average_matching_score"], float)
-    assert 0 <= split["average_matching_score"] <= 10  # Temporarily increased upper bound
+    assert isinstance(split["average_matching_score"], float), "Average matching score is not a float"
+    assert 0 <= split["average_matching_score"] <= 10, "Average matching score is out of expected range"
 
     # Ensure all indices are valid
     all_indices = split["idx_train"] + split["idx_val"] + split["idx_test"]
-    assert all(0 <= idx < len(y) for idx in all_indices)
+    assert all(0 <= idx < len(y) for idx in all_indices), "Invalid indices found in the split"
 
     if do_stratify:
         # Check if stratification is maintained
@@ -134,17 +142,26 @@ def test_generate_matched_split(sample_data, do_stratify):
         val_classes, val_counts = np.unique(y[split["idx_val"]], return_counts=True)
         test_classes, test_counts = np.unique(y[split["idx_test"]], return_counts=True)
         
-        assert np.array_equal(train_classes, val_classes)
-        assert np.array_equal(train_classes, test_classes)
+        assert np.array_equal(train_classes, val_classes), "Classes in train and validation sets do not match"
+        assert np.array_equal(train_classes, test_classes), "Classes in train and test sets do not match"
         assert np.allclose(train_counts / len(split["idx_train"]), 
                            val_counts / len(split["idx_val"]), 
-                           rtol=0.1)
+                           rtol=0.1), "Class proportions in train and validation sets do not match"
         assert np.allclose(train_counts / len(split["idx_train"]), 
                            test_counts / len(split["idx_test"]), 
-                           rtol=0.1)
+                           rtol=0.1), "Class proportions in train and test sets do not match"
 
 @pytest.fixture
 def sample_h5_files(tmpdir):
+    """
+    Fixture to create sample HDF5 files for testing.
+
+    Args:
+        tmpdir: Pytest fixture for temporary directory.
+
+    Returns:
+        tuple: Paths to features, targets, and confounds HDF5 files.
+    """
     X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
     confounds = np.random.rand(100, 5)
 
@@ -169,6 +186,16 @@ def sample_h5_files(tmpdir):
 @pytest.mark.parametrize("confound_correction_method", ["correct-x", "correct-y", "correct-both", "none", "matching"])
 @pytest.mark.parametrize("stratify,balanced", [(True, True), (True, False), (False, False)])
 def test_write_splitfile_variations(sample_h5_files, tmpdir, confound_correction_method, stratify, balanced):
+    """
+    Test write_splitfile function with various parameters.
+
+    Args:
+        sample_h5_files (tuple): Fixture containing paths to sample HDF5 files.
+        tmpdir: Pytest fixture for temporary directory.
+        confound_correction_method (str): Method for confound correction.
+        stratify (bool): Whether to use stratification.
+        balanced (bool): Whether to use balanced splitting.
+    """
     features_path, targets_path, confounds_path = sample_h5_files
     split_path = str(tmpdir.join("split.json"))
 
@@ -194,32 +221,39 @@ def test_write_splitfile_variations(sample_h5_files, tmpdir, confound_correction
 
     assert set(split_dict.keys()) >= {"idx_train", "idx_val", "idx_test", "samplesize", "seed", "stratify"}
     
-    assert len(split_dict["idx_train"]) == 60
-    assert len(split_dict["idx_val"]) == 20
-    assert len(split_dict["idx_test"]) == 20
-    assert split_dict["samplesize"] == 60
-    assert split_dict["seed"] == 0
-    assert split_dict["stratify"] == stratify
+    assert len(split_dict["idx_train"]) == 60, "Incorrect number of training samples"
+    assert len(split_dict["idx_val"]) == 20, "Incorrect number of validation samples"
+    assert len(split_dict["idx_test"]) == 20, "Incorrect number of test samples"
+    assert split_dict["samplesize"] == 60, "Incorrect sample size"
+    assert split_dict["seed"] == 0, "Incorrect seed value"
+    assert split_dict["stratify"] == stratify, "Incorrect stratify value"
     
-    assert len(set(split_dict["idx_train"]) & set(split_dict["idx_val"]) & set(split_dict["idx_test"])) == 0
+    assert len(set(split_dict["idx_train"]) & set(split_dict["idx_val"]) & set(split_dict["idx_test"])) == 0, "Overlap found between train, validation, and test sets"
 
     if confound_correction_method == "matching":
-        assert "average_matching_score" in split_dict
-        assert isinstance(split_dict["average_matching_score"], float)
+        assert "average_matching_score" in split_dict, "Average matching score missing for matching method"
+        assert isinstance(split_dict["average_matching_score"], float), "Average matching score is not a float"
 
     all_indices = split_dict["idx_train"] + split_dict["idx_val"] + split_dict["idx_test"]
-    assert all(0 <= idx < 100 for idx in all_indices)
-    assert len(all_indices) == 100
+    assert all(0 <= idx < 100 for idx in all_indices), "Invalid indices found in the split"
+    assert len(all_indices) == 100, "Incorrect total number of samples"
 
     if stratify and balanced:
         with h5py.File(targets_path, "r") as f:
             y = f["data"][:]
         train_classes = y[split_dict["idx_train"]]
         unique, counts = np.unique(train_classes, return_counts=True)
-        assert len(unique) > 1
-        assert np.allclose(counts, counts[0], rtol=0.1)
+        assert len(unique) > 1, "Only one class found in training set"
+        assert np.allclose(counts, counts[0], rtol=0.1), "Class imbalance found in training set"
 
 def test_write_splitfile_insufficient_samples(sample_h5_files, tmpdir):
+    """
+    Test write_splitfile function with insufficient samples.
+
+    Args:
+        sample_h5_files (tuple): Fixture containing paths to sample HDF5 files.
+        tmpdir: Pytest fixture for temporary directory.
+    """
     features_path, targets_path, confounds_path = sample_h5_files
     split_path = str(tmpdir.join("split.json"))
 
@@ -240,10 +274,17 @@ def test_write_splitfile_insufficient_samples(sample_h5_files, tmpdir):
     with open(split_path, "r") as f:
         split_dict = json.load(f)
 
-    assert "error" in split_dict
-    assert split_dict["error"] == "insufficient samples"
+    assert "error" in split_dict, "Error key missing in split dictionary"
+    assert split_dict["error"] == "insufficient samples", "Incorrect error message for insufficient samples"
 
 def test_write_splitfile_invalid_confound_method(sample_h5_files, tmpdir):
+    """
+    Test write_splitfile function with an invalid confound correction method.
+
+    Args:
+        sample_h5_files (tuple): Fixture containing paths to sample HDF5 files.
+        tmpdir: Pytest fixture for temporary directory.
+    """
     features_path, targets_path, confounds_path = sample_h5_files
     split_path = str(tmpdir.join("split.json"))
 
@@ -263,4 +304,4 @@ def test_write_splitfile_invalid_confound_method(sample_h5_files, tmpdir):
         )
 
     # Check if the split file was not created
-    assert not tmpdir.join("split.json").exists()
+    assert not tmpdir.join("split.json").exists(), "Split file was created despite invalid confound correction method"

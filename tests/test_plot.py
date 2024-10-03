@@ -1,3 +1,19 @@
+"""
+test_plot.py
+============
+
+This module contains unit tests for the plot and process_results functions
+in the plot module of the ESCE workflow.
+
+Test Summary:
+1. test_plot: Tests the plot function by generating synthetic data and verifying the output.
+2. test_process_results: Tests the process_results function by checking the structure and content
+   of the resulting DataFrame.
+
+These tests ensure that the plotting functionality works correctly and that
+the results are processed as expected.
+"""
+
 import pandas as pd
 import pytest
 import numpy as np
@@ -9,7 +25,16 @@ import os
 from workflow.scripts.plot import plot, process_results
 
 def generate_sample_data(path, n_samples=5):
-    """Generate synthetic data for testing."""
+    """
+    Generate synthetic data for testing.
+
+    Args:
+        path (Path): Directory path to store the generated data.
+        n_samples (int): Number of samples to generate.
+
+    Returns:
+        list: List of paths to the generated stats files.
+    """
     data = []
     for i in range(n_samples):
         sample_size = 2 ** (7 + i)  # 128, 256, 512, 1024, 2048
@@ -35,6 +60,9 @@ def generate_sample_data(path, n_samples=5):
     return data
 
 def test_plot():
+    """
+    Test the plot function by generating synthetic data and verifying the output.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         # Generate synthetic data
         tmpdir_path = Path(tmpdir)
@@ -67,6 +95,9 @@ def test_plot():
 
 
 def test_process_results():
+    """
+    Test the process_results function by checking the structure and content of the resulting DataFrame.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         # Generate synthetic data
         tmpdir_path = Path(tmpdir)
@@ -102,4 +133,3 @@ def test_process_results():
         for index, row in df.iterrows():
             expected_cni = f"{row['confound_correction_method']}-{row['confound_correction_cni']}"
             assert row['cni'] == expected_cni, f"Mismatch in cni for row {index}. Expected {expected_cni}, got {row['cni']}"
-
