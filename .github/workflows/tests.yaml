@@ -41,6 +41,7 @@ jobs:
     - name: Run snakemake submodule test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: ${{ github.ref_name }}
       run: poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F all
 
     # Uncomment this step if you need to run tests with conda
