@@ -2,10 +2,14 @@ import os
 import textwrap
 from pathlib import Path
 import altair as alt
-
 import pandas as pd
 import yaml
+import logging
+import json
 
+# Set up logging
+log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
+logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
 
 def plot(
     stats_filename: str,
@@ -26,12 +30,15 @@ def plot(
         model_name (str): Name of the model to plot.
         title (str): Title of the plot.
     """
+    logging.info(f"Starting hyperparameter plot generation for {model_name}")
+    
     # Extract the hyperparameter grid for the specified model
     grid = grid[model_name]
 
     output_filename = Path(output_filename)
     # Check if the scores file is empty or if no hyperparameters are provided
     if os.stat(stats_filename).st_size == 0 or not grid:
+        logging.warning(f"Empty input file or no hyperparameters provided. Creating empty output file: {output_filename}")
         output_filename.touch()
         return
 
@@ -40,6 +47,7 @@ def plot(
 
     # Check if the DataFrame is empty
     if scores.empty:
+        logging.warning(f"Empty DataFrame. Creating empty output file: {output_filename}")
         output_filename.touch()
         return
 
@@ -49,7 +57,10 @@ def plot(
     metric = "r2_val" if "r2_val" in scores.columns else "acc_val" if "acc_val" in scores.columns else None
 
     if metric is None:
+        logging.error("Neither 'r2_val' nor 'acc_val' found in the DataFrame")
         raise ValueError("Neither 'r2_val' nor 'acc_val' found in the DataFrame")
+
+    logging.info(f"Using metric: {metric}")
 
     # Reshape the DataFrame for plotting
     df = scores.melt(
@@ -67,6 +78,7 @@ def plot(
     for hp in hp_names:
         # Determine the scale type for the hyperparameter
         scale_type = hyperparameter_scales.get(hp, 'linear')
+        logging.debug(f"Plotting hyperparameter {hp} with scale type: {scale_type}")
 
         # Create a scatter plot for the hyperparameter
         base = alt.Chart(df[df['hyperparameter'] == hp]).mark_point().encode(
@@ -84,12 +96,12 @@ def plot(
         hline_min = alt.Chart(pd.DataFrame({'y': [min_value]})).mark_rule(
             strokeDash=[4, 4],
             color='black'
-        ).encode(y='y:Q')
+        ).encode(y=alt.Y('y:Q', scale=alt.Scale(type=scale_type)))
 
         hline_max = alt.Chart(pd.DataFrame({'y': [max_value]})).mark_rule(
             strokeDash=[4, 4],
             color='black'
-        ).encode(y='y:Q')
+        ).encode(y=alt.Y('y:Q', scale=alt.Scale(type=scale_type)))
 
         # Combine the scatter plot with the reference lines
         chart = (base + hline_min + hline_max).properties(title=hp)
@@ -101,14 +113,21 @@ def plot(
     )
 
     # Save the final concatenated chart to the specified output file
+    logging.info(f"Saving plot to {output_filename}")
     final_chart.save(str(output_filename))
-
+    
+    # For debugging purposes, save the chart specification as JSON
+    with open(output_filename.with_suffix('.json'), 'w') as f:
+        json.dump(final_chart.to_dict(), f, indent=2)
+    
+    logging.info("Plot generation completed successfully")
 
 if __name__ == "__main__":
     """
     Entry point for the script when executed as a standalone program.
     Parses parameters from Snakemake and initiates the hyperparameter plotting process.
     """
+    logging.info("Starting plot_hps script")
     plot(
         stats_filename=snakemake.input.scores,
         output_filename=snakemake.output.plot,
@@ -117,3 +136,4 @@ if __name__ == "__main__":
         model_name=snakemake.wildcards.model,
         title=snakemake.params.title,
     )
+    logging.info("plot_hps script completed")

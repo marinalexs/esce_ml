@@ -9,9 +9,12 @@ Test Summary:
 1. test_plot: Tests the plot function by generating synthetic data and verifying the output.
 2. test_process_results: Tests the process_results function by checking the structure and content
    of the resulting DataFrame.
+3. test_empty_result_files: Tests handling of empty result files.
+4. test_missing_bootstrap_files: Tests behavior when bootstrap files are missing.
+5. test_invalid_bootstrap_data: Tests error handling for invalid bootstrap data.
 
-These tests ensure that the plotting functionality works correctly and that
-the results are processed as expected.
+These tests ensure that the plotting functionality works correctly, results are processed as expected,
+and edge cases are handled properly.
 """
 
 import pandas as pd
@@ -21,6 +24,7 @@ from pathlib import Path
 import json
 import tempfile
 import os
+import yaml
 
 from workflow.scripts.plot import plot, process_results
 
@@ -93,7 +97,6 @@ def test_plot():
             assert 'Test Plot' in content, "Title not found in the output file"
             assert 'vega-embed' in content, "Vega-Embed not found in the output file"
 
-
 def test_process_results():
     """
     Test the process_results function by checking the structure and content of the resulting DataFrame.
@@ -133,3 +136,84 @@ def test_process_results():
         for index, row in df.iterrows():
             expected_cni = f"{row['confound_correction_method']}-{row['confound_correction_cni']}"
             assert row['cni'] == expected_cni, f"Mismatch in cni for row {index}. Expected {expected_cni}, got {row['cni']}"
+
+def test_empty_result_files():
+    """
+    Test handling of empty result files.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        
+        # Create an empty stats file
+        empty_stats_file = tmpdir_path / "empty_stats.json"
+        empty_stats_file.touch()
+        
+        # Create a non-empty stats file
+        non_empty_stats_file = tmpdir_path / "non_empty_stats.json"
+        with open(non_empty_stats_file, 'w') as f:
+            json.dump({"x": [100], "y_mean": [0.5], "y_std": [0.1]}, f)
+        
+        # Process the results
+        df = process_results([str(empty_stats_file), str(non_empty_stats_file)])
+        
+        # Check that only the non-empty file is processed
+        assert len(df) == 1, "Only non-empty files should be processed"
+        assert df.iloc[0]['full_path'] == str(non_empty_stats_file), "Non-empty file should be processed"
+
+def test_missing_bootstrap_files():
+    """
+    Test behavior when bootstrap files are missing.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        sample_results = generate_sample_data(tmpdir_path, n_samples=1)
+        
+        # Remove the bootstrap file
+        bootstrap_file = Path(sample_results[0]).parent / "bootstrap.json"
+        bootstrap_file.unlink()
+        
+        # Define output file
+        output_file = tmpdir_path / "test_plot.html"
+        
+        # Call the plot function
+        plot(
+            stats_file_list=sample_results,
+            output_filename=str(output_file),
+            color_variable="dataset",
+            linestyle_variable=None,
+            title="Test Plot",
+            max_x=6
+        )
+        
+        # Check if the output file was created despite missing bootstrap file
+        assert output_file.exists(), "Output file should be created even with missing bootstrap file"
+
+def test_invalid_bootstrap_data():
+    """
+    Test error handling for invalid bootstrap data.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir_path = Path(tmpdir)
+        sample_results = generate_sample_data(tmpdir_path, n_samples=1)
+        
+        # Create invalid bootstrap data
+        invalid_bootstrap_data = [["invalid", "data"]]
+        bootstrap_file = Path(sample_results[0]).parent / "bootstrap.json"
+        with open(bootstrap_file, 'w') as f:
+            json.dump(invalid_bootstrap_data, f)
+        
+        # Define output file
+        output_file = tmpdir_path / "test_plot.html"
+        
+        # Call the plot function
+        plot(
+            stats_file_list=sample_results,
+            output_filename=str(output_file),
+            color_variable="dataset",
+            linestyle_variable=None,
+            title="Test Plot",
+            max_x=6
+        )
+        
+        # Check if the output file was created despite invalid bootstrap data
+        assert output_file.exists(), "Output file should be created even with invalid bootstrap data"
