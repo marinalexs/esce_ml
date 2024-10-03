@@ -77,3 +77,19 @@ Or run the following line with the name(s) of a file you want to test separately
 ```
 pytest tests/test_<file_name>.py 
 ```
+
+## Logging
+
+The ESCE workflow uses Python's logging module to provide information about the execution of various scripts. You can control the verbosity of the logging output by setting the `ESCE_LOG_LEVEL` environment variable. The available log levels, in order of increasing verbosity, are:
+
+- CRITICAL
+- ERROR
+- WARNING (default)
+- INFO
+- DEBUG
+
+To set the log level, you can use the following command before running Snakemake:
+
+```
+export ESCE_LOG_LEVEL=<log_level>
+```

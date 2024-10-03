@@ -221,7 +221,7 @@ def test_write_splitfile_insufficient_samples(sample_h5_files, tmpdir):
         split_dict = json.load(f)
 
     assert "error" in split_dict
-    assert split_dict["error"] == "insufficient samples"
+    assert split_dict["error"] == "Insufficient samples"
 
 def test_write_splitfile_invalid_confound_method(sample_h5_files, tmpdir):
     """Test write_splitfile function with an invalid confound correction method."""
@@ -297,7 +297,7 @@ def test_write_splitfile_small_validation_test(sample_h5_files, tmpdir):
         split_dict = json.load(f)
 
     assert "error" in split_dict
-    assert split_dict["error"] == "insufficient samples"
+    assert split_dict["error"] == "Insufficient samples"
 
 def test_write_splitfile_single_class(sample_h5_files, tmpdir):
     """Test write_splitfile function with a single class in the target."""
@@ -326,7 +326,7 @@ def test_write_splitfile_single_class(sample_h5_files, tmpdir):
         split_dict = json.load(f)
 
     assert "error" in split_dict
-    assert split_dict["error"] == "only a single class in target"
+    assert split_dict["error"] == "Only a single class in target"
 
 def test_write_splitfile_matching_non_binary(sample_h5_files, tmpdir):
     """Test write_splitfile function with matching for non-binary classification."""
@@ -355,7 +355,7 @@ def test_write_splitfile_matching_non_binary(sample_h5_files, tmpdir):
         split_dict = json.load(f)
 
     assert "error" in split_dict
-    assert split_dict["error"] == "matching requires binary classification"
+    assert split_dict["error"] == "Matching requires binary classification"
 
 def test_generate_matched_split_with_biased_confounds():
     """
