@@ -93,3 +93,25 @@ To set the log level, you can use the following command before running Snakemake
 ```
 export ESCE_LOG_LEVEL=<log_level>
 ```
+
+## Interactive ESCE Viewer
+
+The Interactive ESCE Viewer allows you to visualize and explore your ESCE results.
+
+### How to Use
+
+1. Install Streamlit:
+   ```
+   pip install streamlit
+   ```
+
+2. Navigate to the project root directory.
+
+3. Run the viewer:
+   ```
+   streamlit run interactive_viewer.py
+   ```
+
+4. The viewer will launch in your default web browser. If it doesn't open automatically, look for a URL in the terminal output (usually http://localhost:8501).
+
+5. Use the sidebar on the left to filter the data you want to visualize. You can select multiple options for each category (dataset, features, target, model, etc.).
