@@ -58,7 +58,8 @@ def process_results(available_results: list) -> pd.DataFrame:
     
     # Extract metadata by parsing the file paths
     def extract_metadata(path):
-        parts = Path(path).parts[-3].split('_')
+        parts = [Path(path).parts[1],Path(path).parts[3]]+Path(path).parts[4].split('_')
+        logger.debug(f"Extracted parts: {Path(path).parts}")
         return pd.Series(parts + [None] * (len(expected_columns) - len(parts)), index=expected_columns)
     
     df[expected_columns] = df["full_path"].apply(extract_metadata)
@@ -80,10 +81,9 @@ def process_results(available_results: list) -> pd.DataFrame:
     df = df[df["full_path"].isin(non_empty_files)]
     
     # Combine confound correction method and CNI into a single column
-    df["cni"] = df.apply(lambda row: f"{row['confound_correction_method']}-{row['confound_correction_cni']}" 
-                         if pd.notna(row['confound_correction_method']) and pd.notna(row['confound_correction_cni']) 
-                         else None, axis=1)
+    df["cni"] = df.apply(lambda row: f"{row['confound_correction_method']}-{row['confound_correction_cni']}" , axis=1)
     logger.info(f"Processed {len(df)} non-empty result files")
+    logger.debug(f"DataFrame: {df.T}")
     return df
 
 def plot(
