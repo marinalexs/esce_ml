@@ -1,28 +1,31 @@
 ## custom names should only use hyphens, never use underscores
 
 val_test_frac: .25
+val_test_min: 4
+val_test_max: 4
 bootstrap_repetitions: 100
+grid: "default"
+quantile_transform: true
 
 seeds: [0, 1, 2,]
-sample_sizes: [10, 20, 30]
+sample_sizes: [10,15,20,25,30,]
 
 experiments:
   example_regression:
     dataset: "example-dataset"
     features: ["example-features-a","example-features-b"]
-    features_cni: ["example-covariates-of-no-interest",]
     targets: ["example-targets",]
-    targets_cni: ["none",]
-    matching: ["none",]
+    confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest", "none"]
+    balanced: false
     models: ["ridge-reg",]
-    grid: "default"
   example_classification:
     dataset: "example-dataset"
     features: ["example-features-b",]
-    features_cni: ["none",]
     targets: ["example-targets",]
-    targets_cni: ["none",]
-    matching: ["none",]
+    confound_correction_method: ["matching", "none"]
+    confound_correction_cni: ["example-covariates-of-no-interest"]
+    balanced: true
     models: ["ridge-cls",]
     grid: "default"
 

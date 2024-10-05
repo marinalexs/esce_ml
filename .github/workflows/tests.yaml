@@ -9,6 +9,9 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
 
     steps:
     - name: Checkout
@@ -17,30 +20,33 @@ jobs:
     - name: Install poetry
       run: pipx install poetry
 
-    - name: Set up Python 3.9
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
         cache: 'poetry'
 
+    - name: Update poetry lock file
+      run: poetry lock --no-update
+
     - name: Install dependencies
-      run: |
-        poetry install
+      run: poetry install
 
     - name: Run unit tests
-      run: |
-        poetry run pytest -m "not slow" --cov=esce --cov-report=term 
+      run: poetry run pytest -m "not slow" --cov=esce --cov-report=term 
 
     - name: Run snakemake workflow test
-      run: |
-        poetry run snakemake --configfile tests/test_config.yaml -F -c1 all
+      run: poetry run snakemake --configfile tests/test_config.yaml -F -c1 all
 
     - name: Run snakemake submodule test
-      run: |
-        export GITHUB_TOKEN=${{ github.token }}
-        poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F all
-        
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: ${{ github.head_ref }}
+      run: poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F all
+
+    # Uncomment this step if you need to run tests with conda
     # - name: Run snakemake submodule test with conda
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     #   run: |
-    #     export GITHUB_TOKEN=${{ github.token }}
     #     poetry run snakemake -s tests/test_snakefile_submodule.smk -c1 -F --use-conda --conda-frontend conda all

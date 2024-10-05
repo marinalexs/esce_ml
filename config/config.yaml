@@ -3,6 +3,9 @@ val_test_min: False
 val_test_max: False
 bootstrap_repetitions: 100
 stratify: False
+balanced: False  # Add this line to set the global balanced value
+quantile_transform: False  # Add this line to set the global quantile_transform value
+grid: "default"  # Add this line to set the global grid value
 
 seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 sample_sizes: [128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768]
@@ -13,12 +16,13 @@ experiments: {}
   # mnist_benchmark:
   #   dataset: "mnist"
   #   features: ["pixel",]
-  #   features_cni: ["none",]
   #   targets: ["ten-digits","odd-even"]
-  #   targets_cni: ["none",]
-  #   matching: ["none",]
+  #   confound_correction_method: ["correct-x", "correct-y", "correct-both", "none"]
+  #   confound_correction_cni: ["example-covariates-of-no-interest"]
+  #   balanced: true  # This can override the global balanced value for this specific experiment
+  #   quantile_transform: true  # This can override the global quantile_transform value for this specific experiment
   #   models: ["ridge-cls",]
-  #   grid: "default"
+  #   grid: "custom"  # This can override the global grid value for this specific experiment
   # another_set_of_experiments:
   #   [...]
 
@@ -30,8 +34,8 @@ custom_datasets: {}
   # dataset_name:
   #   features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
   #   targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
-  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}
   # another_dataset_name:
   #   features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
-  #   targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
-  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY']
+  #   targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}
+  #   covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}

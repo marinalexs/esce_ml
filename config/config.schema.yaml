@@ -38,7 +38,7 @@
         "type": "integer",
         "minimum": 0
       },
-      "default": [0,]
+      "default": [0]
     },
     "sample_sizes": {
       "type": "array",
@@ -62,29 +62,30 @@
               "type": "string"
             }
           },
-          "features_cni": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "targets": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "targets_cni": {
+          "confound_correction_method": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": ["correct-x", "correct-y", "correct-both", "matching", "with-cni", "only-cni", "none"]
             },
+            "minItems": 1,
+            "uniqueItems": true
           },
-          "matching": {
+          "confound_correction_cni": {
             "type": "array",
             "items": {
               "type": "string"
             },
+            "minItems": 1
+          },
+          "balanced": {
+            "type": "boolean"
           },
           "models": {
             "type": "array",
@@ -94,27 +95,13 @@
           },
           "grid": {
             "type": "string"
-          }
-        },
-        "if": {
-          "properties": {
-            "targets_cni": {
-              "not": {
-                "const": ["none"]
-              }
-            }
           },
-          "required": ["targets_cni"]
-        },
-        "then": {
-          "properties": {
-            "matching": {
-              "const": ["none"]
-            }
+          "quantile_transform": {
+            "type": "boolean"
           }
         },
-        "required": ["dataset", "features", "features_cni", "targets", "targets_cni", "matching", "models", "grid"]
-      },
+        "required": ["dataset", "features", "targets", "confound_correction_method", "confound_correction_cni", "models",]
+      }
     },
     "custom_datasets": {
       "type": "object",
@@ -146,7 +133,19 @@
         },
         "required": ["features", "targets", "covariates"]
       }
+    },
+    "balanced": {
+      "type": "boolean",
+      "default": false
+    },
+    "quantile_transform": {
+      "type": "boolean",
+      "default": false
+    },
+    "grid": {
+      "type": "string",
+      "default": "default"
     }
   },
-  "required": ["val_test_frac", "bootstrap_repetitions", "seeds", "sample_sizes", "experiments", "custom_datasets"]
+  "required": ["val_test_frac", "bootstrap_repetitions", "seeds", "sample_sizes", "experiments", "custom_datasets", "balanced", "quantile_transform", "grid"]
 }

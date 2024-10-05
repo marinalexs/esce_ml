@@ -17,58 +17,42 @@ def expand_from_config(filename):
         itertools.chain(
             *[
                 # merge the experiment-specific config with the global config
-                expand(filename, **{**config["experiments"][experiment],**config})
+                expand(filename, **{**config, **config["experiments"][experiment], "balanced": config["experiments"][experiment].get("balanced", config["balanced"]), "quantile_transform": config["experiments"][experiment].get("quantile_transform", config["quantile_transform"]), "grid": config["experiments"][experiment].get("grid", config["grid"])})
                 # for each experiment
                 for experiment in config["experiments"]
             ]
         )
     )
 
-all_data = [
-    config["custom_datasets"][dataset][category][feature]
-    for dataset in config["custom_datasets"]
-    for category in config["custom_datasets"][dataset]
-    for feature in config["custom_datasets"][dataset][category]
-]
-all_fits = expand_from_config(
-    "results/{dataset}/fits/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{sample_sizes}_{seeds}_{grid}.csv"
-)
-sample_complexity_results = expand_from_config(
-    "results/{dataset}/statistics/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json"
-)
-individual_plots = expand_from_config(
-    "results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
-)
-hp_plots = expand_from_config(
-    "results/{dataset}/plots/hps/{models}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",
-)
-by_feature_plots = expand_from_config(
-    "results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{models}_{grid}.png"
-)
-by_target_plots = expand_from_config(
-    "results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{models}_{grid}.png"
-)
-by_model_plots = expand_from_config(
-    "results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
-)
-by_cni_plots = expand_from_config(
-    "results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{models}_{grid}.png",
-)
+features_variant = lambda wildcards: "results/{dataset}/features/{features}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/features/{features}_none_{quantile_transform}.h5"
+targets_variant = lambda wildcards: "results/{dataset}/targets/{targets}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/targets/{targets}_none_{quantile_transform}.h5"
 
+def filter_incompatible_confound_setups(list_of_filenames):
+    return set(
+        [i if i.split("_")[2] != 'none' and i.split("_")[3] != 'none' else "_".join(i.split("_")[:2] + ["none_none"] + i.split("_")[4:]) for i in list_of_filenames]
+    )
+
+sample_complexity_results = expand_from_config(
+    "results/{dataset}/statistics/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json"
+)
+sample_complexity_results = filter_incompatible_confound_setups(sample_complexity_results)
+
+all_plots = [
+    "plots/individual/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{models}_{grid}.png",
+    "plots/hps/{models}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.png",
+    "plots/features/all-features_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{models}_{grid}.png",
+    "plots/targets/{features}_all-targets_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{models}_{grid}.png",
+    "plots/models/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_all-models_{grid}.png",
+    "plots/cni/{features}_{targets}_{confound_correction_method}_all-cni_{balanced}_{quantile_transform}_{models}_{grid}.png",
+]
+all_plots = itertools.chain(*[expand_from_config(f"results/{{dataset}}/{plot}") for plot in all_plots])
+all_plots = filter_incompatible_confound_setups(all_plots)
+all_plots = [i for i in all_plots if not ('/cni/' in i and "none_none" in i)]
 
 rule all:
     input:
         'results/config_validation.done',
-        all_data,
-        all_fits,
-        sample_complexity_results,
-        individual_plots,
-        by_feature_plots,
-        by_target_plots,
-        by_model_plots,
-        by_cni_plots,
-        hp_plots,
-
+        *all_plots,
 
 rule check_config:
     priority: 100
@@ -84,130 +68,144 @@ rule check_config:
 
 rule prepare_features_or_targets:
     output:
-        out="results/{dataset}/{features_or_targets}/{name}_none.h5",
+        out="results/{dataset}/{features_or_targets}/{name}_none_{quantile_transform}.h5",
     params:
         custom_datasets=config["custom_datasets"],
+    wildcard_constraints:
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/prepare_data.py")
-
 
 rule prepare_covariates:
     output:
-        out="results/{dataset}/covariates/{name}.h5",
+        out="results/{dataset}/covariates/{name}_{quantile_transform}.h5",
     params:
         custom_datasets=config["custom_datasets"],
+    wildcard_constraints:
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/prepare_data.py")
 
-
-rule confound_regression:
+rule confound_correction:
     input:
-        features="results/{dataset}/{targets_or_features}/{name}_none.h5",
-        confounds="results/{dataset}/covariates/{confounds}.h5",
+        features="results/{dataset}/{targets_or_features}/{name}_none_{quantile_transform}.h5",
+        confounds="results/{dataset}/covariates/{confound_correction_cni}_{quantile_transform}.h5",
     output:
-        features="results/{dataset}/{targets_or_features}/{name}_{confounds}.h5",
+        features="results/{dataset}/{targets_or_features}/{name}_{confound_correction_cni}_{quantile_transform}.h5",
+    wildcard_constraints:
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/confound_regression.py")
 
-
 rule split:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.h5",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.h5",
-        matching="results/{dataset}/covariates/{matching}.h5",
+        features=features_variant,
+        targets=targets_variant,
+        cni="results/{dataset}/covariates/{confound_correction_cni}_{quantile_transform}.h5",
     params:
         val_test_frac=config["val_test_frac"],
         val_test_max=config["val_test_max"],
         val_test_min=config["val_test_min"],
         stratify=config["stratify"],
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     output:
-        split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
+        split="results/{dataset}/splits/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{samplesize}_{seed}.json",
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/generate_splits.py")
 
-
 rule fit:
     input:
-        features="results/{dataset}/features/{features}_{features_cni}.h5",
-        targets="results/{dataset}/targets/{targets}_{targets_cni}.h5",
-        split="results/{dataset}/splits/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}.json",
+        features=features_variant,
+        targets=targets_variant,
+        covariates="results/{dataset}/covariates/{confound_correction_cni}_{quantile_transform}.h5",
+        split="results/{dataset}/splits/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{samplesize}_{seed}.json",
     params:
         grid = lambda wildcards: config["grids"][wildcards.grid],
         existing_scores=lambda wildcards: glob.glob(
-            "results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_*.csv".format(
+            "results/{dataset}/fits/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{samplesize}_{seed}_*.csv".format(
                 **wildcards
             )
         ),
     output:
-        scores="results/{dataset}/fits/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{samplesize}_{seed}_{grid}.csv",
+        scores="results/{dataset}/fits/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{samplesize}_{seed}_{grid}.csv",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/fit_model.py")
 
-
 rule aggregate:
     input:
         scores=expand(
-            "results/{{dataset}}/fits/{{model}}/{{features}}_{{features_cni}}_{{targets}}_{{targets_cni}}_{{matching}}_{samplesize}_{seed}_{{grid}}.csv",
+            "results/{{dataset}}/fits/{{model}}/{{features}}_{{targets}}_{{confound_correction_method}}_{{confound_correction_cni}}_{{balanced}}_{{quantile_transform}}_{samplesize}_{seed}_{{grid}}.csv",
             seed=config["seeds"],
             samplesize=config["sample_sizes"],
         ),
     output:
-        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.csv",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/aggregate.py")
 
-
 rule extrapolate:
     input:
-        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.csv",
     params:
         bootstrap_repetitions=config["bootstrap_repetitions"],
     output:
-        stats="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
-        bootstraps="results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.bootstrap.json",
+        stats="results/{dataset}/statistics/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json",
+        bootstraps="results/{dataset}/statistics/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.bootstrap.json",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/extrapolate.py")
-
 
 rule plot_individually:
     input:
         sample_complexity_results,
     params:
         stats=[
-            "results/{dataset}/statistics/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json",
+            "results/{dataset}/statistics/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json",
         ],
         title = config['figure_titles']['individual'],
         color_variable=None,
         linestyle_variable=None,
         max_x=config["extrapolate_to"],
     output:
-        plot="results/{dataset}/plots/individual/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
+        plot="results/{dataset}/plots/individual/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{model}_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot.py")
-
 
 rule plot_by_features:
     input:
         sample_complexity_results,
     params:
         stats=lambda wildcards: glob.glob(
-            "results/{dataset}/statistics/{model}/*_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json".format(
+            "results/{dataset}/statistics/{model}/*_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json".format(
                 **wildcards
             )
         ),
@@ -216,19 +214,21 @@ rule plot_by_features:
         linestyle_variable=None,
         max_x=config["extrapolate_to"],
     output:
-        plot="results/{dataset}/plots/features/all-features_{features_cni}_{targets}_{targets_cni}_{matching}_{model}_{grid}.png",
+        plot="results/{dataset}/plots/features/all-features_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{model}_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot.py")
-
 
 rule plot_by_targets:
     input:
         sample_complexity_results,
     params:
         stats=lambda wildcards: glob.glob(
-            "results/{dataset}/statistics/{model}/{features}_{features_cni}_*_{targets_cni}_{matching}_{grid}.stats.json".format(
+            "results/{dataset}/statistics/{model}/{features}_*_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json".format(
                 **wildcards
             )
         ),
@@ -237,19 +237,21 @@ rule plot_by_targets:
         linestyle_variable=None,
         max_x=config["extrapolate_to"],
     output:
-        plot="results/{dataset}/plots/targets/{features}_{features_cni}_all-targets_{targets_cni}_{matching}_{model}_{grid}.png",
+        plot="results/{dataset}/plots/targets/{features}_all-targets_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{model}_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot.py")
-
 
 rule plot_by_models:
     input:
         sample_complexity_results,
     params:
         stats=lambda wildcards: glob.glob(
-            "results/{dataset}/statistics/*/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.stats.json".format(
+            "results/{dataset}/statistics/*/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.stats.json".format(
                 **wildcards
             )
         ),
@@ -258,48 +260,58 @@ rule plot_by_models:
         linestyle_variable=None,
         max_x=config["extrapolate_to"],
     output:
-        plot="results/{dataset}/plots/models/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_all-models_{grid}.png",
+        plot="results/{dataset}/plots/models/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_all-models_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot.py")
-
 
 rule plot_by_cni:
     input:
         sample_complexity_results,
     params:
         stats=lambda wildcards: glob.glob(
-            "results/{dataset}/statistics/{model}/{features}_*_{targets}_*_*_{grid}.stats.json".format(
+            "results/{dataset}/statistics/{model}/{features}_{targets}_{confound_correction_method}_*_{balanced}_{quantile_transform}_{grid}.stats.json".format(
                 **wildcards
             )
-        ),
+        )+
+            ["results/{dataset}/statistics/{model}/{features}_{targets}_none_none_{balanced}_{quantile_transform}_{grid}.stats.json".format(
+                **wildcards
+            )]
+        ,
         title=config['figure_titles']['cni'],
         color_variable="cni",
         linestyle_variable=None,
         max_x=config["extrapolate_to"],
     output:
-        plot="results/{dataset}/plots/cni/{features}_all-features-cni_{targets}_all-targets-cni_all-matching_{model}_{grid}.png",
+        plot="results/{dataset}/plots/cni/{features}_{targets}_{confound_correction_method}_all-cni_{balanced}_{quantile_transform}_{model}_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot.py")
 
-
 rule plot_hyperparameters:
     input:
-        scores="results/{dataset}/scores/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.csv",
+        scores="results/{dataset}/scores/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.csv",
     params:
         title=config['figure_titles']['hyperparameters'],
         hyperparameter_scales=config["hyperparameter_scales"],
         grid=lambda wildcards: config['grids'][wildcards.grid],
     output:
-        plot="results/{dataset}/plots/hps/{model}/{features}_{features_cni}_{targets}_{targets_cni}_{matching}_{grid}.png",
+        plot="results/{dataset}/plots/hps/{model}/{features}_{targets}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{quantile_transform}_{grid}.png",
+    wildcard_constraints:
+        balanced='True|False',
+        quantile_transform='True|False'
     conda:
         workflow.source_path("envs/environment.yaml")
     script:
         workflow.source_path("scripts/plot_hps.py")
-
 
 rule compress_results:
     input:
