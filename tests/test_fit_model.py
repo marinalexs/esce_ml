@@ -361,3 +361,108 @@ def test_existing_scores_reuse(tmpdir, create_h5_dataset):
         rtol=1e-5, 
         atol=1e-8
     )
+
+# Add this new test function
+@pytest.mark.parametrize("confound_correction_method", ["with_cni", "only_cni", "normal"])
+@pytest.mark.parametrize("model_type", ["classification", "regression"])
+def test_fit_with_confound_correction(tmpdir, create_h5_dataset, confound_correction_method, model_type):
+    """
+    Test the fit function with various confound correction methods and model types.
+
+    This test creates toy datasets, sets up the necessary file structure,
+    runs the fit function, and checks the output for correctness.
+
+    Args:
+        tmpdir (str): Pytest fixture for temporary directory.
+        create_h5_dataset (callable): Fixture to create HDF5 datasets.
+        confound_correction_method (str): Method for confound correction.
+        model_type (str): Type of model to test (classification or regression).
+    """
+    # Create toy problems
+    if model_type == "classification":
+        X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
+        model_name = "ridge-cls"
+    else:
+        X, y = make_regression(n_samples=100, n_features=20, random_state=42)
+        model_name = "ridge-reg"
+    
+    y = y.reshape(-1, 1)
+    cni = np.random.rand(100, 5)
+
+    # Create data split
+    split = {
+        "idx_train": list(range(0, 60)),
+        "idx_val": list(range(60, 80)),
+        "idx_test": list(range(80, 100)),
+        "samplesize": 100,
+        "seed": 42,
+    }
+
+    # Save data to temporary files
+    features_path = create_h5_dataset(X, 'features.h5')
+    targets_path = create_h5_dataset(y, 'targets.h5')
+    cni_path = create_h5_dataset(cni, 'cni.h5')
+    split_path = tmpdir.join("split.json")
+    with open(split_path, "w") as f:
+        json.dump(split, f)
+
+    # Define model parameters
+    hp = {"alpha": [0.1, 1.0, 10.0]}
+    grid = {model_name: hp}
+
+    # Run the fit function
+    scores_path = tmpdir.join("scores.csv")
+    fit(
+        features_path,
+        targets_path,
+        str(split_path),
+        str(scores_path),
+        model_name,
+        grid,
+        [],
+        confound_correction_method,
+        cni_path,
+    )
+
+    # Load and check the scores
+    scores = pd.read_csv(scores_path)
+    print(f"Scores for {model_type} model with {confound_correction_method} method:")
+    print(scores)
+
+    # Check expected columns
+    expected_columns = ["n", "s", "alpha"]
+    expected_columns.extend(["acc_train", "acc_val", "acc_test", "f1_train", "f1_val", "f1_test"] if model_type == "classification" 
+                            else ["r2_train", "r2_val", "r2_test", "mae_train", "mae_val", "mae_test", "mse_train", "mse_val", "mse_test"])
+
+    for col in expected_columns:
+        assert col in scores.columns, f"Expected column {col} not found in scores"
+
+    # Check metadata
+    assert scores["n"].iloc[0] == split["samplesize"], f"Expected samplesize {split['samplesize']}, got {scores['n'].iloc[0]}"
+    assert scores["s"].iloc[0] == split["seed"], f"Expected seed {split['seed']}, got {scores['s'].iloc[0]}"
+
+    # Check score ranges
+    score_columns = [col for col in scores.columns if col.endswith(('train', 'val', 'test'))]
+    for col in score_columns:
+        if col.startswith(('acc', 'f1')):
+            assert all(0 <= scores[col]) and all(scores[col] <= 1), f"Scores in column {col} are not within [0, 1] range"
+        elif col.startswith('r2'):
+            assert all(-10 <= scores[col]) and all(scores[col] <= 1), f"R² scores in column {col} are outside the expected range"
+        else:
+            assert all(scores[col] >= 0), f"Scores in column {col} contain negative values"
+
+    # Check alpha values
+    assert set(scores["alpha"].astype(float)) == set(hp["alpha"]), f"Expected alpha values {set(hp['alpha'])}, got {set(scores['alpha'].astype(float))}"
+
+    # Additional checks for regression models
+    if model_type == "regression":
+        r2_cols = ["r2_train", "r2_val", "r2_test"]
+        r2_values = scores[r2_cols].values
+        r2_range = r2_values.max() - r2_values.min()
+        assert r2_range < 0.5, f"R² values vary too much across sets: {dict(zip(r2_cols, r2_values[0]))}"
+
+        mse_cols = ["mse_train", "mse_val", "mse_test"]
+        mse_values = scores[mse_cols].values
+        assert np.all(mse_values >= 0), f"Negative MSE values found: {dict(zip(mse_cols, mse_values[0]))}"
+        mse_range = mse_values.max() - mse_values.min()
+        assert mse_range < 1e6, f"MSE values vary too much across sets: {dict(zip(mse_cols, mse_values[0]))}"
