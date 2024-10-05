@@ -68,7 +68,7 @@ def write_data_to_file() -> Callable[[np.ndarray, str, Path], Path]:
     return _write_data_to_file
 
 @pytest.fixture
-def create_dataset(write_data_to_file: Callable) -> Callable[[np.ndarray, np.ndarray, np.ndarray, str, Path], Dict[str, Path]]:
+def create_dataset(write_data_to_file: Callable) -> Callable[[np.ndarray, np.ndarray, np.ndarray, str, Union[str, Path]], Dict[str, Path]]:
     """
     Fixture to create a dataset from X, y, and confounds data.
 
@@ -78,10 +78,11 @@ def create_dataset(write_data_to_file: Callable) -> Callable[[np.ndarray, np.nda
     Returns:
         Callable: Function to create a dataset and return file paths.
     """
-    def _create_dataset(X: np.ndarray, y: np.ndarray, confounds: np.ndarray, file_format: str, base_path: Path) -> Dict[str, Path]:
-        features_path = write_data_to_file(X, file_format, base_path.with_name(f"{base_path.name}_features.{file_format}"))
-        targets_path = write_data_to_file(y, file_format, base_path.with_name(f"{base_path.name}_targets.{file_format}"))
-        confounds_path = write_data_to_file(confounds, file_format, base_path.with_name(f"{base_path.name}_confounds.{file_format}"))
+    def _create_dataset(X: np.ndarray, y: np.ndarray, confounds: np.ndarray, file_format: str, base_path: Union[str, Path]) -> Dict[str, Path]:
+        base_path = Path(base_path)  # Convert to Path object if it's a string
+        features_path = write_data_to_file(X, file_format, base_path / f"features.{file_format}")
+        targets_path = write_data_to_file(y, file_format, base_path / f"targets.{file_format}")
+        confounds_path = write_data_to_file(confounds, file_format, base_path / f"confounds.{file_format}")
         
         return {
             'features': features_path,
@@ -176,11 +177,19 @@ def construct_filename() -> Callable[[Dict[str, str]], str]:
         Callable: Function to construct a filename from a dictionary of variables.
     """
     def _construct_filename(variables: Dict[str, str]) -> str:
-        required_keys = ['features', 'target', 'confound_correction_method', 'confound_correction_cni', 'balanced', 'grid']
+        default_values = {
+            'features': 'default_features',
+            'target': 'default_target',
+            'confound_correction_method': 'none',
+            'confound_correction_cni': 'default_cni',
+            'balanced': 'unbalanced',
+            'grid': 'default_grid'
+        }
         
-        if not all(key in variables for key in required_keys):
-            missing_keys = [key for key in required_keys if key not in variables]
-            raise ValueError(f"Missing required keys: {', '.join(missing_keys)}")
+        # Fill with default values if key not in dict
+        for key in default_values:
+            if key not in variables:
+                variables[key] = default_values[key]
         
         filename = "{features}_{target}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}".format(**variables)
         return filename

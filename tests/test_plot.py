@@ -178,17 +178,34 @@ def test_process_results(generate_stats_data, write_stats_data, parse_filename, 
         expected_cni = f"{row['confound_correction_method']}-{row['confound_correction_cni']}"
         assert row['cni'] == expected_cni, f"Mismatch in cni for row {index}. Expected {expected_cni}, got {row['cni']}"
 
-def test_empty_result_files(tmp_path):
+def test_empty_result_files(tmp_path, construct_filename):
     """
     Test handling of empty result files.
     """
     # Create an empty stats file
-    empty_stats_file = tmp_path / "results" / "dataset1" / "statistics" / "model1" / "features1_target1_correct-x_cni1_balanced_grid1_stats.json"
+    # Use the construct_filename fixture to create the filenames
+    empty_stats_filename = construct_filename({
+        'features': 'features1',
+        'target': 'target1',
+        'confound_correction_method': 'correct-x',
+        'confound_correction_cni': 'cni1',
+        'balanced': 'balanced',
+        'grid': 'grid1'
+    })
+    empty_stats_file = tmp_path / "results" / "dataset1" / "statistics" / "model1" / f"{empty_stats_filename}_stats.json"
     empty_stats_file.parent.mkdir(parents=True, exist_ok=True)
     empty_stats_file.touch()
     
     # Create a non-empty stats file
-    non_empty_stats_file = tmp_path / "results" / "dataset2" / "statistics" / "model1" / "features1_target1_correct-x_cni1_balanced_grid1_stats.json"
+    non_empty_stats_filename = construct_filename({
+        'features': 'features1',
+        'target': 'target1',
+        'confound_correction_method': 'correct-x',
+        'confound_correction_cni': 'cni1',
+        'balanced': 'balanced',
+        'grid': 'grid1'
+    })
+    non_empty_stats_file = tmp_path / "results" / "dataset2" / "statistics" / "model1" / f"{non_empty_stats_filename}_stats.json"
     non_empty_stats_file.parent.mkdir(parents=True, exist_ok=True)
     with open(non_empty_stats_file, 'w') as f:
         json.dump({"x": [100], "y_mean": [0.5], "y_std": [0.1]}, f)
