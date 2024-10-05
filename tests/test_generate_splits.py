@@ -149,13 +149,13 @@ def test_write_splitfile_variations(generate_synth_data, create_dataset, tmpdir,
         pytest.skip(f"Skipping due to error: {split_dict['error']}")
 
     assert_valid_split(split_dict, N_TRAIN, N_VAL, N_TEST)
-    assert split_dict["stratify"] == (
-        confound_correction_method == "matching" or
-        (stratify and confound_correction_method not in ['correct-x', 'correct-y', 'correct-both'])
-    )
     
-    if confound_correction_method == "matching":
-        assert "average_matching_score" in split_dict
+    expected_stratify = confound_correction_method == "matching" or (
+        stratify and confound_correction_method not in ['correct-x', 'correct-y', 'correct-both']
+    )
+    assert split_dict["stratify"] == expected_stratify, f"Stratify mismatch for method {confound_correction_method}"
+
+    assert split_dict["balanced"] == (balanced and confound_correction_method not in ['correct-x', 'correct-y', 'correct-both'])
 
 def test_write_splitfile_insufficient_samples(generate_synth_data, create_dataset, tmpdir):
     """Test write_splitfile function with insufficient samples."""

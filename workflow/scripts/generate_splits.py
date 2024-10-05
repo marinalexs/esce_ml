@@ -134,7 +134,7 @@ def generate_matched_split(
     mask_orig = mask.copy()
 
     # Determine the minority class
-    class_counts = np.bincount(y[mask])
+    class_counts = np.bincount(y[mask].astype(int))
     minority_class = np.argmin(class_counts)
     majority_class = 1 - minority_class
 
@@ -256,9 +256,12 @@ def write_splitfile(
     if confound_correction_method != "none":
         xy_mask = np.logical_and(xy_mask, confounds_mask)
 
-    # Check number of unique classes
-    n_classes = len(np.unique(y[xy_mask]))
+    # Check number of unique classes and convert to int if necessary
+    unique_classes = np.unique(y[xy_mask])
+    n_classes = len(unique_classes)
     logging.info(f"Number of unique classes: {n_classes}")
+    
+
     if n_classes <= 1:
         error_msg = "Only a single class in target"
         logging.error(error_msg)
@@ -314,14 +317,14 @@ def write_splitfile(
 
     if confound_correction_method == "matching":
         # Perform matching-based split for binary classification
-        if n_classes != 2:
+        if not np.array_equal(np.unique(y[xy_mask]), [0, 1]):
             error_msg = "Matching requires binary classification"
             logging.error(error_msg)
             with open(split_path, "w") as f:
                 json.dump({"error": error_msg}, f, cls=NpEncoder, indent=0)
             return
 
-        class_counts = np.bincount(y[xy_mask])
+        class_counts = np.bincount(y[xy_mask].astype(int))
         minority_class_count = np.min(class_counts)
         required_samples = n_train // 2 + n_val // 2 + n_test // 2
 
@@ -359,8 +362,8 @@ def write_splitfile(
         split_dict[set_name] = sorted(split_dict[set_name])
 
     # Before writing the split information to a JSON file, update the stratify value
-    split_dict["stratify"] = stratify
-    split_dict["balanced"] = balanced
+    split_dict["stratify"] = stratify 
+    split_dict["balanced"] = balanced 
 
     logging.info(f"Split sizes - Train: {len(split_dict['idx_train'])}, Val: {len(split_dict['idx_val'])}, Test: {len(split_dict['idx_test'])}")
 

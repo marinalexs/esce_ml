@@ -62,7 +62,10 @@ def create_synthetic_data(tmpdir, n_samples=1000, n_features=10, binary=True):
     """
     features = pd.DataFrame(np.random.rand(n_samples, n_features), 
                             columns=[f'feature_{i}' for i in range(n_features)])
-    targets = pd.DataFrame({'target': np.random.randint(0, 2, n_samples) if binary else np.random.rand(n_samples)})
+    if binary:
+        targets = pd.DataFrame({'target': np.random.randint(0, 2, n_samples)})
+    else:
+        targets = pd.DataFrame({'target': np.random.rand(n_samples)})
     covariates = pd.DataFrame(np.random.rand(n_samples, 3), columns=['cov1', 'cov2', 'cov3'])
 
     features_path = os.path.join(tmpdir, 'features.csv')
