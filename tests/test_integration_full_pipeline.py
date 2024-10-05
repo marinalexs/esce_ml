@@ -153,13 +153,13 @@ def test_full_pipeline_classification():
         aggregate(scores_paths, aggregated_path)
 
         # Step 7: Extrapolate results
-        extra_path = os.path.join(tmpdir, 'stats.json')
-        bootstrap_path = os.path.join(tmpdir, 'bootstrap.json')
+        extra_path = os.path.join(tmpdir, f'features_target_{method}_cni_balanced_grid_stats.json')
+        bootstrap_path = os.path.join(tmpdir, f'features_target_{method}_cni_balanced_grid_bootstrap.json')
         extrapolate(aggregated_path, extra_path, bootstrap_path, repeats=10)
 
         # Step 8: Plot results
         plot_path = os.path.join(tmpdir, 'plot.html')
-        plot([extra_path], plot_path, color_variable='dataset', linestyle_variable=None, title='Integration Test Plot')
+        plot([extra_path], plot_path, color_variable='confound_correction_method', linestyle_variable=None, title='Integration Test Plot')
 
         # Step 9: Plot hyperparameters
         hp_plot_path = os.path.join(tmpdir, 'hp_plot.html')
@@ -283,13 +283,13 @@ def test_full_pipeline_regression():
         aggregate(scores_paths, aggregated_path)
 
         # Step 7: Extrapolate results
-        extra_path = os.path.join(tmpdir, 'stats.json')
-        bootstrap_path = os.path.join(tmpdir, 'bootstrap.json')
+        extra_path = os.path.join(tmpdir, f'features_target_{method}_cni_balanced_grid_stats.json')
+        bootstrap_path = os.path.join(tmpdir, f'features_target_{method}_cni_balanced_grid_bootstrap.json')
         extrapolate(aggregated_path, extra_path, bootstrap_path, repeats=10)
 
         # Step 8: Plot results
         plot_path = os.path.join(tmpdir, 'plot.html')
-        plot([extra_path], plot_path, color_variable='dataset', linestyle_variable=None, title='Integration Test Plot')
+        plot([extra_path], plot_path, color_variable='confound_correction_method', linestyle_variable=None, title='Integration Test Plot')
 
         # Step 9: Plot hyperparameters
         hp_plot_path = os.path.join(tmpdir, 'hp_plot.html')

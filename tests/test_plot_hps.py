@@ -31,56 +31,12 @@ import json
 
 from workflow.scripts.plot_hps import plot
 
-def generate_sample_data(path, n_samples=5, n_hyperparameters=2, task='regression'):
-    """
-    Generate synthetic data for testing.
 
-    Args:
-        path (Path): Directory path to store the generated data.
-        n_samples (int): Number of samples to generate.
-        n_hyperparameters (int): Number of hyperparameters to generate.
-        task (str): 'regression' or 'classification'
-
-    Returns:
-        str: Path to the generated stats file.
-    """
-    data = []
-    hyperparameters = ['alpha', 'l1_ratio'][:n_hyperparameters]
-    
-    for i in range(n_samples):
-        row = {
-            'n': 2 ** (7 + i),  # 128, 256, 512, 1024, 2048
-            's': np.random.randint(1, 6)
-        }
-        if task == 'regression':
-            row['r2_val'] = np.random.uniform(0.5, 0.9)
-        else:
-            row['acc_val'] = np.random.uniform(0.6, 0.95)
-        for hp in hyperparameters:
-            row[hp] = np.random.uniform(0.01, 1.0)
-        data.append(row)
-    
-    df = pd.DataFrame(data)
-    stats_file = path / "stats.csv"
-    df.to_csv(stats_file, index=False)
-    
-    return str(stats_file)
-
-@pytest.fixture
-def sample_grid():
-    """Fixture for sample hyperparameter grid."""
-    return {'alpha': [0.1, 0.5, 1.0], 'l1_ratio': [0.1, 0.5, 0.9]}
-
-@pytest.fixture
-def sample_hyperparameter_scales():
-    """Fixture for sample hyperparameter scales."""
-    return {'alpha': 'log', 'l1_ratio': 'linear'}
-
-def test_plot_hps_basic(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_basic(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test the basic functionality of plotting hyperparameters."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path)
+        stats_file = generate_scores_data(tmpdir_path)
         output_file = tmpdir_path / "test_plot_hps.html"
 
         plot(
@@ -103,11 +59,11 @@ def test_plot_hps_basic(sample_grid, sample_hyperparameter_scales):
             assert 'l1_ratio' in content, "Hyperparameter 'l1_ratio' not found in the output file"
             assert 'r2_val' in content, "R² metric not found in the output file"
 
-def test_plot_hps_single_hyperparameter(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_single_hyperparameter(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test plotting with a single hyperparameter."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path, n_hyperparameters=1)
+        stats_file = generate_scores_data(tmpdir_path, n_hyperparameters=1)
         output_file = tmpdir_path / "test_plot_hps_single.html"
 
         plot(
@@ -127,7 +83,7 @@ def test_plot_hps_single_hyperparameter(sample_grid, sample_hyperparameter_scale
             assert 'alpha' in content, "Hyperparameter 'alpha' not found in the output file"
             assert 'l1_ratio' not in content, "Hyperparameter 'l1_ratio' should not be in the output file"
 
-def test_plot_hps_empty_input(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_empty_input(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test behavior when an empty input file is provided."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
@@ -148,11 +104,11 @@ def test_plot_hps_empty_input(sample_grid, sample_hyperparameter_scales):
         assert output_file.exists(), "Output file was not created"
         assert output_file.stat().st_size == 0, "Output file should be empty"
 
-def test_plot_hps_no_hyperparameters(sample_hyperparameter_scales):
+def test_plot_hps_no_hyperparameters(sample_hyperparameter_scales, generate_scores_data):
     """Test behavior when no hyperparameters are provided."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path)
+        stats_file = generate_scores_data(tmpdir_path)
         output_file = tmpdir_path / "test_plot_hps_no_hp.html"
 
         plot(
@@ -167,11 +123,11 @@ def test_plot_hps_no_hyperparameters(sample_hyperparameter_scales):
         assert output_file.exists(), "Output file was not created"
         assert output_file.stat().st_size == 0, "Output file should be empty"
 
-def test_plot_hps_regression(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_regression(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test plotting for regression tasks (R² metric)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path, task='regression')
+        stats_file = generate_scores_data(tmpdir_path, task='regression')
         output_file = tmpdir_path / "test_plot_hps_regression.html"
 
         plot(
@@ -188,11 +144,11 @@ def test_plot_hps_regression(sample_grid, sample_hyperparameter_scales):
             content = f.read()
             assert 'r2_val' in content, "R² metric not found in the output file"
 
-def test_plot_hps_classification(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_classification(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test plotting for classification tasks (accuracy metric)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path, task='classification')
+        stats_file = generate_scores_data(tmpdir_path, task='classification')
         output_file = tmpdir_path / "test_plot_hps_classification.html"
 
         plot(
@@ -209,11 +165,11 @@ def test_plot_hps_classification(sample_grid, sample_hyperparameter_scales):
             content = f.read()
             assert 'acc_val' in content, "Accuracy metric not found in the output file"
 
-def test_plot_hps_scale_handling(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_scale_handling(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test correct application of linear and logarithmic scales."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path)
+        stats_file = generate_scores_data(tmpdir_path)
         output_file = tmpdir_path / "test_plot_hps_scales.html"
         json_file = output_file.with_suffix('.json')
 
@@ -235,11 +191,11 @@ def test_plot_hps_scale_handling(sample_grid, sample_hyperparameter_scales):
         assert 'log' in scales, "Logarithmic scale not found in the output file"
         assert 'linear' in scales, "Linear scale not found in the output file"
 
-def test_plot_hps_reference_lines(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_reference_lines(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test the presence of reference lines for hyperparameter ranges."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
-        stats_file = generate_sample_data(tmpdir_path)
+        stats_file = generate_scores_data(tmpdir_path)
         output_file = tmpdir_path / "test_plot_hps_reference.html"
         json_file = output_file.with_suffix('.json')
 
@@ -260,7 +216,7 @@ def test_plot_hps_reference_lines(sample_grid, sample_hyperparameter_scales):
         rule_marks = [layer['mark']['type'] for chart in content['hconcat'] for layer in chart['layer'] if layer['mark']['type'] == 'rule']
         assert rule_marks, "Reference lines not found in the output file"
 
-def test_plot_hps_error_handling(sample_grid, sample_hyperparameter_scales):
+def test_plot_hps_error_handling(sample_grid, sample_hyperparameter_scales, generate_scores_data):
     """Test error handling for invalid input data."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)

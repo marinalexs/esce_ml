@@ -157,7 +157,7 @@ def parse_filename() -> Callable[[str], Dict[str, str]]:
         Callable: Function to parse a filename and return a dictionary of variables.
     """
     def _parse_filename(filename: str) -> Dict[str, str]:
-        pattern = r"(?P<features>[\w-]+)_(?P<targets>[\w-]+)_(?P<confound_correction_method>[\w-]+)_(?P<confound_correction_cni>[\w-]+)_(?P<balanced>[\w-]+)_(?P<grid>[\w-]+)"
+        pattern = r"(?P<features>[\w-]+)_(?P<target>[\w-]+)_(?P<confound_correction_method>[\w-]+)_(?P<confound_correction_cni>[\w-]+)_(?P<balanced>[\w-]+)_(?P<grid>[\w-]+)"
         match = re.search(pattern, filename)
         
         if match:
@@ -167,14 +167,59 @@ def parse_filename() -> Callable[[str], Dict[str, str]]:
     
     return _parse_filename
 
-def generate_scores_data() -> Callable[[int, int, int, int], pd.DataFrame]:
+@pytest.fixture
+def construct_filename() -> Callable[[Dict[str, str]], str]:
     """
-    Fixture to generate synthetic scores data.
+    Fixture to construct a filename from a dictionary of variables.
 
     Returns:
-        Callable: Function to generate synthetic scores data.
+        Callable: Function to construct a filename from a dictionary of variables.
     """
+    def _construct_filename(variables: Dict[str, str]) -> str:
+        required_keys = ['features', 'target', 'confound_correction_method', 'confound_correction_cni', 'balanced', 'grid']
+        
+        if not all(key in variables for key in required_keys):
+            missing_keys = [key for key in required_keys if key not in variables]
+            raise ValueError(f"Missing required keys: {', '.join(missing_keys)}")
+        
+        filename = "{features}_{target}_{confound_correction_method}_{confound_correction_cni}_{balanced}_{grid}".format(**variables)
+        return filename
     
-    
-    
+    return _construct_filename
 
+@pytest.fixture
+def generate_scores_data():
+    def _generate_scores_data(path, n_samples=5, n_hyperparameters=2, task='regression'):
+        data = []
+        hyperparameters = ['alpha', 'l1_ratio'][:n_hyperparameters]
+        
+        for i in range(n_samples):
+            row = {
+                'n': 2 ** (7 + i),  # 128, 256, 512, 1024, 2048
+                's': np.random.randint(1, 6)
+            }
+            if task == 'regression':
+                row['r2_val'] = np.random.uniform(0.5, 0.9)
+            else:
+                row['acc_val'] = np.random.uniform(0.6, 0.95)
+            for hp in hyperparameters:
+                row[hp] = np.random.uniform(0.01, 1.0)
+            data.append(row)
+        
+        df = pd.DataFrame(data)
+        stats_file = path / "stats.csv"
+        df.to_csv(stats_file, index=False)
+        
+        return str(stats_file)
+    
+    return _generate_scores_data
+
+@pytest.fixture
+def sample_grid():
+    """Fixture for sample hyperparameter grid."""
+    return {'alpha': [0.1, 0.5, 1.0], 'l1_ratio': [0.1, 0.5, 0.9]}
+
+@pytest.fixture
+def sample_hyperparameter_scales():
+    """Fixture for sample hyperparameter scales."""
+    return {'alpha': 'log', 'l1_ratio': 'linear'}

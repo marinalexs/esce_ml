@@ -31,6 +31,37 @@ log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
 logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+def extract_metadata(path):
+    """
+    Extract metadata from a filename.
+
+    Args:
+        path (str): Path to the file.
+
+    Returns:
+        pd.Series: Extracted metadata.
+    """
+    filename = Path(path).stem
+    # Remove '_stats' suffix if present
+    filename = filename.replace('.stats', '')
+    pattern = r"(?P<features>[\w-]+)_(?P<target>[\w-]+)_(?P<confound_correction_method>[\w-]+)_(?P<confound_correction_cni>[\w-]+)_(?P<balanced>[\w-]+)_(?P<grid>[\w-]+)"
+    match = re.search(pattern, filename)
+    
+    if match:
+        metadata = match.groupdict()
+    else:
+        raise ValueError(f"Invalid filename structure: {filename}")
+
+    # Add dataset and model information if available
+    parts = Path(path).parts
+    if len(parts) >= 6:
+        metadata['dataset'] = parts[-6]
+        metadata['model'] = parts[-4]
+    else:
+        metadata['dataset'] = 'unknown'
+        metadata['model'] = 'unknown'
+    return pd.Series(metadata)
+
 def process_results(available_results: list) -> pd.DataFrame:
     """
     Read available results and return them as a pandas DataFrame.
@@ -44,30 +75,8 @@ def process_results(available_results: list) -> pd.DataFrame:
     logger.info(f"Processing {len(available_results)} result files")
     df = pd.DataFrame(available_results, columns=["full_path"])
     
-    # Define expected columns
-    expected_columns = [
-        "dataset",
-        "model",
-        "features",
-        "target",
-        "confound_correction_method",
-        "confound_correction_cni",
-        "balanced",
-        "grid",
-    ]
-    
     # Extract metadata by parsing the file paths
-    def extract_metadata(path):
-        parts = Path(path).parts
-        dataset = parts[-6] if len(parts) >= 6 else "unknown"
-        model = parts[-4] if len(parts) >= 4 else "unknown"
-        filename = Path(path).stem
-        filename_parts = filename.split('_')
-        # Ensure we have enough parts, pad with "unknown" if necessary
-        filename_parts = filename_parts + ["unknown"] * (6 - len(filename_parts))
-        return pd.Series([dataset, model] + filename_parts, index=expected_columns)
-    
-    df[expected_columns] = df["full_path"].apply(extract_metadata)
+    df = pd.concat([df, df["full_path"].apply(extract_metadata)], axis=1)
     
     # Filter out empty files
     non_empty_files = []
@@ -230,10 +239,6 @@ def plot(
         width=600,
         height=400
     ).configure_axis(
-        labelFontSize=10,
-        titleFontSize=12
-    ).configure_legend(
-        orient='bottom',
         labelFontSize=10,
         titleFontSize=12
     )  # Removed .interactive()
