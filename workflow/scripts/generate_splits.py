@@ -133,7 +133,13 @@ def generate_matched_split(
     mask = mask.copy() if mask is not None else np.ones(len(y), dtype=bool)
     mask_orig = mask.copy()
 
-    # Generate initial random split for positive class
+    # Determine the minority class
+    class_counts = np.bincount(y[mask])
+    minority_class = np.argmin(class_counts)
+    majority_class = 1 - minority_class
+
+    # Generate initial random split for minority class
+    minority_mask = np.logical_and(mask, y == minority_class)
     split = generate_random_split(
         y=y,
         n_train=n_train // 2,
@@ -141,12 +147,12 @@ def generate_matched_split(
         n_test=n_test // 2,
         do_stratify=do_stratify,
         seed=seed,
-        mask=np.logical_and(mask, y == 1),
+        mask=minority_mask,
     )
     idx_all = np.arange(len(y))
 
-    # Exclude positive class from matching pool
-    mask[y == 1] = False
+    # Exclude minority class from matching pool
+    mask[y == minority_class] = False
     assert np.isfinite(match[mask]).all(), "Confounding variables contain non-finite values."
 
     # Standardize confounding variables for matching
@@ -154,36 +160,36 @@ def generate_matched_split(
     matching_scores = []
 
     for idx_set in ["idx_train", "idx_val", "idx_test"]:
-        control_group = []  # Control group for each split set
+        majority_group = []  # Majority class group for each split set
         for idx in split[idx_set]:
-            idx_pool = idx_all[mask]  # Pool of potential controls
+            idx_pool = idx_all[mask]  # Pool of potential matches from majority class
             scores = np.sum((match[idx_pool] - match[idx]) ** 2, axis=1)  # Compute squared differences
 
             # Shuffle to handle ties randomly
-            shuffled = random_state.permutation(np.column_stack((scores, idx_pool)))
+            shuffled = random_state.permutation(np.column_stack((scores, idx_pool)))            
             t_idx = np.nanargmin(shuffled.T[0])  # Index of minimum distance
 
             score_match = shuffled.T[0][t_idx]  # Distance for diagnostics
             matching_scores.append(score_match)
 
-            idx_match = shuffled.T[1][t_idx].astype(int)  # Matched control index
-            control_group.append(idx_match)
-            mask[idx_match] = False  # Remove matched control from pool
+            idx_match = shuffled.T[1][t_idx].astype(int)  # Matched majority class index
+            majority_group.append(idx_match)
+            mask[idx_match] = False  # Remove matched sample from pool
 
             assert mask_orig[idx_match], "Matched index was not originally masked."
 
-        # Combine patient and control indices
-        split[idx_set] = np.hstack((split[idx_set], control_group))
+        # Combine minority and majority class indices
+        split[idx_set] = np.hstack((split[idx_set], majority_group))
 
     # Update split dictionary
     split = {
         "idx_train": split["idx_train"].tolist(),
         "idx_val": split["idx_val"].tolist(),
         "idx_test": split["idx_test"].tolist(),
-        "samplesize": split["samplesize"] * 2,  # Account for both patient and control groups
+        "samplesize": split["samplesize"] * 2,  # Account for both minority and majority groups
         "seed": split["seed"],
         "stratify": split["stratify"],
-        "average_matching_score": float(np.mean(matching_scores)),
+        "average_matching_score": float(np.mean(matching_scores)) if matching_scores else None,
     }
 
     return split
@@ -315,8 +321,11 @@ def write_splitfile(
                 json.dump({"error": error_msg}, f, cls=NpEncoder, indent=0)
             return
 
+        class_counts = np.bincount(y[xy_mask])
+        minority_class_count = np.min(class_counts)
         required_samples = n_train // 2 + n_val // 2 + n_test // 2
-        if sum(xy_mask[y == 1]) >= required_samples:
+
+        if minority_class_count >= required_samples:
             split_dict = generate_matched_split(
                 y=y,
                 match=confounds,
@@ -329,7 +338,7 @@ def write_splitfile(
             )
             logging.info(f"Average matching score: {split_dict['average_matching_score']}")
         else:
-            error_msg = "Insufficient samples for matching"
+            error_msg = f"Insufficient samples for matching. Required: {required_samples}, Available in minority class: {minority_class_count}"
             logging.error(error_msg)
             with open(split_path, "w") as f:
                 json.dump({"error": error_msg}, f, cls=NpEncoder, indent=0)
