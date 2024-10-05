@@ -187,7 +187,10 @@ def test_write_splitfile_variations(sample_h5_files, tmpdir, confound_correction
     assert len(split_dict["idx_test"]) == 200
     assert split_dict["samplesize"] == 600
     assert split_dict["seed"] == 0
-    assert split_dict["stratify"] == (stratify and confound_correction_method not in ['correct-x', 'correct-y', 'correct-both'])
+    assert split_dict["stratify"] == (
+        confound_correction_method == "matching" or
+        (stratify and confound_correction_method not in ['correct-x', 'correct-y', 'correct-both'])
+    )
     
     assert len(set(split_dict["idx_train"]) & set(split_dict["idx_val"]) & set(split_dict["idx_test"])) == 0
 

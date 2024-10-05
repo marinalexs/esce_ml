@@ -270,6 +270,9 @@ def write_splitfile(
         stratify = False
         balanced = False
 
+    if confound_correction_method == "matching":
+        stratify = True
+
     if stratify:
         logging.info("Applying stratification to the split")
     if balanced:
@@ -312,7 +315,6 @@ def write_splitfile(
                 json.dump({"error": error_msg}, f, cls=NpEncoder, indent=0)
             return
 
-        stratify = True
         required_samples = n_train // 2 + n_val // 2 + n_test // 2
         if sum(xy_mask[y == 1]) >= required_samples:
             split_dict = generate_matched_split(
@@ -321,7 +323,7 @@ def write_splitfile(
                 n_train=n_train,
                 n_val=n_val,
                 n_test=n_test,
-                do_stratify=stratify,  # Always use stratification for matching
+                do_stratify=True,  # Always use stratification for matching
                 mask=xy_mask,
                 seed=seed,
             )

@@ -58,9 +58,14 @@ def process_results(available_results: list) -> pd.DataFrame:
     
     # Extract metadata by parsing the file paths
     def extract_metadata(path):
-        parts = [Path(path).parts[1],Path(path).parts[3]]+Path(path).parts[4].split('_')
-        logger.debug(f"Extracted parts: {Path(path).parts}")
-        return pd.Series(parts + [None] * (len(expected_columns) - len(parts)), index=expected_columns)
+        parts = Path(path).parts
+        dataset = parts[-6] if len(parts) >= 6 else "unknown"
+        model = parts[-4] if len(parts) >= 4 else "unknown"
+        filename = Path(path).stem
+        filename_parts = filename.split('_')
+        # Ensure we have enough parts, pad with "unknown" if necessary
+        filename_parts = filename_parts + ["unknown"] * (6 - len(filename_parts))
+        return pd.Series([dataset, model] + filename_parts, index=expected_columns)
     
     df[expected_columns] = df["full_path"].apply(extract_metadata)
     
