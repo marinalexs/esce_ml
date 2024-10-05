@@ -31,7 +31,7 @@ def generate_synth_data() -> Callable[[int, int, bool, int], Tuple[np.ndarray, n
         else:
             X, y = make_regression(n_samples=n_samples, n_features=n_features, random_state=random_state)
 
-        y = y.reshape(-1, 1)
+        # y = y.reshape(-1, 1)
         confounds = np.random.randn(n_samples, 3)  # 3 confounding variables
                 
         return X, y, confounds
@@ -128,7 +128,7 @@ def write_stats_data() -> Callable[[str, np.ndarray, np.ndarray, np.ndarray, np.
     Returns:
         Callable: Function to write stats data to JSON files.
     """
-    def _write_stats_data(path: str, x: np.ndarray, y: np.ndarray, y_err: np.ndarray, bootstrap_params: np.ndarray) -> Tuple[str, str]:
+    def _write_stats_data(path: str, x: np.ndarray, y: np.ndarray, y_err: np.ndarray, bootstrapped_params: np.ndarray) -> Tuple[str, str]:
         stats_file = f"{path}_stats.json"
         bootstrap_file = f"{path}_bootstrap.json"
         
@@ -142,7 +142,7 @@ def write_stats_data() -> Callable[[str, np.ndarray, np.ndarray, np.ndarray, np.
             json.dump(stats_data, f)
         
         with open(bootstrap_file, 'w') as f:
-            json.dump(bootstrap_params.tolist(), f)
+            json.dump(bootstrapped_params.tolist(), f)
         
         return stats_file, bootstrap_file
     
@@ -166,4 +166,15 @@ def parse_filename() -> Callable[[str], Dict[str, str]]:
             raise ValueError(f"Unable to parse filename: {filename}")
     
     return _parse_filename
+
+def generate_scores_data() -> Callable[[int, int, int, int], pd.DataFrame]:
+    """
+    Fixture to generate synthetic scores data.
+
+    Returns:
+        Callable: Function to generate synthetic scores data.
+    """
+    
+    
+    
 
