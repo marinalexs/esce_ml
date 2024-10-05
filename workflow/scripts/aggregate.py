@@ -72,8 +72,17 @@ def aggregate(
 
     # Determine the validation metric to use (R² for regression, accuracy for classification)
     # Prioritize R² if present
-    metric = "r2_val" if "r2_val" in df.columns else "acc_val"
+    metric = "r2_val" if "r2_val" in df.columns else "acc_val" if "acc_val" in df.columns else None
+    if metric is None:
+        logging.error("No valid metric column (r2_val or acc_val) found in the data.")
+        return
+
     logging.info(f"Using {metric} as the validation metric.")
+
+    # Check if both 'n' and 's' columns are present
+    if 'n' not in df.columns or 's' not in df.columns:
+        logging.error("Both 'n' and 's' columns must be present in the data.")
+        return
 
     # Group the DataFrame by sample size ('n') and seed ('s')
     # For each group, identify the index of the row with the maximum validation metric

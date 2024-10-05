@@ -19,42 +19,13 @@ The tests cover the following scenarios:
 import pandas as pd
 import pytest
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Callable
+import os
 
 from workflow.scripts.aggregate import aggregate
 
-
-@pytest.fixture
-def sample_data_r2(tmpdir: Path) -> Tuple[List[str], str]:
-    """
-    Fixture to create sample data with R² metric for testing.
-
-    Args:
-        tmpdir: Pytest fixture for temporary directory.
-
-    Returns:
-        Tuple containing a list of score file paths and the stats file path.
-    """
-    scores1 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.8, 0.9], "other_param": ["a", "b"]}
-    scores2 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.7, 0.85], "other_param": ["c", "d"]}
-
-    df1 = pd.DataFrame(scores1)
-    df2 = pd.DataFrame(scores2)
-
-    scores_path1 = tmpdir.join("scores1.csv")
-    scores_path2 = tmpdir.join("scores2.csv")
-
-    df1.to_csv(scores_path1, index=False)
-    df2.to_csv(scores_path2, index=False)
-
-    score_path_list = [str(scores_path1), str(scores_path2)]
-    stats_path = str(tmpdir.join("stats.csv"))
-
-    return score_path_list, stats_path
-
-
 class TestAggregate:
-    def test_aggregate_r2(self, sample_data_r2: Tuple[List[str], str]) -> None:
+    def test_aggregate_r2(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the aggregate function with R² metric.
 
@@ -65,9 +36,17 @@ class TestAggregate:
         4. The correct other_param values are selected for each sample size
 
         Args:
-            sample_data_r2: Fixture providing sample R² data.
+            tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
-        score_path_list, stats_path = sample_data_r2
+        scores1 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.8, 0.9], "other_param": ["a", "b"]}
+        scores2 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.7, 0.85], "other_param": ["c", "d"]}
+
+        scores_path1 = write_data_to_file(pd.DataFrame(scores1), 'csv', tmpdir / "scores1.csv")
+        scores_path2 = write_data_to_file(pd.DataFrame(scores2), 'csv', tmpdir / "scores2.csv")
+
+        score_path_list = [str(scores_path1), str(scores_path2)]
+        stats_path = str(tmpdir / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
@@ -91,20 +70,20 @@ class TestAggregate:
         Args:
             tmpdir: Pytest fixture for temporary directory.
         """
-        empty_file1 = tmpdir.join("empty1.csv")
-        empty_file2 = tmpdir.join("empty2.csv")
-        Path(empty_file1).touch()
-        Path(empty_file2).touch()
+        empty_file1 = Path(tmpdir) / "empty1.csv"
+        empty_file2 = Path(tmpdir) / "empty2.csv"
+        empty_file1.touch()
+        empty_file2.touch()
 
         score_path_list = [str(empty_file1), str(empty_file2)]
-        stats_path = str(tmpdir.join("stats.csv"))
+        stats_path = str(Path(tmpdir) / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
-        assert Path(stats_path).exists(), "Output file was not created"
-        assert Path(stats_path).stat().st_size == 0, "Output file is not empty"
+        assert os.path.exists(stats_path), "Output file was not created"
+        assert os.path.getsize(stats_path) == 0, "Output file is not empty"
 
-    def test_aggregate_accuracy(self, tmpdir: Path) -> None:
+    def test_aggregate_accuracy(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the aggregate function with accuracy metric.
 
@@ -115,21 +94,16 @@ class TestAggregate:
 
         Args:
             tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
         scores1 = {"n": [100, 200], "s": [42, 43], "acc_val": [0.7, 0.85]}
         scores2 = {"n": [100, 200], "s": [42, 43], "acc_val": [0.75, 0.8]}
 
-        df1 = pd.DataFrame(scores1)
-        df2 = pd.DataFrame(scores2)
-
-        scores_path1 = tmpdir.join("scores1.csv")
-        scores_path2 = tmpdir.join("scores2.csv")
-
-        df1.to_csv(scores_path1, index=False)
-        df2.to_csv(scores_path2, index=False)
+        scores_path1 = write_data_to_file(pd.DataFrame(scores1), 'csv', tmpdir / "scores1.csv")
+        scores_path2 = write_data_to_file(pd.DataFrame(scores2), 'csv', tmpdir / "scores2.csv")
 
         score_path_list = [str(scores_path1), str(scores_path2)]
-        stats_path = str(tmpdir.join("stats.csv"))
+        stats_path = str(tmpdir / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
@@ -140,7 +114,7 @@ class TestAggregate:
         assert stats.loc[stats["n"] == 100, "acc_val"].values[0] == 0.75, "Incorrect accuracy value selected for n=100"
         assert stats.loc[stats["n"] == 200, "acc_val"].values[0] == 0.85, "Incorrect accuracy value selected for n=200"
 
-    def test_aggregate_mixed_metrics(self, tmpdir: Path) -> None:
+    def test_aggregate_mixed_metrics(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the aggregate function with mixed metrics (R² and accuracy).
 
@@ -151,21 +125,16 @@ class TestAggregate:
 
         Args:
             tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
         scores1 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.8, 0.9]}
         scores2 = {"n": [100, 200], "s": [42, 43], "acc_val": [0.75, 0.85]}
 
-        df1 = pd.DataFrame(scores1)
-        df2 = pd.DataFrame(scores2)
-
-        scores_path1 = tmpdir.join("scores1.csv")
-        scores_path2 = tmpdir.join("scores2.csv")
-
-        df1.to_csv(scores_path1, index=False)
-        df2.to_csv(scores_path2, index=False)
+        scores_path1 = write_data_to_file(pd.DataFrame(scores1), 'csv', tmpdir / "scores1.csv")
+        scores_path2 = write_data_to_file(pd.DataFrame(scores2), 'csv', tmpdir / "scores2.csv")
 
         score_path_list = [str(scores_path1), str(scores_path2)]
-        stats_path = str(tmpdir.join("stats.csv"))
+        stats_path = str(tmpdir / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
@@ -175,7 +144,7 @@ class TestAggregate:
         assert "acc_val" not in stats.columns, "acc_val column should not be present in the output"
         assert len(stats) == 2, "Incorrect number of rows in the output"
 
-    def test_aggregate_duplicate_max_scores(self, tmpdir: Path) -> None:
+    def test_aggregate_duplicate_max_scores(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the aggregate function with duplicate maximum scores.
 
@@ -185,15 +154,14 @@ class TestAggregate:
 
         Args:
             tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
         scores = {"n": [100, 100], "s": [42, 42], "r2_val": [0.8, 0.8], "other_param": ["a", "b"]}
 
-        df = pd.DataFrame(scores)
-        scores_path = tmpdir.join("scores.csv")
-        df.to_csv(scores_path, index=False)
+        scores_path = write_data_to_file(pd.DataFrame(scores), 'csv', tmpdir / "scores.csv")
 
         score_path_list = [str(scores_path)]
-        stats_path = str(tmpdir.join("stats.csv"))
+        stats_path = str(tmpdir / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
@@ -202,7 +170,7 @@ class TestAggregate:
         assert len(stats) == 1, "Incorrect number of rows in the output"
         assert stats["other_param"].values[0] == "a", "Incorrect row selected for duplicate max scores"
 
-    def test_aggregate_varying_input_files(self, tmpdir: Path) -> None:
+    def test_aggregate_varying_input_files(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the aggregate function with varying numbers of input files.
 
@@ -212,23 +180,18 @@ class TestAggregate:
 
         Args:
             tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
         scores1 = {"n": [100], "s": [42], "r2_val": [0.8]}
         scores2 = {"n": [200], "s": [43], "r2_val": [0.9]}
         scores3 = {"n": [300], "s": [44], "r2_val": [0.85]}
 
-        df1, df2, df3 = pd.DataFrame(scores1), pd.DataFrame(scores2), pd.DataFrame(scores3)
-
-        scores_path1 = tmpdir.join("scores1.csv")
-        scores_path2 = tmpdir.join("scores2.csv")
-        scores_path3 = tmpdir.join("scores3.csv")
-
-        df1.to_csv(scores_path1, index=False)
-        df2.to_csv(scores_path2, index=False)
-        df3.to_csv(scores_path3, index=False)
+        scores_path1 = write_data_to_file(pd.DataFrame(scores1), 'csv', tmpdir / "scores1.csv")
+        scores_path2 = write_data_to_file(pd.DataFrame(scores2), 'csv', tmpdir / "scores2.csv")
+        scores_path3 = write_data_to_file(pd.DataFrame(scores3), 'csv', tmpdir / "scores3.csv")
 
         score_path_list = [str(scores_path1), str(scores_path2), str(scores_path3)]
-        stats_path = str(tmpdir.join("stats.csv"))
+        stats_path = str(tmpdir / "stats.csv")
 
         aggregate(score_path_list, stats_path)
 
@@ -237,7 +200,7 @@ class TestAggregate:
         assert len(stats) == 3, "Incorrect number of rows in the output"
         assert set(stats["n"]) == {100, 200, 300}, "Incorrect sample sizes in the output"
 
-    def test_aggregate_reproducibility(self, sample_data_r2: Tuple[List[str], str]) -> None:
+    def test_aggregate_reproducibility(self, tmpdir: Path, write_data_to_file: Callable) -> None:
         """
         Test the reproducibility of the aggregate function.
 
@@ -245,10 +208,18 @@ class TestAggregate:
         1. Running the aggregate function twice with the same input produces identical results
 
         Args:
-            sample_data_r2: Fixture providing sample R² data.
+            tmpdir: Pytest fixture for temporary directory.
+            write_data_to_file: Fixture to write data to a file.
         """
-        score_path_list, stats_path1 = sample_data_r2
-        stats_path2 = str(Path(stats_path1).parent / "stats2.csv")
+        scores1 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.8, 0.9], "other_param": ["a", "b"]}
+        scores2 = {"n": [100, 200], "s": [42, 43], "r2_val": [0.7, 0.85], "other_param": ["c", "d"]}
+
+        scores_path1 = write_data_to_file(pd.DataFrame(scores1), 'csv', tmpdir / "scores1.csv")
+        scores_path2 = write_data_to_file(pd.DataFrame(scores2), 'csv', tmpdir / "scores2.csv")
+
+        score_path_list = [str(scores_path1), str(scores_path2)]
+        stats_path1 = str(tmpdir / "stats1.csv")
+        stats_path2 = str(tmpdir / "stats2.csv")
 
         aggregate(score_path_list, stats_path1)
         aggregate(score_path_list, stats_path2)
