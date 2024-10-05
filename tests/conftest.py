@@ -55,7 +55,10 @@ def write_data_to_file() -> Callable[[np.ndarray, str, Path], Path]:
         elif file_format == 'h5':
             with h5py.File(file_path, 'w') as f:
                 f.create_dataset('data', data=data)
-                f.create_dataset('mask', data=~np.isnan(data))
+                mask = ~np.isnan(data)
+                if data.ndim == 2:
+                    mask = np.all(mask, axis=1)
+                f.create_dataset('mask', data=mask)
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
         
