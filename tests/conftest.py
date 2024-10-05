@@ -6,6 +6,7 @@ This module contains pytest fixtures for the ESCE workflow tests.
 These fixtures provide reusable test data and utilities across multiple test files.
 """
 
+from sklearn.datasets import make_classification, make_regression
 import pytest
 import h5py
 import numpy as np
@@ -25,14 +26,14 @@ def generate_synth_data() -> Callable[[int, int, bool, int], Tuple[np.ndarray, n
     """
     def _generate_synth_data(n_samples: int = 100, n_features: int = 10, classification: bool = True, random_state: int = 42) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         np.random.seed(random_state)
-        X = np.random.randn(n_samples, n_features)
-        confounds = np.random.randn(n_samples, 3)  # 3 confounding variables
-        
         if classification:
-            y = np.random.randint(0, 2, n_samples)
+            X, y = make_classification(n_samples=n_samples, n_features=n_features, n_classes=2, random_state=random_state)
         else:
-            y = np.random.randn(n_samples)
-        
+            X, y = make_regression(n_samples=n_samples, n_features=n_features, random_state=random_state)
+
+        y = y.reshape(-1, 1)
+        confounds = np.random.randn(n_samples, 3)  # 3 confounding variables
+                
         return X, y, confounds
     
     return _generate_synth_data

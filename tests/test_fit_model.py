@@ -18,15 +18,17 @@ Test Summary:
 8. Test Reproducibility
 9. Test Edge Cases
 10. Test Existing Scores Reuse
+11. Test Fit with Confound Correction
 """
 
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable
 import h5py
 import numpy as np
 import pandas as pd
 import pytest
 from sklearn.datasets import make_classification, make_regression
+from pathlib import Path
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.preprocessing import StandardScaler
 
@@ -38,39 +40,24 @@ from workflow.scripts.fit_model import (
     MODELS
 )
 
-@pytest.fixture
-def create_h5_dataset(tmpdir):
-    """Fixture to create an HDF5 dataset for testing."""
-    def _create_h5_dataset(data, filename):
-        file_path = tmpdir.join(filename)
-        with h5py.File(file_path, 'w') as f:
-            f.create_dataset('data', data=data)
-            f.create_dataset('mask', data=np.ones(data.shape[0], dtype=bool))
-        return str(file_path)
-    return _create_h5_dataset
-
 # 1. Test Model Fitting
 
 @pytest.mark.parametrize("model_type", ["classification", "regression"])
-def test_model_fitting(create_h5_dataset, model_type):
+def test_model_fitting(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, model_type: str):
     """Test correct fitting of different model types with various hyperparameters."""
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=(model_type == "classification"))
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
+
     if model_type == "classification":
-        X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
         model_class = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
         param_name = "C"
     else:
-        X, y = make_regression(n_samples=100, n_features=20, random_state=42)
         model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
         param_name = "alpha"
 
-    X, y = X * 100, y * 50  # Scale features and targets
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
-
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         for param_value in [0.1, 1.0, 10.0]:  # Test different hyperparameters
@@ -81,16 +68,14 @@ def test_model_fitting(create_h5_dataset, model_type):
 # 2. Test Feature / Target Handling
 
 @pytest.mark.parametrize("mode", ["normal", "with_cni", "only_cni"])
-def test_feature_handling(create_h5_dataset, mode):
+def test_feature_handling(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, mode: str):
     """Test correct handling of features for different modes."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
+
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
-
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
@@ -101,17 +86,15 @@ def test_feature_handling(create_h5_dataset, mode):
 
 # 3. Test Performance Evaluation
 
-def test_performance_evaluation(create_h5_dataset):
+def test_performance_evaluation(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test correct computation of metrics for classification and regression tasks."""
     # Classification
-    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
-    x_path = create_h5_dataset(X, 'features_cls.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets_cls.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni_cls.h5')
+    X_cls, y_cls, confounds_cls = generate_synth_data(n_samples=100, n_features=20, classification=True)
+    dataset_cls = create_dataset(X_cls, y_cls, confounds_cls, 'h5', tmp_path / "test_data_cls")
 
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset_cls['features'], 'r') as x_file, h5py.File(dataset_cls['targets'], 'r') as y_file, h5py.File(dataset_cls['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         cls_model = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
@@ -120,12 +103,10 @@ def test_performance_evaluation(create_h5_dataset):
         assert all(k in cls_metrics for k in ['acc_train', 'acc_val', 'acc_test', 'f1_train', 'f1_val', 'f1_test'])
 
     # Regression
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    x_path = create_h5_dataset(X, 'features_reg.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets_reg.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni_reg.h5')
+    X_reg, y_reg, confounds_reg = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset_reg = create_dataset(X_reg, y_reg, confounds_reg, 'h5', tmp_path / "test_data_reg")
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset_reg['features'], 'r') as x_file, h5py.File(dataset_reg['targets'], 'r') as y_file, h5py.File(dataset_reg['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         reg_model = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
@@ -135,14 +116,12 @@ def test_performance_evaluation(create_h5_dataset):
 
 # 4. Test Score Recording
 
-def test_score_recording(tmpdir, create_h5_dataset):
+def test_score_recording(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test correct recording of scores in CSV format."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
-    split_path = tmpdir.join("split.json")
+    split_path = tmp_path / "split.json"
     with open(split_path, "w") as f:
         json.dump({
             "idx_train": list(range(0, 60)),
@@ -152,18 +131,18 @@ def test_score_recording(tmpdir, create_h5_dataset):
             "seed": 42,
         }, f)
 
-    scores_path = tmpdir.join("scores.csv")
+    scores_path = tmp_path / "scores.csv"
     
     fit(
-        x_path,
-        y_path,
+        str(dataset['features']),
+        str(dataset['targets']),
         str(split_path),
         str(scores_path),
         "ridge-reg",
         {"ridge-reg": {"alpha": [0.1, 1.0, 10.0]}},
         [],
         "normal",
-        cni_path,
+        str(dataset['confounds']),
     )
 
     scores = pd.read_csv(scores_path)
@@ -172,16 +151,14 @@ def test_score_recording(tmpdir, create_h5_dataset):
 
 # 5. Test Error Handling
 
-def test_error_handling(create_h5_dataset):
+def test_error_handling(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test appropriate error messages for invalid inputs or configurations."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
@@ -191,16 +168,14 @@ def test_error_handling(create_h5_dataset):
 
 # 6. Test Memory Efficiency
 
-def test_memory_efficiency(create_h5_dataset):
+def test_memory_efficiency(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test efficient data loading and processing for large datasets."""
-    X, y = make_regression(n_samples=10000, n_features=100, random_state=42)
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(10000, 3), 'cni.h5')
+    X, y, confounds = generate_synth_data(n_samples=10000, n_features=100, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
     idx_train, idx_val, idx_test = list(range(0, 6000)), list(range(6000, 8000)), list(range(8000, 10000))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
@@ -211,18 +186,16 @@ def test_memory_efficiency(create_h5_dataset):
 # 7. Test Different Data Types
 
 @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.int32, np.int64])
-def test_different_data_types(create_h5_dataset, dtype):
+def test_different_data_types(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, dtype):
     """Test correct handling of various data types."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    X, y = X.astype(dtype), y.astype(dtype)
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    X, y, confounds = X.astype(dtype), y.astype(dtype), confounds.astype(dtype)
     
-    x_path = create_h5_dataset(X, f'features_{dtype.__name__}.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), f'targets_{dtype.__name__}.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3).astype(dtype), f'cni_{dtype.__name__}.h5')
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / f"test_data_{dtype.__name__}")
 
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = RegressionModel(lambda **args: Ridge(**args), "ridge_regression")
@@ -232,16 +205,14 @@ def test_different_data_types(create_h5_dataset, dtype):
 
 # 8. Test Reproducibility
 
-def test_reproducibility(create_h5_dataset):
+def test_reproducibility(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test consistent results with the same random seed."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset['features'], 'r') as x_file, h5py.File(dataset['targets'], 'r') as y_file, h5py.File(dataset['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = RegressionModel(lambda **args: Ridge(random_state=42, **args), "ridge_regression")
@@ -252,17 +223,15 @@ def test_reproducibility(create_h5_dataset):
 
 # 9. Test Edge Cases
 
-def test_edge_cases(create_h5_dataset):
+def test_edge_cases(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test behavior with minimal datasets and imbalanced datasets."""
     # Minimal dataset
-    X, y = make_classification(n_samples=10, n_features=5, n_classes=2, n_informative=2, n_redundant=0, n_repeated=0, random_state=42)
-    x_path = create_h5_dataset(X, 'features_minimal.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets_minimal.h5')
-    cni_path = create_h5_dataset(np.random.rand(10, 2), 'cni_minimal.h5')
+    X_min, y_min, confounds_min = generate_synth_data(n_samples=10, n_features=5, classification=True)
+    dataset_min = create_dataset(X_min, y_min, confounds_min, 'h5', tmp_path / "test_data_minimal")
 
     idx_train, idx_val, idx_test = [0, 1, 2, 3, 4], [5, 6, 7], [8, 9]
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset_min['features'], 'r') as x_file, h5py.File(dataset_min['targets'], 'r') as y_file, h5py.File(dataset_min['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
@@ -271,14 +240,13 @@ def test_edge_cases(create_h5_dataset):
         assert isinstance(metrics, dict), "Failed to handle minimal dataset"
 
     # Imbalanced dataset
-    X, y = make_classification(n_samples=100, n_features=20, n_classes=2, weights=[0.9, 0.1], random_state=42)
-    x_path = create_h5_dataset(X, 'features_imbalanced.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets_imbalanced.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni_imbalanced.h5')
+    X_imb, y_imb, confounds_imb = generate_synth_data(n_samples=100, n_features=20, classification=True)
+    y_imb = np.where(y_imb < np.percentile(y_imb, 90), 0, 1)  # Create imbalance
+    dataset_imb = create_dataset(X_imb, y_imb, confounds_imb, 'h5', tmp_path / "test_data_imbalanced")
 
     idx_train, idx_val, idx_test = list(range(0, 60)), list(range(60, 80)), list(range(80, 100))
 
-    with h5py.File(x_path, 'r') as x_file, h5py.File(y_path, 'r') as y_file, h5py.File(cni_path, 'r') as cni_file:
+    with h5py.File(dataset_imb['features'], 'r') as x_file, h5py.File(dataset_imb['targets'], 'r') as y_file, h5py.File(dataset_imb['confounds'], 'r') as cni_file:
         x_dataset, y_dataset, cni_dataset = x_file['data'], y_file['data'], cni_file['data']
 
         model_class = ClassifierModel(lambda **args: LogisticRegression(**args), "logistic_regression")
@@ -288,14 +256,12 @@ def test_edge_cases(create_h5_dataset):
 
 # 10. Test Existing Scores Reuse
 
-def test_existing_scores_reuse(tmpdir, create_h5_dataset):
+def test_existing_scores_reuse(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path):
     """Test that existing scores are successfully reused."""
-    X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-    x_path = create_h5_dataset(X, 'features.h5')
-    y_path = create_h5_dataset(y.reshape(-1, 1), 'targets.h5')
-    cni_path = create_h5_dataset(np.random.rand(100, 3), 'cni.h5')
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
-    split_path = tmpdir.join("split.json")
+    split_path = tmp_path / "split.json"
     with open(split_path, "w") as f:
         json.dump({
             "idx_train": list(range(0, 60)),
@@ -306,7 +272,7 @@ def test_existing_scores_reuse(tmpdir, create_h5_dataset):
         }, f)
 
     # Create existing scores
-    existing_scores_path = tmpdir.join("existing_scores.csv")
+    existing_scores_path = tmp_path / "existing_scores.csv"
     existing_scores = pd.DataFrame({
         'alpha': [0.1, 1.0],
         'r2_train': [0.8, 0.7],
@@ -323,19 +289,19 @@ def test_existing_scores_reuse(tmpdir, create_h5_dataset):
     })
     existing_scores.to_csv(existing_scores_path, index=False)
 
-    scores_path = tmpdir.join("scores.csv")
+    scores_path = tmp_path / "scores.csv"
     
     # Run fit function with existing scores
     new_scores = fit(
-        x_path,
-        y_path,
+        str(dataset['features']),
+        str(dataset['targets']),
         str(split_path),
         str(scores_path),
         "ridge-reg",
         {"ridge-reg": {"alpha": [0.1, 1.0, 10.0]}},
         [str(existing_scores_path)],
         "normal",
-        cni_path,
+        str(dataset['confounds']),
     )
 
     # Check that existing scores were reused
@@ -362,32 +328,14 @@ def test_existing_scores_reuse(tmpdir, create_h5_dataset):
         atol=1e-8
     )
 
-# Add this new test function
+# 11. Test Fit with Confound Correction
+
 @pytest.mark.parametrize("confound_correction_method", ["with_cni", "only_cni", "normal"])
 @pytest.mark.parametrize("model_type", ["classification", "regression"])
-def test_fit_with_confound_correction(tmpdir, create_h5_dataset, confound_correction_method, model_type):
-    """
-    Test the fit function with various confound correction methods and model types.
-
-    This test creates toy datasets, sets up the necessary file structure,
-    runs the fit function, and checks the output for correctness.
-
-    Args:
-        tmpdir (str): Pytest fixture for temporary directory.
-        create_h5_dataset (callable): Fixture to create HDF5 datasets.
-        confound_correction_method (str): Method for confound correction.
-        model_type (str): Type of model to test (classification or regression).
-    """
-    # Create toy problems
-    if model_type == "classification":
-        X, y = make_classification(n_samples=100, n_features=20, n_classes=2, random_state=42)
-        model_name = "ridge-cls"
-    else:
-        X, y = make_regression(n_samples=100, n_features=20, random_state=42)
-        model_name = "ridge-reg"
-    
-    y = y.reshape(-1, 1)
-    cni = np.random.rand(100, 5)
+def test_fit_with_confound_correction(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, confound_correction_method: str, model_type: str):
+    """Test the fit function with various confound correction methods and model types."""
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=(model_type == "classification"), random_state=42)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
 
     # Create data split
     split = {
@@ -398,30 +346,27 @@ def test_fit_with_confound_correction(tmpdir, create_h5_dataset, confound_correc
         "seed": 42,
     }
 
-    # Save data to temporary files
-    features_path = create_h5_dataset(X, 'features.h5')
-    targets_path = create_h5_dataset(y, 'targets.h5')
-    cni_path = create_h5_dataset(cni, 'cni.h5')
-    split_path = tmpdir.join("split.json")
+    split_path = tmp_path / "split.json"
     with open(split_path, "w") as f:
         json.dump(split, f)
 
     # Define model parameters
+    model_name = "ridge-cls" if model_type == "classification" else "ridge-reg"
     hp = {"alpha": [0.1, 1.0, 10.0]}
     grid = {model_name: hp}
 
     # Run the fit function
-    scores_path = tmpdir.join("scores.csv")
+    scores_path = tmp_path / "scores.csv"
     fit(
-        features_path,
-        targets_path,
+        str(dataset['features']),
+        str(dataset['targets']),
         str(split_path),
         str(scores_path),
         model_name,
         grid,
         [],
         confound_correction_method,
-        cni_path,
+        str(dataset['confounds']),
     )
 
     # Load and check the scores
