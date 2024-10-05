@@ -5,6 +5,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_openml
+from sklearn.preprocessing import QuantileTransformer
 
 # Set up logging
 log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
@@ -12,6 +13,9 @@ logging.basicConfig(level=getattr(logging, log_level), format='%(asctime)s - %(l
 
 # Define a constant for floating point precision
 FLOAT_PRECISION = np.float32
+
+# Define a constant for quantile transform unique values threshold
+QUANTILE_TRANSFORM_UNIQUE_VALUES_THRESHOLD = 20
 
 predefined_datasets = {
     "mnist": {
@@ -41,6 +45,7 @@ def prepare_data(
     features_targets_covariates: str,
     variant: str,
     custom_datasets: dict,
+    quantile_transform: bool = False,
 ):
     """
     Prepare a dataset for use in the workflow by loading, processing, and saving it in HDF5 format.
@@ -99,6 +104,25 @@ def prepare_data(
         logging.error(error_msg)
         raise TypeError(error_msg)
 
+    # if data is empty, ignore quantile transform
+    if data.size == 0:
+        quantile_transform = False
+        logging.info("Data is empty, skipping quantile transform") 
+
+    if quantile_transform:
+        logging.info("Applying quantile transform")
+        if data.ndim == 1:
+            data = data.reshape(-1, 1)
+        
+        for i in range(data.shape[1]):
+            if len(np.unique(data[:, i])) > QUANTILE_TRANSFORM_UNIQUE_VALUES_THRESHOLD:
+                data[:, i] = QuantileTransformer(random_state=42).fit_transform(data[:, i].reshape(-1, 1)).ravel()
+            else:
+                logging.warning(f"Skipping quantile transform for feature {i} due to low number of unique values ({len(np.unique(data[:, i]))} < {QUANTILE_TRANSFORM_UNIQUE_VALUES_THRESHOLD})")
+    else:
+        logging.info("No quantile transform applied")
+
+
     # Apply appropriate processing and masking based on the type of data
     if features_targets_covariates == "targets":
         data = data.reshape(-1)
@@ -149,5 +173,6 @@ if __name__ == "__main__":
         else "covariates",
         variant=snakemake.wildcards.name,
         custom_datasets=snakemake.params.custom_datasets,
+        quantile_transform=True if snakemake.wildcards.quantile_transform == "True" else False
     )
     logging.info("Data preparation process completed")

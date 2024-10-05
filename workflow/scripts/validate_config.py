@@ -23,6 +23,11 @@ def validate_details(config: dict, MODELS: dict, PREDEFINED_DATASETS: dict, Regr
     
     errors = []
     
+    # Get global settings
+    global_grid = config.get("grid", "default")
+    global_balanced = config.get("balanced", False)
+    global_quantile_transform = config.get("quantile_transform", False)
+    
     # Iterate over each experiment in the configuration
     for exp_name, exp in config["experiments"].items():
     
@@ -68,17 +73,18 @@ def validate_details(config: dict, MODELS: dict, PREDEFINED_DATASETS: dict, Regr
                 )
     
         # Validate hyperparameter grids
-        if exp["grid"] not in config['grids']:
+        exp_grid = exp.get("grid", global_grid)
+        if exp_grid not in config['grids']:
             available_grids = os.listdir('config/grids')
             errors.append(
-                f"Experiment '{exp_name}': grid '{exp['grid']}' should be one of {available_grids}."
+                f"Experiment '{exp_name}': grid '{exp_grid}' should be one of {available_grids}."
             )
         else:
-            grid = config['grids'][exp["grid"]]
+            grid = config['grids'][exp_grid]
             for model in exp["models"]:
                 if model not in grid:
                     errors.append(
-                        f"Experiment '{exp_name}': grid '{exp['grid']}' must have hyperparameters defined for model '{model}'."
+                        f"Experiment '{exp_name}': grid '{exp_grid}' must have hyperparameters defined for model '{model}'."
                     )
     
         # Ensure regression models are used appropriately with confound corrections

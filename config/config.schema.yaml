@@ -85,8 +85,7 @@
             "minItems": 1
           },
           "balanced": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           },
           "models": {
             "type": "array",
@@ -96,9 +95,12 @@
           },
           "grid": {
             "type": "string"
+          },
+          "quantile_transform": {
+            "type": "boolean"
           }
         },
-        "required": ["dataset", "features", "targets", "confound_correction_method", "confound_correction_cni", "models", "grid"]
+        "required": ["dataset", "features", "targets", "confound_correction_method", "confound_correction_cni", "models",]
       }
     },
     "custom_datasets": {
@@ -131,7 +133,19 @@
         },
         "required": ["features", "targets", "covariates"]
       }
+    },
+    "balanced": {
+      "type": "boolean",
+      "default": false
+    },
+    "quantile_transform": {
+      "type": "boolean",
+      "default": false
+    },
+    "grid": {
+      "type": "string",
+      "default": "default"
     }
   },
-  "required": ["val_test_frac", "bootstrap_repetitions", "seeds", "sample_sizes", "experiments", "custom_datasets"]
+  "required": ["val_test_frac", "bootstrap_repetitions", "seeds", "sample_sizes", "experiments", "custom_datasets", "balanced", "quantile_transform", "grid"]
 }

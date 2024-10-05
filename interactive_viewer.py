@@ -40,7 +40,7 @@ def extract_metadata(path: str) -> pd.Series:
     columns = [
         "dataset", "model", "features", "target",
         "confound-correction-method", "confound-correction-cni",
-        "balanced", "grid",
+        "balanced","quantile-transform", "grid",
     ]
     return pd.Series(parts + [None] * (len(columns) - len(parts)), index=columns)
 
