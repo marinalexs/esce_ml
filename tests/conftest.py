@@ -80,9 +80,9 @@ def create_dataset(write_data_to_file: Callable) -> Callable[[np.ndarray, np.nda
     """
     def _create_dataset(X: np.ndarray, y: np.ndarray, confounds: np.ndarray, file_format: str, base_path: Union[str, Path]) -> Dict[str, Path]:
         base_path = Path(base_path)  # Convert to Path object if it's a string
-        features_path = write_data_to_file(X, file_format, base_path / f"features.{file_format}")
-        targets_path = write_data_to_file(y, file_format, base_path / f"targets.{file_format}")
-        confounds_path = write_data_to_file(confounds, file_format, base_path / f"confounds.{file_format}")
+        features_path = write_data_to_file(X, file_format, base_path.with_name(f"features.{file_format}"))
+        targets_path = write_data_to_file(y, file_format, base_path.with_name(f"targets.{file_format}"))
+        confounds_path = write_data_to_file(confounds, file_format, base_path.with_name(f"confounds.{file_format}"))
         
         return {
             'features': features_path,
