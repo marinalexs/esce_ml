@@ -1,0 +1,85 @@
+val_test_frac: .25
+val_test_min: 100
+val_test_max: 1000
+stratify: false
+grid: "default"
+quantile_transform: false
+
+#seeds: [0,1,2,3,4,5,6,7,8,9,]
+seeds: [0,1,2]
+#sample_sizes: [64,90,128,181,256,362,512,724,1024,2048,4096,8192,16384,28000,]
+sample_sizes: [64,724,16384,]
+
+# experiments: {}
+
+experiments:
+  NAKO_auditc_regression:
+    dataset: "NAKO"
+    features: ["features-vol-desikan",
+                "features-vol-destrieux",
+                "features-surf-desikan",
+                "features-thick-desikan",
+                "features-vol-seg" ,
+                "features-all",]
+    targets: ["target-audit-c",]
+    confound_correction_method: ["none", "matching", 'with-cni', 'only-cni',]
+    confound_correction_cni: ["example-covariates-of-no-interest", "none",]
+    balanced: false
+    models: ["ridge-reg",]
+  UKB_auditc_regression:
+    dataset: "UKB"
+    features: ["features-vol-desikan",
+                "features-vol-destrieux",
+                "features-surf-desikan",
+                "features-thick-desikan",
+                "features-vol-seg" ,
+                "features-all",]
+    targets: ["target-audit-c",]
+    confound_correction_method: ["none", "matching", 'with-cni', 'only-cni',]
+    confound_correction_cni: ["example-covariates-of-no-interest", "none",]
+    balanced: false
+    models: ["ridge-reg",]
+
+custom_datasets:
+  NAKO:
+    features: {
+      "features-all":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_all.csv",
+      "features-surf-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_surf_desikan.csv",
+      "features-thick-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_thick_desikan.csv",
+      "features-vol-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_vol_desikan.csv",
+      "features-vol-destrieux":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_vol_destrieux.csv",
+      "features-vol-seg":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_x_features_vol_seg.csv"}
+    targets: {
+      "target-sex":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_sex.csv",
+      "target-age":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_age.csv",
+      'target-bmi': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_bmi.csv',
+      'target-household-size': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_household_size.csv',
+      'target-smoking': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_smoking.csv',
+      'target-pack-years': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_pack_years.csv',
+      'target-drinker': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_drinker.csv',
+      'target-audit-c': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_AUDIT_C.csv',
+      'target-risky-drinking': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_risky_drinking.csv',
+      'target-anxiety': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_anxiety.csv',
+      'target-depression': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_y_target_depression.csv'}
+    covariates: {'example-covariates-of-no-interest':'/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/nako/full_dataset_confounding_age_sex/nako_c_confounding_age_sex.csv',}
+  UKB:
+    features: {
+      "features-all":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_all.csv",
+      "features-surf-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_surf_desikan.csv",
+      "features-thick-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_thick_desikan.csv",
+      "features-vol-desikan":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_vol_desikan.csv",
+      "features-vol-destrieux":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_vol_destrieux.csv",
+      "features-vol-seg":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_x_features_vol_seg.csv"}
+    targets: {
+      "target-sex":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_sex.csv",
+      "target-age":"/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_age.csv",
+      'target-bmi': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_bmi.csv',
+      'target-household-size': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_household_size.csv',
+      'target-smoking': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_smoking.csv',
+      'target-pack-years': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_pack_years.csv',
+      'target-drinker': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_drinker.csv',
+      'target-audit-c': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_AUDIT_C.csv',
+      'target-risky-drinking': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_risky_drinking.csv',
+      'target-anxiety': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_anxiety.csv',
+      'target-depression': '/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_y_target_depression.csv',}
+    covariates: {'example-covariates-of-no-interest':'/ritter/share/projects/Marina/Replication_study/inputfiles_snakemake_marina/ukb/full_dataset_confounding_age_sex/ukb_c_confounding_age_sex.csv',}

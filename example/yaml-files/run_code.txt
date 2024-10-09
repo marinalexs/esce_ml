@@ -1,0 +1,7 @@
+cd /ritter/marina/dev/esce_ml
+
+to run onyl new adjustments
+snakemake --cores 20 --configfile example/yaml-files/audit_c_confounding.yaml --rerun-triggers mtime --use-conda --rerun-incomplete all
+
+to run all code again
+snakemake --cores 20 --configfile example/yaml-files/all_targets_confounding.yaml --use-conda --forceall all
