@@ -226,7 +226,7 @@ def write_splitfile(
     logging.debug(f"Starting split generation with method: {confound_correction_method}")
 
     # Validate confound correction method
-    valid_methods = ["correct-x", "correct-y", "correct-both", "with_cni", "only_cni", "matching", "none"]
+    valid_methods = ["correct-x", "correct-y", "correct-both", "with-cni", "only-cni", "matching", "none"]
     if confound_correction_method not in valid_methods:
         error_msg = f"Invalid confound correction method: {confound_correction_method}. Valid methods are: {', '.join(valid_methods)}"
         logging.error(error_msg)
