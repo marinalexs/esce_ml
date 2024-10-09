@@ -75,6 +75,33 @@ experiments:
 ```
 
 
+## Models
+
+### Classification
+
+- majority-cls: Majority classifier
+- logistic-regression-cls: Logistic regression classifier
+- ridge-cls: Ridge classifier
+- random-forest-cls: Random forest classifier
+- xgb-cls: Gradient Boosting classifier
+- rbf-kernel-svm-cls: Radial Basis Function kernel SVM classifier
+- poly-kernel-svm-cls: Poly kernel SVM classifier
+- pca-ridge-cls: Principal Component Analysis -> ridge classifier
+- rfe-ridge-cls: Recursive Feature Elimination -> ridge classifier
+
+### Regression
+
+- mean-reg: Mean regressor
+- ols-reg: Ordinary least squares regressor
+- ridge-reg: Ridge regressor
+- random-forest-reg: Random forest regressor
+- xgb-reg: Gradient Boosting regressor
+- rbf-kernel-svm-reg: Radial Basis Function kernel SVM regressor
+- poly-kernel-svm-reg: Poly kernel SVM regressor
+- pca-ridge-reg: Principal Component Analysis -> ridge regressor
+- rfe-ridge-reg: Recursive Feature Elimination -> ridge regressor
+
+
 ## Dataset Definitions
 
 In each dataset, you must provide three types of files:

@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Literal, Union, Optional, Tuple
 import numpy as np
 import h5py
 import pandas as pd
+import sklearn
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -26,8 +27,15 @@ from sklearn.metrics import (
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import ParameterGrid
 from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.linear_model import Ridge, RidgeClassifier
+from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, RidgeCV, RidgeClassifier, RidgeClassifierCV
 from sklearn.base import BaseEstimator
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor, RandomForestClassifier, RandomForestRegressor
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import RFE
+from sklearn.pipeline import make_pipeline
+from sklearn.kernel_ridge import KernelRidge
+from sklearn.svm import SVC, SVR
+from xgboost import XGBRegressor, XGBClassifier
 
 # Set up logging
 log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
@@ -331,17 +339,75 @@ class RegressionModel(BaseModel):
 
 # Define available models with their corresponding generators and names
 MODELS: Dict[str, Union[ClassifierModel, RegressionModel]] = {
-    "majority-classifier": ClassifierModel(
+    "majority-cls": ClassifierModel(
         lambda **args: DummyClassifier(strategy="most_frequent", **args),
         "majority classifier",
     ),
-    "mean-regressor": RegressionModel(
-        lambda **args: DummyRegressor(strategy="mean", **args), "mean regressor"
+    "logistic-regression-cls": ClassifierModel(
+        lambda **args: LogisticRegression(**args), "logistic regression classifier"
     ),
     "ridge-cls": ClassifierModel(
         lambda **args: RidgeClassifier(**args), "ridge classifier"
     ),
+    "poly-kernel-svm-cls": ClassifierModel(
+        lambda **args: SVC(kernel="poly", **args), "polynomial kernel svm classifier"
+    ),
+    "rbf-kernel-svm-cls": ClassifierModel(
+        lambda **args: SVC(kernel="rbf", **args), "rbf kernel svm classifier"
+    ),
+    "random-forest-cls": ClassifierModel(
+        lambda **args: RandomForestClassifier(**args), "random forest classifier"
+    ),
+    
+    "pca-ridge-cls": ClassifierModel(
+        lambda **args: make_pipeline(
+            PCA(**{k.split('pca__')[1]: v for k, v in args.items() if k.startswith('pca__')}),
+            RidgeClassifier(**{k.split('ridge__')[1]: v for k, v in args.items() if k.startswith('ridge__')})
+        ), "pca ridge classifier"
+    ),
+    "rfe-ridge-cls": ClassifierModel(
+        lambda **args: make_pipeline(
+            RFE(estimator=RidgeClassifierCV(), **{k.split('rfe__')[1]: v for k, v in args.items() if k.startswith('rfe__')}),
+            RidgeClassifier(**{k.split('ridge__')[1]: v for k, v in args.items() if k.startswith('ridge__')})
+        ), "rfe ridge classifier"
+    ),
+    "xgb-cls": ClassifierModel(
+        lambda **args: GradientBoostingClassifier(random_state=42, n_iter_no_change=10, **args), "xgboost classifier"
+    ),
+
+    "mean-reg": RegressionModel(
+        lambda **args: DummyRegressor(strategy="mean", **args), "mean regressor"
+    ),
+    "ols-reg": RegressionModel(
+        lambda **args: LinearRegression(**args), "ordinary least squares regressor"
+    ),
     "ridge-reg": RegressionModel(lambda **args: Ridge(**args), "ridge regressor"),
+    "poly-kernel-svm-reg": RegressionModel(
+        lambda **args: SVR(kernel="poly", **args), "polynomial kernel svm regressor"
+    ),
+    "rbf-kernel-svm-reg": RegressionModel(
+        lambda **args: SVR(kernel="rbf", **args), "rbf kernel svm regressor"
+    ),
+    "random-forest-reg": RegressionModel(
+        lambda **args: RandomForestRegressor(**args), "random forest regressor"
+    ),
+
+    "pca-ridge-reg": RegressionModel(
+        lambda **args: make_pipeline(
+            PCA(**{k.split('pca__')[1]: v for k, v in args.items() if k.startswith('pca__')}),
+            Ridge(**{k.split('ridge__')[1]: v for k, v in args.items() if k.startswith('ridge__')})
+        ), "pca ridge regressor"
+    ),
+    "rfe-ridge-reg": RegressionModel(
+        lambda **args: make_pipeline(
+            RFE(estimator=RidgeCV(), **{k.split('rfe__')[1]: v for k, v in args.items() if k.startswith('rfe__')}),
+            Ridge(**{k.split('ridge__')[1]: v for k, v in args.items() if k.startswith('ridge__')})
+        ), "rfe ridge regressor"
+    ),
+    "xgb-reg": RegressionModel(
+        lambda **args: GradientBoostingRegressor(random_state=42, n_iter_no_change=10, **args), "xgboost regressor"
+    ),
+
 }
 
 
