@@ -139,7 +139,7 @@ def plot(
                 
             # Create a DataFrame for each score with mean and standard deviation
             df_ = pd.DataFrame(
-                {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"]}
+                {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"], "metric": score["metric"]}
             )
             for col in ['model', 'features', 'target', 'cni', 'dataset']:
                 if col in row.index:
@@ -167,11 +167,17 @@ def plot(
     # Replace NaN values in y_std with 0
     data['y_std'] = data['y_std'].fillna(0)
 
+    # Get the metric from the first row
+    metric = data.iloc[0]["metric"]
+
     logger.debug("Creating main line chart")
     # Create the main line chart
     chart = alt.Chart(data).mark_line().encode(
-        x=alt.X('n:Q', scale=alt.Scale(type='log'), title='Sample Size'),
-        y=alt.Y('y:Q', scale=alt.Scale(zero=False), title='Performance Metric'),
+        x=alt.X('n:Q', 
+                scale=alt.Scale(type='log', 
+                                domain=[data['n'].min() * 0.9, data['n'].max() * 1.1]),
+                title='Sample Size'),
+        y=alt.Y('y:Q', scale=alt.Scale(zero=False), title=f'Performance Metric [{metric}]'),
         color=alt.Color(f'{color_variable}:N', title=color_variable) if color_variable and color_variable in data.columns else alt.value('#1f77b4'),
         strokeDash=alt.StrokeDash(f'{linestyle_variable}:N', title=linestyle_variable) if linestyle_variable and linestyle_variable in data.columns else alt.value([1, 0])
     )

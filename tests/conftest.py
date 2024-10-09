@@ -136,7 +136,8 @@ def write_stats_data() -> Callable[[str, np.ndarray, np.ndarray, np.ndarray, np.
         stats_data = {
             'x': x.tolist(),
             'y_mean': y.tolist(),
-            'y_std': y_err.tolist()
+            'y_std': y_err.tolist(),
+            'metric': 'test_metric'
         }
         
         with open(stats_file, 'w') as f:
