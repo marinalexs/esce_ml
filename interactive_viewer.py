@@ -70,7 +70,7 @@ def load_data(results_metadata: pd.DataFrame) -> pd.DataFrame:
                 continue
             
             df_ = pd.DataFrame({"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"]})
-            for col in ['dataset', 'features', 'target', 'model', 'cni', 'confound-correction-method', 'confound-correction-cni', 'balanced', 'grid']:
+            for col in ['dataset', 'features', 'target', 'model', 'cni', 'confound-correction-method', 'confound-correction-cni', 'balanced','quantile-transform', 'grid']:
                 if col in row.index:
                     df_[col] = row[col]
             data.append(df_)
@@ -89,7 +89,7 @@ def load_data(results_metadata: pd.DataFrame) -> pd.DataFrame:
     for col in data.select_dtypes(include=['object']).columns:
         data[col] = data[col].str.replace('_', '-')
 
-    category_columns = ['dataset', 'features', 'target', 'model', 'cni', 'confound-correction-method', 'confound-correction-cni', 'balanced', 'grid']
+    category_columns = ['dataset', 'features', 'target', 'model', 'cni', 'confound-correction-method', 'confound-correction-cni', 'balanced','quantile-transform', 'grid']
     data['id'] = data[category_columns].astype(str).agg('-'.join, axis=1)
 
     logger.info("Data processed successfully")
@@ -174,7 +174,7 @@ def main():
         return
 
     st.sidebar.header("Filters")
-    category_columns = ['dataset', 'features', 'target', 'model', 'confound-correction-method', 'confound-correction-cni', 'balanced', 'grid']
+    category_columns = ['dataset', 'features', 'target', 'model', 'confound-correction-method', 'confound-correction-cni', 'balanced','quantile-transform', 'grid']
     selected_categories = {
         col: st.sidebar.multiselect(f"Select [{col}]", data[col].unique().tolist(), default=data[col].unique().tolist())
         for col in category_columns
