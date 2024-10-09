@@ -165,8 +165,8 @@ def test_process_results(generate_stats_data, write_stats_data, parse_filename, 
     # Check if the columns are correctly extracted
     for index, row in df.iterrows():
         path_parts = Path(row['full_path']).parts
-        assert row['dataset'] == path_parts[-6], f"Mismatch in dataset for row {index}"
-        assert row['model'] == path_parts[-4], f"Mismatch in model for row {index}"
+        assert row['dataset'] == path_parts[-4], f"Mismatch in dataset for row {index}"
+        assert row['model'] == path_parts[-2], f"Mismatch in model for row {index}"
         
         filename = Path(row['full_path']).stem.replace('.stats', '')
         parsed = parse_filename(filename)

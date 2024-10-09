@@ -54,12 +54,12 @@ def extract_metadata(path):
 
     # Add dataset and model information if available
     parts = Path(path).parts
-    if len(parts) >= 6:
-        metadata['dataset'] = parts[-6]
-        metadata['model'] = parts[-4]
+    if len(parts) >= 5:
+        metadata['dataset'] = parts[-4]
+        metadata['model'] = parts[-2]
     else:
-        metadata['dataset'] = 'unknown'
-        metadata['model'] = 'unknown'
+        raise ValueError(f"Invalid filename structure: {filename}")
+    
     return pd.Series(metadata)
 
 def process_results(available_results: list) -> pd.DataFrame:

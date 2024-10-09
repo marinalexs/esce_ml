@@ -1,10 +1,46 @@
 grids:
   default:
-    majority-classifier: {}
+    majority-cls: {}
+    mean-reg: {}
+    logistic-regression-cls: {}
+    ols-reg: {}
     ridge-reg: {'alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
     ridge-cls: {'alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
+    random-forest-reg: {'n_estimators':[500],'max_depth':[3,5,10, 100], 'max_features':[0.01,0.1,0.5,1]}
+    random-forest-cls: {'n_estimators':[500],'max_depth':[3,5,10, 100], 'max_features':[0.01,0.1,0.5,1]}
+    xgb-reg: {'n_estimators': [2000, ],'subsample': [0.5, 1.0, ],'learning_rate': [0.1, ],'max_features': [1.0, 0.5],'max_depth': [2, 3, 4, 6, 8, 10, ],}
+    xgb-cls: {'n_estimators': [2000, ],'subsample': [0.5, 1.0, ],'learning_rate': [0.1, ],'max_features': [1.0, 0.5],'max_depth': [2, 3, 4, 6, 8, 10, ],}
+    rbf-kernel-svm-reg: {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000], 'gamma':[ 0.00000003,0.00000539,0.00097656,0.17677670,32.00000000]}
+    rbf-kernel-svm-cls: {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000], 'gamma':[ 0.00000003,0.00000539,0.00097656,0.17677670,32.00000000]}
+    poly-kernel-svm-reg: {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000], 'degree':[1,2,3,5,10]}
+    poly-kernel-svm-cls: {'C':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000], 'degree':[1,2,3,5,10]}
+
+    pca-ridge-reg: {'pca__n_components':[10,20,50,100,500,1000], 'ridge__alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
+    pca-ridge-cls: {'pca__n_components':[10,20,50,100,500,1000], 'ridge__alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
+    rfe-ridge-reg: {'rfe__n_features_to_select':[10,20,50,100,500,1000], 'ridge__alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
+    rfe-ridge-cls: {'rfe__n_features_to_select':[10,20,50,100,500,1000], 'ridge__alpha':[0.00001,0.0001,0.001,0.01,0.1,1,10,100,1000,10000,100000]}
+
 
   minimal:
-    majority-classifier: {}
-    ridge-reg: {'alpha':[0.1,1,10]}
-    ridge-cls: {'alpha':[0.1,1,10]}
+    majority-cls: {}
+    mean-reg: {}
+    logistic-regression-cls: {}
+    ols-reg: {}
+    ridge-reg: {'alpha':[0.1,1]}
+    ridge-cls: {'alpha':[0.1,1]}
+    random-forest-reg: {'n_estimators':[50],'max_depth':[3]}
+    random-forest-cls: {'n_estimators':[50],'max_depth':[3]}
+    xgb-reg: {'n_estimators': [2000, ],'subsample': [0.5, 1.0, ],'learning_rate': [0.1, ],'max_features': [1.0, 0.5],'max_depth': [3, ],}
+    xgb-cls: {'n_estimators': [2000, ],'subsample': [0.5, 1.0, ],'learning_rate': [0.1, ],'max_features': [1.0, 0.5],'max_depth': [3, ],}
+    rbf-kernel-svm-reg: {'C':[0.1,1], 'gamma':[0.1]}
+    rbf-kernel-svm-cls: {'C':[0.1,1], 'gamma':[0.1]}
+    poly-kernel-svm-reg: {'C':[0.1,1], 'degree':[2]}
+    poly-kernel-svm-cls: {'C':[0.1,1], 'degree':[2]}
+
+    pca-ridge-reg: {'pca__n_components':[10], 'ridge__alpha':[0.1,1]}
+    pca-ridge-cls: {'pca__n_components':[10], 'ridge__alpha':[0.1,1]}
+    rfe-ridge-reg: {'rfe__n_features_to_select':[10], 'ridge__alpha':[0.1,1]}
+    rfe-ridge-cls: {'rfe__n_features_to_select':[10], 'ridge__alpha':[0.1,1]}
+    
+    
+

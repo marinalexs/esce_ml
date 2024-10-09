@@ -19,6 +19,7 @@ Test Summary:
 9. Test Edge Cases
 10. Test Existing Scores Reuse
 11. Test Fit with Confound Correction
+12. Test All Models with Minimal Grid
 """
 
 import json
@@ -31,6 +32,7 @@ from sklearn.datasets import make_classification, make_regression
 from pathlib import Path
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.preprocessing import StandardScaler
+import yaml
 
 from workflow.scripts.fit_model import (
     ClassifierModel,
@@ -411,3 +413,108 @@ def test_fit_with_confound_correction(generate_synth_data: Callable, create_data
         assert np.all(mse_values >= 0), f"Negative MSE values found: {dict(zip(mse_cols, mse_values[0]))}"
         mse_range = mse_values.max() - mse_values.min()
         assert mse_range < 1e6, f"MSE values vary too much across sets: {dict(zip(mse_cols, mse_values[0]))}"
+
+# 12. Test All Models with Minimal Grid
+
+# Load the minimal grid configuration
+with open(Path("config/grids.yaml"), "r") as f:
+    grids = yaml.safe_load(f)["grids"]["minimal"]
+
+@pytest.mark.parametrize("model_name", list(grids.keys()))
+def test_all_models_minimal_grid(generate_synth_data, create_dataset, tmp_path, model_name):
+    """Test all models using the first hyperparameter combination from the minimal grid."""
+    # Determine if it's a classification or regression task
+    is_classification = "cls" in model_name
+
+    # Generate synthetic data
+    X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=is_classification)
+    dataset = create_dataset(X, y, confounds, 'h5', tmp_path / "test_data")
+
+    # Create split
+    split = {
+        "idx_train": list(range(0, 60)),
+        "idx_val": list(range(60, 80)),
+        "idx_test": list(range(80, 100)),
+        "samplesize": 100,
+        "seed": 42,
+    }
+    split_path = tmp_path / "split.json"
+    with open(split_path, "w") as f:
+        json.dump(split, f)
+
+    # Get the first hyperparameter combination
+    # Get the first hyperparameter combination
+    grid = grids[model_name]
+    first_hp = {}
+    for key, value in grid.items():
+        if isinstance(value, list):
+            first_hp[key] = [value[0]]  # Take only the first item if it's a list
+        else:
+            first_hp[key] = value  # Keep as is if it's not a list
+    grid = {model_name: first_hp}
+    
+    # Print for debugging
+    print(f"Model: {model_name}, First HP: {first_hp}")
+
+    # Run the fit function
+    scores_path = tmp_path / f"scores_{model_name}.csv"
+    try:
+        fit(
+            str(dataset['features']),
+            str(dataset['targets']),
+            str(split_path),
+            str(scores_path),
+            model_name,
+            grid,
+            [],
+            "normal",
+            str(dataset['confounds']),
+        )
+    except Exception as e:
+        pytest.fail(f"Model {model_name} failed to fit: {str(e)}")
+
+    # Load and check the scores
+    scores = pd.read_csv(scores_path)
+    print(scores)
+    
+    # Check that we have exactly one row of scores
+    assert len(scores) == 1, f"Expected 1 row of scores for {model_name}, got {len(scores)}"
+
+    # Check expected columns
+    expected_columns = ["n", "s"] + list(first_hp.keys())
+    if is_classification:
+        expected_columns.extend(["acc_train", "acc_val", "acc_test", "f1_train", "f1_val", "f1_test"])
+    else:
+        expected_columns.extend(["r2_train", "r2_val", "r2_test", "mae_train", "mae_val", "mae_test", "mse_train", "mse_val", "mse_test"])
+
+    for col in expected_columns:
+        assert col in scores.columns, f"Expected column {col} not found in scores for {model_name}"
+
+    # Check metadata
+    assert scores["n"].iloc[0] == split["samplesize"], f"Expected samplesize {split['samplesize']}, got {scores['n'].iloc[0]} for {model_name}"
+    assert scores["s"].iloc[0] == split["seed"], f"Expected seed {split['seed']}, got {scores['s'].iloc[0]} for {model_name}"
+
+    # Check score ranges
+    score_columns = [col for col in scores.columns if col.endswith(('train', 'val', 'test'))]
+    for col in score_columns:
+        if col.startswith(('acc', 'f1')):
+            assert 0 <= scores[col].iloc[0] <= 1, f"Score in column {col} is not within [0, 1] range for {model_name}"
+        elif col.startswith('r2'):
+            assert scores[col].iloc[0] <= 1, f"R² score in column {col} is greater than 1 for {model_name}"
+        else:
+            assert scores[col].iloc[0] >= 0, f"Score in column {col} is negative for {model_name}"
+
+    # Additional checks for regression models
+    if not is_classification:
+        r2_cols = ["r2_train", "r2_val", "r2_test"]
+        r2_values = scores[r2_cols].values[0]
+        r2_range = max(r2_values) - min(r2_values)
+        assert r2_range < 1.0, f"R² values vary too much across sets for {model_name}: {dict(zip(r2_cols, r2_values))}"
+
+        mse_cols = ["mse_train", "mse_val", "mse_test"]
+        mse_values = scores[mse_cols].values[0]
+        assert np.all(mse_values >= 0), f"Negative MSE values found for {model_name}: {dict(zip(mse_cols, mse_values))}"
+        mse_range = max(mse_values) - min(mse_values)
+        assert mse_range < 1e6, f"MSE values vary too much across sets for {model_name}: {dict(zip(mse_cols, mse_values))}"
+
+    print(f"Model {model_name} passed all checks.")
