@@ -27,7 +27,6 @@ def expand_from_config(filename):
 features_variant = lambda wildcards: "results/{dataset}/features/{features}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-both'] else "results/{dataset}/features/{features}_none_{quantile_transform}.h5"
 targets_variant = lambda wildcards: "results/{dataset}/targets/{targets}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-y', 'correct-both'] else "results/{dataset}/targets/{targets}_none_{quantile_transform}.h5"
 
-
 def filter_incompatible_confound_setups(list_of_filenames):
     return set(
         [i if i.split("_")[2] != 'none' and i.split("_")[3] != 'none' else "_".join(i.split("_")[:2] + ["none_none"] + i.split("_")[4:]) for i in list_of_filenames]
