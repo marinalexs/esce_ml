@@ -35,7 +35,6 @@ from sklearn.feature_selection import RFE
 from sklearn.pipeline import make_pipeline
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.svm import SVC, SVR
-from xgboost import XGBRegressor, XGBClassifier
 
 # Set up logging
 log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
