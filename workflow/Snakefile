@@ -24,8 +24,8 @@ def expand_from_config(filename):
         )
     )
 
-features_variant = lambda wildcards: "results/{dataset}/features/{features}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/features/{features}_none_{quantile_transform}.h5"
-targets_variant = lambda wildcards: "results/{dataset}/targets/{targets}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-y', 'correct-both'] else "results/{dataset}/targets/{targets}_none_{quantile_transform}.h5"
+features_variant = lambda wildcards: "results/{dataset}/features/{features}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-x', 'correct-both'] else "results/{dataset}/features/{features}_none_{quantile_transform}.h5"
+targets_variant = lambda wildcards: "results/{dataset}/targets/{targets}_{confound_correction_cni}_{quantile_transform}.h5" if wildcards.confound_correction_method in ['correct-y', 'correct-both'] else "results/{dataset}/targets/{targets}_none_{quantile_transform}.h5"
 
 def filter_incompatible_confound_setups(list_of_filenames):
     return set(
