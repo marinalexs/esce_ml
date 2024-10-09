@@ -139,7 +139,7 @@ def plot(
                 
             # Create a DataFrame for each score with mean and standard deviation
             df_ = pd.DataFrame(
-                {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"]}
+                {"n": score["x"], "y": score["y_mean"], "y_std": score["y_std"], "metric": score["metric"]}
             )
             for col in ['model', 'features', 'target', 'cni', 'dataset']:
                 if col in row.index:
@@ -147,8 +147,6 @@ def plot(
             data.append(df_)
         except Exception as e:
             logger.error(f"Error processing file {row.full_path}: {str(e)}")
-
-    metric = df.iloc[0]["metric"]
 
     # Combine all individual DataFrames into one
     if len(data) > 0:
@@ -168,6 +166,9 @@ def plot(
 
     # Replace NaN values in y_std with 0
     data['y_std'] = data['y_std'].fillna(0)
+
+    # Get the metric from the first row
+    metric = data.iloc[0]["metric"]
 
     logger.debug("Creating main line chart")
     # Create the main line chart
