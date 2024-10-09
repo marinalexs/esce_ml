@@ -30,7 +30,7 @@ balanced: False
 # (bool) In classification tasks, balance data via undersampling. This is a global setting that can be overridden in individual experiments.
 
 quantile_transform: False
-# (bool) Apply quantile transform to features. This is a global setting that can be overridden in individual experiments.
+# (bool) Apply quantile transform to features and (regression-) targets. This is a global setting that can be overridden in individual experiments.
 
 grid: "default"
 # (str) Hyperparameter grid to use. This is a global setting that can be overridden in individual experiments.
