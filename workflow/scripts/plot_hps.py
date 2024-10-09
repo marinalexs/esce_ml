@@ -54,11 +54,11 @@ def plot(
     # List of hyperparameters to plot
     hp_names = list(grid.keys())
     # Determine the metric to use based on available columns
-    metric = "r2_val" if "r2_val" in scores.columns else "acc_val" if "acc_val" in scores.columns else None
+    metric = "r2_val" if "r2_val" in scores.columns else "bal_acc_val" if "bal_acc_val" in scores.columns else None
 
     if metric is None:
-        logging.error("Neither 'r2_val' nor 'acc_val' found in the DataFrame")
-        raise ValueError("Neither 'r2_val' nor 'acc_val' found in the DataFrame")
+        logging.error("Neither 'r2_val' nor 'bal_acc_val' found in the DataFrame")
+        raise ValueError("Neither 'r2_val' nor 'bal_acc_val' found in the DataFrame")
 
     logging.info(f"Using metric: {metric}")
 

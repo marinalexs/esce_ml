@@ -18,6 +18,7 @@ import h5py
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    balanced_accuracy_score,
     f1_score,
     mean_absolute_error,
     mean_squared_error,
@@ -281,6 +282,9 @@ class ClassifierModel(BaseModel):
             "acc_train": accuracy_score(y_train, y_hat_train),
             "acc_val": accuracy_score(y_val, y_hat_val),
             "acc_test": accuracy_score(y_test, y_hat_test),
+            "bal_acc_train": balanced_accuracy_score(y_train, y_hat_train),
+            "bal_acc_val": balanced_accuracy_score(y_val, y_hat_val),
+            "bal_acc_test": balanced_accuracy_score(y_test, y_hat_test),
             "f1_train": f1_score(y_train, y_hat_train, average="weighted"),
             "f1_val": f1_score(y_val, y_hat_val, average="weighted"),
             "f1_test": f1_score(y_test, y_hat_test, average="weighted"),

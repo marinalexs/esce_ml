@@ -72,7 +72,7 @@ def aggregate(
 
     # Determine the validation metric to use (R² for regression, accuracy for classification)
     # Prioritize R² if present
-    metric = "r2_val" if "r2_val" in df.columns else "acc_val" if "acc_val" in df.columns else None
+    metric = "r2_val" if "r2_val" in df.columns else "bal_acc_val" if "bal_acc_val" in df.columns else None
     if metric is None:
         logging.error("No valid metric column (r2_val or acc_val) found in the data.")
         return

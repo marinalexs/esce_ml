@@ -146,7 +146,7 @@ def extrapolate(
     logging.info(f"Loaded data from {stats_path}. Shape: {df.shape}")
 
     # Determine the metric to use based on available columns
-    metric = "r2_test" if "r2_test" in df.columns else "acc_test"
+    metric = "r2_test" if "r2_test" in df.columns else "bal_acc_test"
     logging.info(f"Using metric: {metric}")
 
     result: Dict[str, Union[int, str, List[float], List[bool]]] = {"n_seeds": len(df["s"].unique())}
