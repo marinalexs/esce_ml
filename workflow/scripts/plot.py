@@ -148,6 +148,8 @@ def plot(
         except Exception as e:
             logger.error(f"Error processing file {row.full_path}: {str(e)}")
 
+    metric = df.iloc[0]["metric"]
+
     # Combine all individual DataFrames into one
     if len(data) > 0:
         data = pd.concat(data, axis=0, ignore_index=True)
@@ -170,8 +172,11 @@ def plot(
     logger.debug("Creating main line chart")
     # Create the main line chart
     chart = alt.Chart(data).mark_line().encode(
-        x=alt.X('n:Q', scale=alt.Scale(type='log'), title='Sample Size'),
-        y=alt.Y('y:Q', scale=alt.Scale(zero=False), title='Performance Metric'),
+        x=alt.X('n:Q', 
+                scale=alt.Scale(type='log', 
+                                domain=[data['n'].min() * 0.9, data['n'].max() * 1.1]),
+                title='Sample Size'),
+        y=alt.Y('y:Q', scale=alt.Scale(zero=False), title=f'Performance Metric [{metric}]'),
         color=alt.Color(f'{color_variable}:N', title=color_variable) if color_variable and color_variable in data.columns else alt.value('#1f77b4'),
         strokeDash=alt.StrokeDash(f'{linestyle_variable}:N', title=linestyle_variable) if linestyle_variable and linestyle_variable in data.columns else alt.value([1, 0])
     )

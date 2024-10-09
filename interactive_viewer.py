@@ -108,8 +108,10 @@ def create_chart(data: pd.DataFrame, selected_categories: Dict[str, List[str]]) 
     base = alt.Chart(data).encode(
         x=alt.X('n:Q', 
                 title='Sample Size', 
-                scale=alt.Scale(type='log'),
-                axis=alt.Axis(format='~s')),
+                scale=alt.Scale(type='log', 
+                                domain=[data['n'].min() * 0.9, data['n'].max() * 1.1]),
+                                axis=alt.Axis(format='~s')
+                                ),
         y=alt.Y('y:Q', 
                 title='Performance Metric'),
         color=alt.Color('id:N', scale=color_scale, legend=None),
