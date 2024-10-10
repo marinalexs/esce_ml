@@ -39,10 +39,10 @@ def custom_datasets(tmpdir: Path, generate_synth_data: Callable, create_dataset:
         create_dataset: Fixture to create dataset files.
 
     Returns:
-        Dict containing custom datasets in different formats (csv, tsv, npy).
+        Dict containing custom datasets in different formats (csv, tsv, npy, parquet, h5).
     """
     X, y, confounds = generate_synth_data(n_samples=100, n_features=10)
-    formats = ['csv', 'tsv', 'npy']
+    formats = ['csv', 'tsv', 'npy','parquet', 'h5']
     datasets = {}
 
     for fmt in formats:
@@ -57,7 +57,7 @@ def test_prepare_data_custom_datasets(tmpdir: Path, custom_datasets: Dict[str, D
     Test preparation of custom datasets for different input file types and data categories.
     
     This test checks if the prepare_data function correctly processes custom datasets
-    in various formats (csv, tsv, npy) for features, targets, and covariates.
+    in various formats (csv, tsv, parquet, h5) for features, targets, and covariates.
     """
     for fmt in custom_datasets:
         for data_type in ['features', 'targets', 'covariates']:

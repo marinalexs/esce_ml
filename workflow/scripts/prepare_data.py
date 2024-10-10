@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import QuantileTransformer
+import pyarrow.parquet as pq
 
 # Set up logging
 log_level = os.environ.get('ESCE_LOG_LEVEL', 'WARNING').upper()
@@ -50,7 +51,7 @@ def prepare_data(
     """
     Prepare a dataset for use in the workflow by loading, processing, and saving it in HDF5 format.
 
-    This function handles predefined datasets and custom datasets. It reads data from CSV, TSV, or NPY files,
+    This function handles predefined datasets and custom datasets. It reads data from CSV, TSV, Parquet, and HDF5 files,
     performs necessary preprocessing, applies masks to filter valid samples, and saves the processed data
     along with the mask into an HDF5 file.
 
@@ -87,8 +88,13 @@ def prepare_data(
             data = pd.read_csv(in_path, delimiter="\t").values
         elif in_path.suffix == ".npy":
             data = np.load(in_path)
+        elif in_path.suffix == ".parquet":
+            data = pq.read_table(in_path).to_pandas().values
+        elif in_path.suffix == ".h5":
+            with h5py.File(in_path, "r") as f:
+                data = f["data"][()]
         else:
-            error_msg = "Unsupported file format. Supported formats are CSV, TSV, and NPY."
+            error_msg = "Unsupported file format. Supported formats are CSV, TSV, NPY, Parquet, and HDF5."
             logging.error(error_msg)
             raise ValueError(error_msg)
 

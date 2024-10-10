@@ -113,7 +113,10 @@ In each dataset, you must provide three types of files:
 Files should be saved in one of the following formats:
 - Comma-separated values (`.csv`)
 - Tab-separated values (`.tsv`)
-- Numpy array file (`.npy`)
+- Parquet file (`.parquet`)
+- hdf5 file (`.h5`)
+
+CSV and TSV files should contain a header with the names of the features and targets. The header should be the first line of the file, and the rest of the file should contain the data. HDF5 files should contain a dataset named `data` that contains the numerical data.
 
 It's important to note that within a single dataset, all files must have the same number of rows and the same samples must be consistently referred to in all files.
 
@@ -122,11 +125,11 @@ custom_datasets:
 # Defines custom datasets
     dataset-name:
     # (str) Name of the first custom dataset
-        features: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}
+        features: {'NAME':'PATH_TO_CSV_TSV_PARQUET_H5','NAME':'PATH_TO_CSV_TSV_PARQUET_H5'}
         # (dict of str) Names and paths of the feature set files
-        targets: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}
+        targets: {'NAME':'PATH_TO_CSV_TSV_PARQUET_H5','NAME':'PATH_TO_CSV_TSV_PARQUET_H5'}
         # (dict of str) Names and paths of the target files
-        covariates: {'NAME':'PATH_TO_CSV_TSV_NPY','NAME':'PATH_TO_CSV_TSV_NPY'}
+        covariates: {'NAME':'PATH_TO_CSV_TSV_PARQUET_H5','NAME':'PATH_TO_CSV_TSV_PARQUET_H5'}
         # (dict of str) Names and paths of the covariate set files
     another-dataset-name:
     # (str) Name of the second custom dataset
