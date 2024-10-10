@@ -10,3 +10,4 @@ dependencies:
   - pyyaml
   - h5py
   - altair-all
+  - pyarrow
