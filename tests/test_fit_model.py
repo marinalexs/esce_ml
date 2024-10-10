@@ -69,7 +69,7 @@ def test_model_fitting(generate_synth_data: Callable, create_dataset: Callable, 
 
 # 2. Test Feature / Target Handling
 
-@pytest.mark.parametrize("mode", ["normal", "with_cni", "only_cni"])
+@pytest.mark.parametrize("mode", ["normal", "with-cni", "only-cni"])
 def test_feature_handling(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, mode: str):
     """Test correct handling of features for different modes."""
     X, y, confounds = generate_synth_data(n_samples=100, n_features=20, classification=False)
@@ -332,7 +332,7 @@ def test_existing_scores_reuse(generate_synth_data: Callable, create_dataset: Ca
 
 # 11. Test Fit with Confound Correction
 
-@pytest.mark.parametrize("confound_correction_method", ["with_cni", "only_cni", "normal"])
+@pytest.mark.parametrize("confound_correction_method", ["with-cni", "only-cni", "normal"])
 @pytest.mark.parametrize("model_type", ["classification", "regression"])
 def test_fit_with_confound_correction(generate_synth_data: Callable, create_dataset: Callable, tmp_path: Path, confound_correction_method: str, model_type: str):
     """Test the fit function with various confound correction methods and model types."""

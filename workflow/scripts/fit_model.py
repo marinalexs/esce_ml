@@ -85,7 +85,7 @@ class BaseModel(ABC):
         idx_train: List[int],
         idx_val: List[int],
         idx_test: List[int],
-        mode: Literal["normal", "with_cni", "only_cni"] = "normal",
+        mode: Literal["normal", "with-cni", "only-cni"] = "normal",
         **kwargs: Any,
     ) -> Dict[str, float]:
         """
@@ -98,7 +98,7 @@ class BaseModel(ABC):
             idx_train (List[int]): Indices for the training set.
             idx_val (List[int]): Indices for the validation set.
             idx_test (List[int]): Indices for the test set.
-            mode (Literal["normal", "with_cni", "only_cni"]): Mode of feature inclusion.
+            mode (Literal["normal", "with-cni", "only-cni"]): Mode of feature inclusion.
             **kwargs: Additional keyword arguments for the model generator.
 
         Returns:
@@ -135,7 +135,7 @@ class BaseModel(ABC):
         idx_train: List[int],
         idx_val: List[int],
         idx_test: List[int],
-        mode: Literal["normal", "with_cni", "only_cni"],
+        mode: Literal["normal", "with-cni", "only-cni"],
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Select features and targets based on the specified mode.
@@ -147,18 +147,18 @@ class BaseModel(ABC):
             idx_train (List[int]): Indices for the training set.
             idx_val (List[int]): Indices for the validation set.
             idx_test (List[int]): Indices for the test set.
-            mode (Literal["normal", "with_cni", "only_cni"]): Mode of feature inclusion.
+            mode (Literal["normal", "with-cni", "only-cni"]): Mode of feature inclusion.
 
         Returns:
             tuple: Selected features and targets for train, validation, and test sets.
         """
         if mode == "normal":
             x_train, x_val, x_test = x[idx_train], x[idx_val], x[idx_test]
-        elif mode == "with_cni":
+        elif mode == "with-cni":
             x_train = np.concatenate([x[idx_train], cni[idx_train]], axis=1)
             x_val = np.concatenate([x[idx_val], cni[idx_val]], axis=1)
             x_test = np.concatenate([x[idx_test], cni[idx_test]], axis=1)
-        elif mode == "only_cni":
+        elif mode == "only-cni":
             x_train, x_val, x_test = cni[idx_train], cni[idx_val], cni[idx_test]
         else:
             raise ValueError(f"Invalid mode: {mode}")
@@ -508,7 +508,7 @@ def fit(
                     idx_train=split["idx_train"],
                     idx_val=split["idx_val"],
                     idx_test=split["idx_test"],
-                    mode=confound_correction_method if confound_correction_method in ['with_cni', 'only_cni'] else 'normal',
+                    mode=confound_correction_method if confound_correction_method in ['with-cni', 'only-cni'] else 'normal',
                     **params,
                 )
                 score.update(params)
