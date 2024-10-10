@@ -55,6 +55,7 @@ def write_data_to_file() -> Callable[[np.ndarray, str, Path], Path]:
             np.save(file_path, data)
         elif file_format == 'parquet':
             df = pd.DataFrame(data)
+            df.columns = df.columns.astype(str)
             df.to_parquet(file_path)
         elif file_format == 'h5':
             with h5py.File(file_path, 'w') as f:
